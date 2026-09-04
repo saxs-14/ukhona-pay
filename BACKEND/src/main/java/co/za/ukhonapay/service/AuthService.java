@@ -18,6 +18,9 @@ import co.za.ukhonapay.repository.UserRepository;
 import co.za.ukhonapay.repository.VendorRepository;
 import co.za.ukhonapay.repository.WalletRepository;
 import co.za.ukhonapay.security.JwtService;
+import co.za.ukhonapay.validation.SouthAfricanIdValidator;
+import co.za.ukhonapay.validation.VehicleRegistrationValidator;
+import co.za.ukhonapay.validation.WeakPinValidator;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -61,12 +64,22 @@ public class AuthService {
         if (userRepository.existsByIdNumber(req.idNumber())) {
             throw new IllegalArgumentException("ID number already registered");
         }
+        if (!SouthAfricanIdValidator.isValid(req.idNumber())) {
+            throw new IllegalArgumentException("Not a valid South African ID number");
+        }
+        if (WeakPinValidator.isWeak(req.pin())) {
+            throw new IllegalArgumentException("That PIN is too easy to guess - avoid repeated or sequential digits");
+        }
 
         Long associationId = null;
         Long rankId = null;
+        String vehicleRegistration = null;
 
         switch (req.userType()) {
-            case TAXI_DRIVER -> associationId = requireAssociation(req.associationId());
+            case TAXI_DRIVER -> {
+                associationId = requireAssociation(req.associationId());
+                vehicleRegistration = requireVehicleRegistration(req.vehicleRegistration());
+            }
             case VENDOR -> rankId = requireRank(req.rankId());
             case TAXI_ASSOCIATION_ADMIN -> {
                 associationId = requireAssociation(req.associationId());
@@ -114,7 +127,7 @@ public class AuthService {
                 TaxiAssociation association = taxiAssociationRepository.findById(associationId)
                         .orElseThrow(() -> new ResourceNotFoundException("Taxi association not found"));
                 vendorBuilder.locationName(association.getName())
-                        .vehicleRegistration(req.vehicleRegistration())
+                        .vehicleRegistration(vehicleRegistration)
                         .associationId(associationId);
             } else {
                 TaxiRank rank = taxiRankRepository.findById(rankId)
@@ -154,6 +167,16 @@ public class AuthService {
             throw new IllegalArgumentException("Taxi rank is required");
         }
         return rankId;
+    }
+
+    private String requireVehicleRegistration(String vehicleRegistration) {
+        if (vehicleRegistration == null || vehicleRegistration.isBlank()) {
+            throw new IllegalArgumentException("Vehicle registration is required");
+        }
+        if (!VehicleRegistrationValidator.isValid(vehicleRegistration)) {
+            throw new IllegalArgumentException("Not a valid South African number plate");
+        }
+        return VehicleRegistrationValidator.normalize(vehicleRegistration);
     }
 
     private String generateQrCode(Long userId) {
