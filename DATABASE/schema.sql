@@ -175,7 +175,7 @@ INSERT INTO users (phone_number, pin_hash, user_type, name, email, phone_verifie
 
 -- Wallets for all 15 users (association admins start with operational funds, drivers & vendors start with R0/earnings)
 INSERT INTO wallets (user_id, balance, cashback_balance)
-SELECT id, CASE WHEN user_type = 'TAXI_ASSOCIATION_ADMIN' THEN 1000.00 ELSE 0.00 END, 0.00
+SELECT id, CASE WHEN user_type = 'EMPLOYEE' THEN 1000.00 ELSE 0.00 END, 0.00
 FROM users;
 
 -- Vendor profiles
@@ -209,6 +209,84 @@ INSERT INTO transactions (reference, sender_id, receiver_id, vendor_id, amount, 
 ('TXN-0018', (SELECT id FROM users WHERE phone_number='0798765439'), (SELECT id FROM users WHERE phone_number='0711234501'), (SELECT id FROM vendors WHERE qr_code='UKP-VENDOR-LUCKYTAXI-001'), 150.00, 3.75, 0.025, 'COMPLETED', 'Taxi fare - Riverside to CBD', now() - interval '7 days'),
 ('TXN-0019', (SELECT id FROM users WHERE phone_number='0798765440'), (SELECT id FROM users WHERE phone_number='0711234502'), (SELECT id FROM vendors WHERE qr_code='UKP-VENDOR-THANDISPAZA-002'), 250.00, 6.25, 0.025, 'COMPLETED', 'Groceries - KaNyamazane', now() - interval '3 days'),
 ('TXN-0020', (SELECT id FROM users WHERE phone_number='0798765441'), (SELECT id FROM users WHERE phone_number='0711234501'), (SELECT id FROM vendors WHERE qr_code='UKP-VENDOR-LUCKYTAXI-001'), 100.00, 2.50, 0.025, 'COMPLETED', 'Taxi fare - Nelspruit CBD', now() - interval '1 days');
+
+-- ============================================================================
+-- BULK 90-DAY FINANCIAL-IDENTITY HISTORY
+-- Lucky (taxi driver) and Thandi (vendor) get a realistic trailing daily
+-- transaction history so the financial-score / credit-readiness feature has
+-- real data to compute against, matching the demo narrative ("90 days of
+-- recorded rides makes a driver bank-eligible"). Generated relative to now()
+-- so a reset always produces a fresh, current-looking 90-day window.
+-- ============================================================================
+DO $$
+DECLARE
+    lucky_user_id BIGINT := (SELECT id FROM users WHERE phone_number = '0711234501');
+    lucky_vendor_id BIGINT := (SELECT id FROM vendors WHERE qr_code = 'UKP-VENDOR-LUCKYTAXI-001');
+    thandi_user_id BIGINT := (SELECT id FROM users WHERE phone_number = '0711234502');
+    thandi_vendor_id BIGINT := (SELECT id FROM vendors WHERE qr_code = 'UKP-VENDOR-THANDISPAZA-002');
+    employee_phones TEXT[] := ARRAY['0798765432','0798765433','0798765434','0798765435','0798765436',
+                                     '0798765437','0798765438','0798765439','0798765440','0798765441'];
+    destinations TEXT[] := ARRAY['Nelspruit CBD','Sonheuwel','White River','KaNyamazane','Riverside Mall','Kabokweni'];
+    spaza_items TEXT[] := ARRAY['Bread & tea','Airtime','Cooldrink & snack','Vetkoek','Phone credit','Sweets & chips'];
+    day_offset INT;
+    ride_num INT;
+    rides_today INT;
+    sender_phone TEXT;
+    fare NUMERIC(12,2);
+    ride_hour INT;
+    ride_minute INT;
+    txn_ts TIMESTAMP;
+    counter INT := 1;
+BEGIN
+    -- Lucky: 90 trailing days, ~88% of days active, 8-15 rides per active day, R10-R30 fares
+    FOR day_offset IN 0..89 LOOP
+        IF random() < 0.88 THEN
+            rides_today := 8 + floor(random() * 8)::int; -- 8-15
+            FOR ride_num IN 1..rides_today LOOP
+                sender_phone := employee_phones[1 + floor(random() * array_length(employee_phones, 1))::int];
+                fare := round((10 + random() * 20)::numeric, 0);
+                ride_hour := 6 + floor(random() * 13)::int; -- 06:00-18:59
+                ride_minute := floor(random() * 60)::int;
+                txn_ts := date_trunc('day', now() - (day_offset || ' days')::interval)
+                          + (ride_hour || ' hours')::interval + (ride_minute || ' minutes')::interval;
+                INSERT INTO transactions (reference, sender_id, receiver_id, vendor_id, amount, cashback_amount, cashback_rate, status, description, created_at)
+                VALUES (
+                    'TXN-LUCKY-' || lpad(counter::text, 6, '0'),
+                    (SELECT id FROM users WHERE phone_number = sender_phone),
+                    lucky_user_id, lucky_vendor_id, fare, round(fare * 0.025, 2), 0.025, 'COMPLETED',
+                    'Passenger - ' || destinations[1 + floor(random() * array_length(destinations, 1))::int],
+                    txn_ts
+                );
+                counter := counter + 1;
+            END LOOP;
+        END IF;
+    END LOOP;
+
+    -- Thandi: 60 trailing days, ~82% of days active, 3-7 sales per active day, R15-R55 baskets
+    counter := 1;
+    FOR day_offset IN 0..59 LOOP
+        IF random() < 0.82 THEN
+            rides_today := 3 + floor(random() * 5)::int; -- 3-7
+            FOR ride_num IN 1..rides_today LOOP
+                sender_phone := employee_phones[1 + floor(random() * array_length(employee_phones, 1))::int];
+                fare := round((15 + random() * 40)::numeric, 0);
+                ride_hour := 6 + floor(random() * 13)::int;
+                ride_minute := floor(random() * 60)::int;
+                txn_ts := date_trunc('day', now() - (day_offset || ' days')::interval)
+                          + (ride_hour || ' hours')::interval + (ride_minute || ' minutes')::interval;
+                INSERT INTO transactions (reference, sender_id, receiver_id, vendor_id, amount, cashback_amount, cashback_rate, status, description, created_at)
+                VALUES (
+                    'TXN-THANDI-' || lpad(counter::text, 6, '0'),
+                    (SELECT id FROM users WHERE phone_number = sender_phone),
+                    thandi_user_id, thandi_vendor_id, fare, round(fare * 0.025, 2), 0.025, 'COMPLETED',
+                    'Sale - ' || spaza_items[1 + floor(random() * array_length(spaza_items, 1))::int],
+                    txn_ts
+                );
+                counter := counter + 1;
+            END LOOP;
+        END IF;
+    END LOOP;
+END $$;
 
 -- Cashback ledger mirrors the 20 transactions (all EARNED, none withdrawn yet except employee 1's demo withdrawal)
 INSERT INTO cashback (user_id, transaction_id, amount, status)

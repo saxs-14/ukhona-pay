@@ -4,6 +4,7 @@ import { BadgeCheck, Clock, MapPin, Star } from "lucide-react";
 import client from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import AnimatedNumber from "../components/ui/AnimatedNumber";
+import FinancialScoreCard from "../components/ui/FinancialScoreCard";
 import { SkeletonCard } from "../components/ui/Skeleton";
 import { listContainer, listItem } from "../lib/motion";
 
@@ -40,8 +41,11 @@ export default function VendorDashboard() {
     );
   }
 
+  const traderLabel = vendor.category === "TAXI" ? "Driver" : "Vendor";
+
   return (
     <div className="mx-auto max-w-md px-4 py-6">
+      <p className="mb-1 text-xs font-medium uppercase tracking-wide text-terracotta-600">{traderLabel}</p>
       <h1 className="flex items-center gap-1.5 font-display text-xl text-sand-900">
         {vendor.businessName} {vendor.verified && <BadgeCheck size={17} className="text-terracotta-600" />}
       </h1>
@@ -50,11 +54,16 @@ export default function VendorDashboard() {
       </p>
 
       <div className="rounded-2xl bg-gradient-to-br from-terracotta-600 to-terracotta-700 p-4 text-white shadow-warm">
-        <p className="text-xs text-terracotta-100">Wallet balance</p>
+        <p className="text-xs text-terracotta-100">Income received</p>
         <p className="text-2xl font-semibold">
           <AnimatedNumber value={Number(wallet.balance)} prefix="R" />
         </p>
+        <p className="mt-1 text-xs text-terracotta-100">
+          From commuters paying via their own banking app
+        </p>
       </div>
+
+      <FinancialScoreCard />
 
       <motion.div
         initial={{ opacity: 0, scale: 0.96 }}

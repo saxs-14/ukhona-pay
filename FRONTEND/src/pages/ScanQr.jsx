@@ -55,7 +55,10 @@ export default function ScanQr() {
       <h1 className="mb-1 flex items-center gap-2 font-display text-xl text-sand-900">
         <Camera size={20} className="text-terracotta-600" /> Scan to pay
       </h1>
-      <p className="mb-4 text-sm text-sand-500">Point your camera at the vendor's Ukhona Pay QR code</p>
+      <p className="mb-1 text-sm text-sand-500">Point your camera at the driver or vendor's Ukhona Pay QR code</p>
+      <p className="mb-4 text-xs text-sand-400">
+        In production you'd scan this from your own banking app. This demo scan-and-pay flow simulates that step.
+      </p>
 
       <motion.div
         initial={{ opacity: 0, scale: 0.97 }}
