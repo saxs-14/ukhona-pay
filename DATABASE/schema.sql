@@ -171,33 +171,10 @@ CREATE TABLE ratings (
 );
 
 -- ============================================================================
--- REFERENCE DATA
--- Taxi associations and ranks are infrastructure lookups the signup dropdowns
--- need to have anything to select - not demo users/transactions. No user,
--- wallet, vendor, transaction, cashback, withdrawal, or rating rows are
--- seeded; every account is created through real signup.
+-- NO SEED DATA
+-- Every row in every table - including taxi_associations, taxi_ranks, and
+-- atm_locations - is created through real usage, not pre-loaded here. An
+-- Association Administrator creates their association on signup; a vendor or
+-- admin creates a taxi rank the same way if it doesn't exist yet. See
+-- ReferenceDataController's POST /api/taxi-associations and /api/taxi-ranks.
 -- ============================================================================
-
--- ATM locations (Mbombela / Nelspruit, Mpumalanga)
-INSERT INTO atm_locations (name, address, city, latitude, longitude, bank) VALUES
-('ABSA ATM - Riverside Mall', 'Bester St, Riverside Park', 'Mbombela', -25.4501, 31.0126, 'ABSA'),
-('ABSA ATM - Ilanga Mall', 'Elephant Walk, Sonpark', 'Mbombela', -25.4638, 30.9926, 'ABSA'),
-('ABSA ATM - Nelspruit CBD', 'Brown St, Nelspruit Central', 'Mbombela', -25.4745, 30.9703, 'ABSA'),
-('ABSA ATM - Sonpark Boulevard', 'Nel St, Sonpark', 'Mbombela', -25.4560, 30.9558, 'ABSA'),
-('ABSA ATM - White River', 'Main Rd, White River', 'Mbombela', -25.3242, 31.0189, 'ABSA');
-
--- Taxi associations operating in and around Mbombela / Nelspruit
-INSERT INTO taxi_associations (name) VALUES
-('Mbombela Long Distance Taxi Association'),
-('Nelspruit CBD Taxi Association'),
-('KaNyamazane Taxi Association'),
-('White River Taxi Association'),
-('Kabokweni Taxi Association');
-
--- Taxi ranks / trading points in and around Mbombela / Nelspruit
-INSERT INTO taxi_ranks (name, location_name) VALUES
-('Mbombela Taxi Rank', 'Nelspruit CBD'),
-('KaNyamazane Rank', 'KaNyamazane, Mbombela'),
-('Sonheuwel Rank', 'Sonheuwel, Mbombela'),
-('Kabokweni Rank', 'Kabokweni, Mbombela'),
-('Riverside Mall Rank', 'Riverside Mall, Mbombela');
