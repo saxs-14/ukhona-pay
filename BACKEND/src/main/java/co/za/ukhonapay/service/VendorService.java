@@ -2,9 +2,11 @@ package co.za.ukhonapay.service;
 
 import co.za.ukhonapay.dto.VendorResponse;
 import co.za.ukhonapay.exception.VendorNotFoundException;
+import co.za.ukhonapay.model.TaxiAssociation;
 import co.za.ukhonapay.model.Vendor;
 import co.za.ukhonapay.model.Wallet;
 import co.za.ukhonapay.model.enums.VendorCategory;
+import co.za.ukhonapay.repository.TaxiAssociationRepository;
 import co.za.ukhonapay.repository.VendorRepository;
 import co.za.ukhonapay.repository.WalletRepository;
 import org.springframework.stereotype.Service;
@@ -17,10 +19,13 @@ public class VendorService {
 
     private final VendorRepository vendorRepository;
     private final WalletRepository walletRepository;
+    private final TaxiAssociationRepository taxiAssociationRepository;
 
-    public VendorService(VendorRepository vendorRepository, WalletRepository walletRepository) {
+    public VendorService(VendorRepository vendorRepository, WalletRepository walletRepository,
+                          TaxiAssociationRepository taxiAssociationRepository) {
         this.vendorRepository = vendorRepository;
         this.walletRepository = walletRepository;
+        this.taxiAssociationRepository = taxiAssociationRepository;
     }
 
     public List<VendorResponse> search(String category, String name) {
@@ -51,11 +56,13 @@ public class VendorService {
         BigDecimal walletBalance = walletRepository.findByUserId(v.getUserId())
                 .map(Wallet::getBalance)
                 .orElse(BigDecimal.ZERO);
+        String associationName = v.getAssociationId() == null ? null
+                : taxiAssociationRepository.findById(v.getAssociationId()).map(TaxiAssociation::getName).orElse(null);
 
         return new VendorResponse(
                 v.getId(), v.getUserId(), v.getBusinessName(), v.getCategory().name(),
                 v.getLocationName(), v.getLatitude(), v.getLongitude(), v.getQrCode(),
                 v.isVerified(), v.getRatingAvg(), v.getRatingCount(), v.getPhotoUrl(),
-                v.getVehicleRegistration(), walletBalance);
+                v.getVehicleRegistration(), walletBalance, v.getAssociationId(), associationName);
     }
 }

@@ -14,6 +14,8 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 
     List<Transaction> findByReceiverIdOrderByCreatedAtDesc(Long receiverId);
 
+    List<Transaction> findByReceiverAssociationIdOrderByCreatedAtDesc(Long receiverAssociationId);
+
     List<Transaction> findByVendorIdOrderByCreatedAtDesc(Long vendorId);
 
     long countByVendorId(Long vendorId);

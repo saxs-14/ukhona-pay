@@ -1,14 +1,20 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Building2, MapPin, Phone, ShieldCheck, User } from "lucide-react";
+import { Building2, Clock, MapPin, Phone, ShieldCheck, User, Wallet } from "lucide-react";
 import client from "../api/client";
+import AnimatedNumber from "../components/ui/AnimatedNumber";
 import { SkeletonCard } from "../components/ui/Skeleton";
+import { listContainer, listItem } from "../lib/motion";
 
 export default function AssociationAdminDashboard() {
   const [profile, setProfile] = useState(null);
+  const [wallet, setWallet] = useState(null);
+  const [transfers, setTransfers] = useState([]);
 
   useEffect(() => {
     client.get("/users/me").then((res) => setProfile(res.data));
+    client.get("/wallet/association/me").then((res) => setWallet(res.data)).catch(() => setWallet(null));
+    client.get("/transactions/association/me").then((res) => setTransfers(res.data)).catch(() => setTransfers([]));
   }, []);
 
   if (!profile) {
@@ -33,6 +39,18 @@ export default function AssociationAdminDashboard() {
         {profile.name} {profile.surname}
       </h1>
 
+      {wallet && (
+        <div className="mb-3 rounded-2xl bg-gradient-to-br from-terracotta-600 to-terracotta-700 p-4 text-white shadow-warm">
+          <p className="flex items-center gap-1.5 text-xs text-terracotta-100">
+            <Wallet size={12} /> Association wallet balance
+          </p>
+          <p className="text-2xl font-semibold">
+            <AnimatedNumber value={Number(wallet.balance)} prefix="R" />
+          </p>
+          <p className="mt-1 text-xs text-terracotta-100">From drivers paying their taxi owner/association directly</p>
+        </div>
+      )}
+
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -53,7 +71,25 @@ export default function AssociationAdminDashboard() {
         </div>
       </motion.div>
 
-      <div className="mt-5 rounded-xl bg-sand-50 p-4 text-sm text-sand-600">
+      <div className="mt-6">
+        <h2 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-sand-700">
+          <Clock size={14} /> Recent transfers from drivers
+        </h2>
+        <motion.div variants={listContainer} initial="initial" animate="animate" className="space-y-2">
+          {transfers.map((t) => (
+            <motion.div key={t.reference} variants={listItem} className="flex items-center justify-between rounded-xl border border-sand-200 bg-white px-4 py-3">
+              <div>
+                <p className="text-sm font-medium text-sand-800">{t.senderName}</p>
+                <p className="text-xs text-sand-400">{new Date(t.createdAt).toLocaleString("en-ZA")}</p>
+              </div>
+              <p className="text-sm font-semibold text-bushveld-600">+R{Number(t.amount).toFixed(2)}</p>
+            </motion.div>
+          ))}
+          {transfers.length === 0 && <p className="text-sm text-sand-400">No transfers received yet.</p>}
+        </motion.div>
+      </div>
+
+      <div className="mt-6 rounded-xl bg-sand-50 p-4 text-sm text-sand-600">
         Driver and vendor oversight for {profile.associationName || "your association"} — member management and
         rank-level reporting are next on the roadmap.
       </div>

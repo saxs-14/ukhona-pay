@@ -4,6 +4,8 @@
 -- ============================================================================
 
 DROP TABLE IF EXISTS ratings CASCADE;
+DROP TABLE IF EXISTS bank_withdrawals CASCADE;
+DROP TABLE IF EXISTS bank_accounts CASCADE;
 DROP TABLE IF EXISTS withdrawals CASCADE;
 DROP TABLE IF EXISTS cashback CASCADE;
 DROP TABLE IF EXISTS transactions CASCADE;
@@ -54,15 +56,21 @@ CREATE TABLE users (
 );
 
 -- ============================================================================
--- WALLETS  (one wallet per user: main balance + cashback savings)
+-- WALLETS  (one wallet per user OR per taxi association: main balance + cashback)
+-- A wallet belongs to exactly one of a user or a taxi association - the latter
+-- lets drivers pay their taxi owner/association directly (see transactions
+-- below) without that association needing its own login. Association wallets
+-- are created lazily by the backend the first time money is sent to one.
 -- ============================================================================
 CREATE TABLE wallets (
     id              BIGSERIAL PRIMARY KEY,
-    user_id         BIGINT NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    user_id         BIGINT UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    association_id  BIGINT UNIQUE REFERENCES taxi_associations(id),
     balance         NUMERIC(12,2) NOT NULL DEFAULT 0 CHECK (balance >= 0),
     cashback_balance NUMERIC(12,2) NOT NULL DEFAULT 0 CHECK (cashback_balance >= 0),
     currency        VARCHAR(3) NOT NULL DEFAULT 'ZAR',
-    updated_at      TIMESTAMP NOT NULL DEFAULT now()
+    updated_at      TIMESTAMP NOT NULL DEFAULT now(),
+    CHECK ((user_id IS NOT NULL AND association_id IS NULL) OR (user_id IS NULL AND association_id IS NOT NULL))
 );
 
 -- ============================================================================
@@ -105,20 +113,24 @@ CREATE TABLE atm_locations (
 );
 
 -- ============================================================================
--- TRANSACTIONS  (immutable ledger - vendor payments)
+-- TRANSACTIONS  (immutable ledger - vendor payments and driver-to-association
+-- transfers). A transaction's receiver is either a user or a taxi association,
+-- never both - see the CHECK constraint below.
 -- ============================================================================
 CREATE TABLE transactions (
     id                  BIGSERIAL PRIMARY KEY,
     reference           VARCHAR(20) NOT NULL UNIQUE,
     sender_id           BIGINT NOT NULL REFERENCES users(id),
-    receiver_id         BIGINT NOT NULL REFERENCES users(id),
+    receiver_id         BIGINT REFERENCES users(id),
+    receiver_association_id BIGINT REFERENCES taxi_associations(id),
     vendor_id           BIGINT REFERENCES vendors(id),
     amount              NUMERIC(12,2) NOT NULL CHECK (amount > 0),
     cashback_amount     NUMERIC(12,2) NOT NULL DEFAULT 0,
     cashback_rate       NUMERIC(4,3) NOT NULL DEFAULT 0.025,
     status              VARCHAR(20) NOT NULL DEFAULT 'COMPLETED' CHECK (status IN ('PENDING', 'COMPLETED', 'FAILED')),
     description         VARCHAR(255),
-    created_at          TIMESTAMP NOT NULL DEFAULT now()
+    created_at          TIMESTAMP NOT NULL DEFAULT now(),
+    CHECK ((receiver_id IS NOT NULL AND receiver_association_id IS NULL) OR (receiver_id IS NULL AND receiver_association_id IS NOT NULL))
 );
 
 CREATE INDEX idx_transactions_sender ON transactions(sender_id);
@@ -155,6 +167,36 @@ CREATE TABLE withdrawals (
 );
 
 CREATE INDEX idx_withdrawals_user ON withdrawals(user_id);
+
+-- ============================================================================
+-- BANK ACCOUNTS  (one saved bank account per driver/vendor, for bank withdrawals)
+-- ============================================================================
+CREATE TABLE bank_accounts (
+    id                  BIGSERIAL PRIMARY KEY,
+    user_id             BIGINT NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    account_holder_name VARCHAR(150) NOT NULL,
+    bank_name           VARCHAR(100) NOT NULL,
+    account_number      VARCHAR(20) NOT NULL,
+    branch_code         VARCHAR(10) NOT NULL,
+    created_at          TIMESTAMP NOT NULL DEFAULT now(),
+    updated_at          TIMESTAMP NOT NULL DEFAULT now()
+);
+
+-- ============================================================================
+-- BANK WITHDRAWALS  (simulated payout to a saved bank account - debits the
+-- main wallet balance immediately, no real bank rail integration)
+-- ============================================================================
+CREATE TABLE bank_withdrawals (
+    id              BIGSERIAL PRIMARY KEY,
+    user_id         BIGINT NOT NULL REFERENCES users(id),
+    bank_account_id BIGINT NOT NULL REFERENCES bank_accounts(id),
+    reference       VARCHAR(20) NOT NULL UNIQUE,
+    amount          NUMERIC(12,2) NOT NULL CHECK (amount > 0),
+    status          VARCHAR(20) NOT NULL DEFAULT 'COMPLETED' CHECK (status IN ('COMPLETED', 'FAILED')),
+    created_at      TIMESTAMP NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_bank_withdrawals_user ON bank_withdrawals(user_id);
 
 -- ============================================================================
 -- RATINGS  (customer -> vendor)

@@ -1,10 +1,17 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { BarChart3, History, Home } from "lucide-react";
+import { BarChart3, History, Home, ScanLine } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 const traderLinks = (home) => [
   { to: home, label: "Home", icon: Home },
+  { to: "/vendor/analytics", label: "Insights", icon: BarChart3 },
+  { to: "/transactions", label: "History", icon: History },
+];
+
+const driverLinks = [
+  { to: "/driver", label: "Home", icon: Home },
+  { to: "/driver/scan", label: "Pay", icon: ScanLine },
   { to: "/vendor/analytics", label: "Insights", icon: BarChart3 },
   { to: "/transactions", label: "History", icon: History },
 ];
@@ -20,7 +27,7 @@ export default function BottomNav() {
 
   let links;
   if (user.userType === "VENDOR") links = traderLinks("/vendor");
-  else if (user.userType === "TAXI_DRIVER") links = traderLinks("/driver");
+  else if (user.userType === "TAXI_DRIVER") links = driverLinks;
   else links = adminLinks;
 
   return (

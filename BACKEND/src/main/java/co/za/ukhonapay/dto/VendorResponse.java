@@ -16,6 +16,8 @@ public record VendorResponse(
         int ratingCount,
         String photoUrl,
         String vehicleRegistration,
-        BigDecimal walletBalance
+        BigDecimal walletBalance,
+        Long associationId,
+        String associationName
 ) {
 }

@@ -1,5 +1,7 @@
 package co.za.ukhonapay.controller;
 
+import co.za.ukhonapay.dto.AssociationTransferRequest;
+import co.za.ukhonapay.dto.AssociationTransferResponse;
 import co.za.ukhonapay.dto.PaymentRequest;
 import co.za.ukhonapay.dto.PaymentResponse;
 import co.za.ukhonapay.security.CurrentUser;
@@ -24,5 +26,10 @@ public class PaymentController {
     @PostMapping("/pay")
     public ResponseEntity<PaymentResponse> pay(@Valid @RequestBody PaymentRequest request) {
         return ResponseEntity.ok(paymentService.pay(CurrentUser.id(), request));
+    }
+
+    @PostMapping("/association")
+    public ResponseEntity<AssociationTransferResponse> payAssociation(@Valid @RequestBody AssociationTransferRequest request) {
+        return ResponseEntity.ok(paymentService.transferToAssociation(CurrentUser.id(), request));
     }
 }

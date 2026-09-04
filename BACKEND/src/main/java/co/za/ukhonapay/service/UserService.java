@@ -39,4 +39,10 @@ public class UserService {
                 user.getName(), user.getSurname(), user.getEmail(),
                 associationName, rankName);
     }
+
+    public Long getAssociationIdForUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        return user.getAssociationId();
+    }
 }

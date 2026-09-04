@@ -1,11 +1,18 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { BadgeCheck, Car, Clock, Star, Users } from "lucide-react";
+import { BadgeCheck, Building2, Car, Clock, Landmark, ScanLine, Star, Users } from "lucide-react";
 import client from "../api/client";
 import AnimatedNumber from "../components/ui/AnimatedNumber";
 import FinancialScoreCard from "../components/ui/FinancialScoreCard";
 import { SkeletonCard } from "../components/ui/Skeleton";
 import { listContainer, listItem } from "../lib/motion";
+
+const quickActions = [
+  { to: "/driver/withdraw", label: "Withdraw", icon: Landmark },
+  { to: "/driver/send", label: "Send to association", icon: Building2 },
+  { to: "/driver/scan", label: "Scan & pay", icon: ScanLine },
+];
 
 export default function DriverDashboard() {
   const [vendor, setVendor] = useState(null);
@@ -57,6 +64,19 @@ export default function DriverDashboard() {
         <p className="mt-1 text-xs text-terracotta-100">
           From commuters paying via their own banking app
         </p>
+      </div>
+
+      <div className="mt-3 grid grid-cols-3 gap-2">
+        {quickActions.map((a) => (
+          <Link
+            key={a.to}
+            to={a.to}
+            className="flex flex-col items-center gap-1.5 rounded-xl border border-sand-200 bg-white px-2 py-3 text-center transition-colors hover:border-terracotta-300 hover:bg-terracotta-50"
+          >
+            <a.icon size={18} className="text-terracotta-600" />
+            <span className="text-xs font-medium leading-tight text-sand-700">{a.label}</span>
+          </Link>
+        ))}
       </div>
 
       {vendor.vehicleRegistration && (

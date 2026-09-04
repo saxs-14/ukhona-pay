@@ -20,8 +20,11 @@ public class Transaction {
     @Column(name = "sender_id", nullable = false)
     private Long senderId;
 
-    @Column(name = "receiver_id", nullable = false)
+    @Column(name = "receiver_id")
     private Long receiverId;
+
+    @Column(name = "receiver_association_id")
+    private Long receiverAssociationId;
 
     @Column(name = "vendor_id")
     private Long vendorId;
@@ -61,6 +64,8 @@ public class Transaction {
     public void setSenderId(Long senderId) { this.senderId = senderId; }
     public Long getReceiverId() { return receiverId; }
     public void setReceiverId(Long receiverId) { this.receiverId = receiverId; }
+    public Long getReceiverAssociationId() { return receiverAssociationId; }
+    public void setReceiverAssociationId(Long receiverAssociationId) { this.receiverAssociationId = receiverAssociationId; }
     public Long getVendorId() { return vendorId; }
     public void setVendorId(Long vendorId) { this.vendorId = vendorId; }
     public BigDecimal getAmount() { return amount; }
@@ -82,6 +87,7 @@ public class Transaction {
         public Builder reference(String v) { transaction.reference = v; return this; }
         public Builder senderId(Long v) { transaction.senderId = v; return this; }
         public Builder receiverId(Long v) { transaction.receiverId = v; return this; }
+        public Builder receiverAssociationId(Long v) { transaction.receiverAssociationId = v; return this; }
         public Builder vendorId(Long v) { transaction.vendorId = v; return this; }
         public Builder amount(BigDecimal v) { transaction.amount = v; return this; }
         public Builder cashbackAmount(BigDecimal v) { transaction.cashbackAmount = v; return this; }

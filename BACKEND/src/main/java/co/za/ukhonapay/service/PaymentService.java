@@ -1,5 +1,7 @@
 package co.za.ukhonapay.service;
 
+import co.za.ukhonapay.dto.AssociationTransferRequest;
+import co.za.ukhonapay.dto.AssociationTransferResponse;
 import co.za.ukhonapay.dto.PaymentRequest;
 import co.za.ukhonapay.dto.PaymentResponse;
 import co.za.ukhonapay.exception.InsufficientFundsException;
@@ -7,6 +9,7 @@ import co.za.ukhonapay.exception.InvalidCredentialsException;
 import co.za.ukhonapay.exception.ResourceNotFoundException;
 import co.za.ukhonapay.exception.VendorNotFoundException;
 import co.za.ukhonapay.model.Cashback;
+import co.za.ukhonapay.model.TaxiAssociation;
 import co.za.ukhonapay.model.Transaction;
 import co.za.ukhonapay.model.User;
 import co.za.ukhonapay.model.Vendor;
@@ -15,6 +18,7 @@ import co.za.ukhonapay.model.enums.CashbackStatus;
 import co.za.ukhonapay.model.enums.TransactionStatus;
 import co.za.ukhonapay.model.enums.UserType;
 import co.za.ukhonapay.repository.CashbackRepository;
+import co.za.ukhonapay.repository.TaxiAssociationRepository;
 import co.za.ukhonapay.repository.TransactionRepository;
 import co.za.ukhonapay.repository.UserRepository;
 import co.za.ukhonapay.repository.VendorRepository;
@@ -36,6 +40,8 @@ public class PaymentService {
     private final WalletRepository walletRepository;
     private final TransactionRepository transactionRepository;
     private final CashbackRepository cashbackRepository;
+    private final TaxiAssociationRepository taxiAssociationRepository;
+    private final WalletService walletService;
     private final PasswordEncoder passwordEncoder;
     private final BigDecimal defaultCashbackRate;
     private final SecureRandom random = new SecureRandom();
@@ -45,6 +51,8 @@ public class PaymentService {
                            WalletRepository walletRepository,
                            TransactionRepository transactionRepository,
                            CashbackRepository cashbackRepository,
+                           TaxiAssociationRepository taxiAssociationRepository,
+                           WalletService walletService,
                            PasswordEncoder passwordEncoder,
                            @Value("${ukhonapay.cashback.default-rate}") BigDecimal defaultCashbackRate) {
         this.userRepository = userRepository;
@@ -52,6 +60,8 @@ public class PaymentService {
         this.walletRepository = walletRepository;
         this.transactionRepository = transactionRepository;
         this.cashbackRepository = cashbackRepository;
+        this.taxiAssociationRepository = taxiAssociationRepository;
+        this.walletService = walletService;
         this.passwordEncoder = passwordEncoder;
         this.defaultCashbackRate = defaultCashbackRate;
     }
@@ -127,6 +137,56 @@ public class PaymentService {
                 senderWallet.getBalance(),
                 senderWallet.getCashbackBalance(),
                 transaction.getCreatedAt());
+    }
+
+    @Transactional
+    public AssociationTransferResponse transferToAssociation(Long driverId, AssociationTransferRequest req) {
+        User sender = userRepository.findById(driverId)
+                .orElseThrow(() -> new ResourceNotFoundException("Sender not found"));
+
+        if (!passwordEncoder.matches(req.pin(), sender.getPinHash())) {
+            throw new InvalidCredentialsException("Incorrect PIN");
+        }
+
+        Vendor driverProfile = vendorRepository.findByUserId(driverId)
+                .orElseThrow(() -> new VendorNotFoundException("No driver profile for this user"));
+        Long associationId = driverProfile.getAssociationId();
+        if (associationId == null) {
+            throw new ResourceNotFoundException("No taxi association linked to your driver profile");
+        }
+        TaxiAssociation association = taxiAssociationRepository.findById(associationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Taxi association not found"));
+
+        Wallet senderWallet = walletRepository.findWithLockByUserId(driverId)
+                .orElseThrow(() -> new ResourceNotFoundException("Sender wallet not found"));
+
+        BigDecimal amount = req.amount();
+        if (senderWallet.getBalance().compareTo(amount) < 0) {
+            throw new InsufficientFundsException("Insufficient wallet balance for this transfer");
+        }
+
+        Wallet associationWallet = walletService.getOrCreateLockedAssociationWallet(associationId);
+
+        senderWallet.setBalance(senderWallet.getBalance().subtract(amount));
+        associationWallet.setBalance(associationWallet.getBalance().add(amount));
+        walletRepository.save(senderWallet);
+        walletRepository.save(associationWallet);
+
+        Transaction transaction = Transaction.builder()
+                .reference(generateReference())
+                .senderId(driverId)
+                .receiverAssociationId(associationId)
+                .amount(amount)
+                .cashbackAmount(BigDecimal.ZERO)
+                .cashbackRate(BigDecimal.ZERO)
+                .status(TransactionStatus.COMPLETED)
+                .description(req.description())
+                .build();
+        transaction = transactionRepository.save(transaction);
+
+        return new AssociationTransferResponse(
+                transaction.getReference(), associationId, association.getName(),
+                amount, senderWallet.getBalance(), transaction.getCreatedAt());
     }
 
     private String generateReference() {
