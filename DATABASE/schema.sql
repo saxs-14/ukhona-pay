@@ -120,7 +120,9 @@ CREATE TABLE atm_locations (
 CREATE TABLE transactions (
     id                  BIGSERIAL PRIMARY KEY,
     reference           VARCHAR(20) NOT NULL UNIQUE,
-    sender_id           BIGINT NOT NULL REFERENCES users(id),
+    -- Null sender = an external payment (a commuter paying via their own
+    -- banking app - they never hold a UKHONA PAY account/user row).
+    sender_id           BIGINT REFERENCES users(id),
     receiver_id         BIGINT REFERENCES users(id),
     receiver_association_id BIGINT REFERENCES taxi_associations(id),
     vendor_id           BIGINT REFERENCES vendors(id),

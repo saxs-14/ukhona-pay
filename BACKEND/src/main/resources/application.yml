@@ -19,6 +19,10 @@ spring:
     open-in-view: false
 
 ukhonapay:
+  frontend:
+    # Where a scanned vendor QR code should send a commuter's phone to pay -
+    # override for demo day if judges are on a LAN IP instead of localhost.
+    base-url: ${FRONTEND_BASE_URL:http://localhost:5173}
   jwt:
     secret: ${JWT_SECRET:demo-only-secret-key-for-hackathon-do-not-use-in-production-1234567890}
     expiry-minutes: 720

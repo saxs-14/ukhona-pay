@@ -2,6 +2,8 @@ package co.za.ukhonapay.controller;
 
 import co.za.ukhonapay.dto.AssociationTransferRequest;
 import co.za.ukhonapay.dto.AssociationTransferResponse;
+import co.za.ukhonapay.dto.IncomingPaymentRequest;
+import co.za.ukhonapay.dto.IncomingPaymentResponse;
 import co.za.ukhonapay.dto.PaymentRequest;
 import co.za.ukhonapay.dto.PaymentResponse;
 import co.za.ukhonapay.security.CurrentUser;
@@ -31,5 +33,12 @@ public class PaymentController {
     @PostMapping("/association")
     public ResponseEntity<AssociationTransferResponse> payAssociation(@Valid @RequestBody AssociationTransferRequest request) {
         return ResponseEntity.ok(paymentService.transferToAssociation(CurrentUser.id(), request));
+    }
+
+    // Public - a commuter paying via their own banking app never has a UKHONA
+    // PAY account/JWT. See SecurityConfig for the matching permitAll rule.
+    @PostMapping("/receive")
+    public ResponseEntity<IncomingPaymentResponse> receive(@Valid @RequestBody IncomingPaymentRequest request) {
+        return ResponseEntity.ok(paymentService.receiveExternalPayment(request));
     }
 }

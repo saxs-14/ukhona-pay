@@ -4,6 +4,7 @@ import co.za.ukhonapay.dto.VendorResponse;
 import co.za.ukhonapay.security.CurrentUser;
 import co.za.ukhonapay.service.QrCodeService;
 import co.za.ukhonapay.service.VendorService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,10 +17,13 @@ public class VendorController {
 
     private final VendorService vendorService;
     private final QrCodeService qrCodeService;
+    private final String frontendBaseUrl;
 
-    public VendorController(VendorService vendorService, QrCodeService qrCodeService) {
+    public VendorController(VendorService vendorService, QrCodeService qrCodeService,
+                             @Value("${ukhonapay.frontend.base-url}") String frontendBaseUrl) {
         this.vendorService = vendorService;
         this.qrCodeService = qrCodeService;
+        this.frontendBaseUrl = frontendBaseUrl;
     }
 
     @GetMapping
@@ -41,6 +45,7 @@ public class VendorController {
     @GetMapping("/me/qr-image")
     public ResponseEntity<Map<String, String>> myQrImage() {
         VendorResponse vendor = vendorService.getByUserId(CurrentUser.id());
-        return ResponseEntity.ok(Map.of("qrCode", vendor.qrCode(), "image", qrCodeService.generatePngBase64(vendor.qrCode())));
+        String payUrl = frontendBaseUrl + "/pay/" + vendor.qrCode();
+        return ResponseEntity.ok(Map.of("qrCode", vendor.qrCode(), "image", qrCodeService.generatePngBase64(payUrl)));
     }
 }

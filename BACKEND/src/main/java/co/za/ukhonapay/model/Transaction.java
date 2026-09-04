@@ -17,7 +17,9 @@ public class Transaction {
     @Column(nullable = false, unique = true, length = 20)
     private String reference;
 
-    @Column(name = "sender_id", nullable = false)
+    // Null means an external payment - a commuter paying via their own banking
+    // app, who never holds a UKHONA PAY account/user row.
+    @Column(name = "sender_id")
     private Long senderId;
 
     @Column(name = "receiver_id")

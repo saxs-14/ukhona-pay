@@ -18,6 +18,7 @@ import DriverScanPay from "./pages/DriverScanPay";
 import AssociationAdminDashboard from "./pages/AssociationAdminDashboard";
 import VendorAnalytics from "./pages/VendorAnalytics";
 import PlatformDashboard from "./pages/PlatformDashboard";
+import PayVendor from "./pages/PayVendor";
 
 function Home() {
   const { user } = useAuth();
@@ -44,6 +45,7 @@ export default function App() {
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<SignupPage />} />
+              <Route path="/pay/:qrCode" element={<PayVendor />} />
 
               <Route path="/vendor" element={<ProtectedRoute allow={["VENDOR"]}><VendorDashboard /></ProtectedRoute>} />
               <Route path="/driver" element={<ProtectedRoute allow={["TAXI_DRIVER"]}><DriverDashboard /></ProtectedRoute>} />

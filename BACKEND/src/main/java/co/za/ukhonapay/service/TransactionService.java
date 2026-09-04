@@ -74,12 +74,14 @@ public class TransactionService {
 
     private TransactionResponse toResponse(Transaction t, Long requestingUserId, Map<Long, String> namesById,
                                             Map<Long, String> associationNamesById, Map<Long, String> categoryByVendorId) {
-        String senderName = namesById.getOrDefault(t.getSenderId(), "Unknown");
+        // Null sender = a commuter who paid via their own banking app - they
+        // never hold a UKHONA PAY user row to look a name up for.
+        String senderName = t.getSenderId() == null ? "Customer payment" : namesById.getOrDefault(t.getSenderId(), "Unknown");
         String receiverName = t.getReceiverAssociationId() != null
                 ? associationNamesById.getOrDefault(t.getReceiverAssociationId(), "Unknown association")
                 : namesById.getOrDefault(t.getReceiverId(), "Unknown");
         String category = t.getVendorId() != null ? categoryByVendorId.get(t.getVendorId()) : null;
-        String direction = t.getSenderId().equals(requestingUserId) ? "SENT" : "RECEIVED";
+        String direction = (requestingUserId != null && requestingUserId.equals(t.getSenderId())) ? "SENT" : "RECEIVED";
 
         return new TransactionResponse(
                 t.getReference(), t.getSenderId(), senderName, t.getReceiverId(), receiverName,

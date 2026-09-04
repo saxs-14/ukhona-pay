@@ -2,6 +2,8 @@ package co.za.ukhonapay.service;
 
 import co.za.ukhonapay.dto.AssociationTransferRequest;
 import co.za.ukhonapay.dto.AssociationTransferResponse;
+import co.za.ukhonapay.dto.IncomingPaymentRequest;
+import co.za.ukhonapay.dto.IncomingPaymentResponse;
 import co.za.ukhonapay.dto.PaymentRequest;
 import co.za.ukhonapay.dto.PaymentResponse;
 import co.za.ukhonapay.exception.InsufficientFundsException;
@@ -187,6 +189,38 @@ public class PaymentService {
         return new AssociationTransferResponse(
                 transaction.getReference(), associationId, association.getName(),
                 amount, senderWallet.getBalance(), transaction.getCreatedAt());
+    }
+
+    // A commuter paying via their own banking app - no sender wallet to debit,
+    // no PIN to check, since the payer never holds a UKHONA PAY account. This
+    // stands in for what a real bank's payment-confirmation webhook would call.
+    @Transactional
+    public IncomingPaymentResponse receiveExternalPayment(IncomingPaymentRequest req) {
+        Vendor vendor = vendorRepository.findByQrCode(req.vendorQrCode())
+                .orElseThrow(() -> new VendorNotFoundException("No vendor found for this QR code"));
+
+        Wallet vendorWallet = walletRepository.findWithLockByUserId(vendor.getUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("Vendor wallet not found"));
+
+        BigDecimal amount = req.amount();
+        vendorWallet.setBalance(vendorWallet.getBalance().add(amount));
+        walletRepository.save(vendorWallet);
+
+        Transaction transaction = Transaction.builder()
+                .reference(generateReference())
+                .receiverId(vendor.getUserId())
+                .vendorId(vendor.getId())
+                .amount(amount)
+                .cashbackAmount(BigDecimal.ZERO)
+                .cashbackRate(BigDecimal.ZERO)
+                .status(TransactionStatus.COMPLETED)
+                .description(req.description())
+                .build();
+        transaction = transactionRepository.save(transaction);
+
+        return new IncomingPaymentResponse(
+                transaction.getReference(), vendor.getId(), vendor.getBusinessName(),
+                amount, vendorWallet.getBalance(), transaction.getCreatedAt());
     }
 
     private String generateReference() {
