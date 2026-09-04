@@ -27,13 +27,13 @@ Write-Host "--------------------------"
 Check "Docker Desktop is running" { docker info *> $null; $LASTEXITCODE -eq 0 }
 Check "ukhonapay-postgres container is up" { (docker ps --format "{{.Names}}" | Select-String "ukhonapay-postgres") -ne $null }
 Check "Postgres accepting connections on 5442" { docker exec ukhonapay-postgres pg_isready -U ukhonapay *> $null; $LASTEXITCODE -eq 0 }
-Check "Seed data present - 5 vendors expected" {
-    $count = docker exec ukhonapay-postgres psql -U ukhonapay -d ukhonapay -t -c "SELECT count(*) FROM vendors;" 2>$null
+Check "Reference data present - 5 taxi ranks expected" {
+    $count = docker exec ukhonapay-postgres psql -U ukhonapay -d ukhonapay -t -c "SELECT count(*) FROM taxi_ranks;" 2>$null
     ($count -replace '\s','') -eq "5"
 }
 Check "Backend responding on :8080" {
     try {
-        $r = Invoke-WebRequest -Uri "http://localhost:8080/api/auth/login" -Method Post -Body '{"phoneNumber":"0798765432","pin":"1234"}' -ContentType "application/json" -UseBasicParsing -TimeoutSec 5
+        $r = Invoke-WebRequest -Uri "http://localhost:8080/api/taxi-associations" -UseBasicParsing -TimeoutSec 5
         $r.StatusCode -eq 200
     } catch { $false }
 }

@@ -2,6 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { BarChart3, LogOut } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { dashboardPathFor } from "../lib/roles";
 
 export default function NavBar() {
   const { user, logout } = useAuth();
@@ -14,7 +15,7 @@ export default function NavBar() {
     navigate("/login");
   }
 
-  const homePath = user.userType === "VENDOR" ? "/vendor" : "/dashboard";
+  const homePath = dashboardPathFor(user.userType);
 
   return (
     <nav className="sticky top-0 z-20 flex items-center justify-between border-b border-sand-200 bg-white/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-white/80">

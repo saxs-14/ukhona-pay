@@ -11,6 +11,27 @@ DROP TABLE IF EXISTS vendors CASCADE;
 DROP TABLE IF EXISTS wallets CASCADE;
 DROP TABLE IF EXISTS atm_locations CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
+DROP TABLE IF EXISTS taxi_ranks CASCADE;
+DROP TABLE IF EXISTS taxi_associations CASCADE;
+
+-- ============================================================================
+-- TAXI ASSOCIATIONS  (reference data - which association a driver/admin belongs to)
+-- ============================================================================
+CREATE TABLE taxi_associations (
+    id              BIGSERIAL PRIMARY KEY,
+    name            VARCHAR(150) NOT NULL UNIQUE,
+    created_at      TIMESTAMP NOT NULL DEFAULT now()
+);
+
+-- ============================================================================
+-- TAXI RANKS  (reference data - which rank a vendor trades at / admin oversees)
+-- ============================================================================
+CREATE TABLE taxi_ranks (
+    id              BIGSERIAL PRIMARY KEY,
+    name            VARCHAR(150) NOT NULL UNIQUE,
+    location_name   VARCHAR(150),
+    created_at      TIMESTAMP NOT NULL DEFAULT now()
+);
 
 -- ============================================================================
 -- USERS
@@ -19,10 +40,15 @@ CREATE TABLE users (
     id              BIGSERIAL PRIMARY KEY,
     phone_number    VARCHAR(10) NOT NULL UNIQUE CHECK (phone_number ~ '^0[0-9]{9}$'),
     pin_hash        VARCHAR(255) NOT NULL,
-    user_type       VARCHAR(25) NOT NULL CHECK (user_type IN ('VENDOR', 'EMPLOYEE', 'TAXI_DRIVER', 'TAXI_ASSOCIATION_ADMIN')),
+    user_type       VARCHAR(25) NOT NULL CHECK (user_type IN ('VENDOR', 'TAXI_DRIVER', 'TAXI_ASSOCIATION_ADMIN')),
     name            VARCHAR(120) NOT NULL,
+    surname         VARCHAR(120) NOT NULL,
+    id_number       VARCHAR(13) NOT NULL UNIQUE CHECK (id_number ~ '^[0-9]{13}$'),
     email           VARCHAR(150),
     phone_verified  BOOLEAN NOT NULL DEFAULT FALSE,
+    -- Association Administrator only - which association/rank they administer.
+    association_id  BIGINT REFERENCES taxi_associations(id),
+    rank_id         BIGINT REFERENCES taxi_ranks(id),
     created_at      TIMESTAMP NOT NULL DEFAULT now(),
     updated_at      TIMESTAMP NOT NULL DEFAULT now()
 );
@@ -40,7 +66,7 @@ CREATE TABLE wallets (
 );
 
 -- ============================================================================
--- VENDORS  (extends a user of type VENDOR)
+-- VENDORS  (extends a user of type VENDOR or TAXI_DRIVER)
 -- ============================================================================
 CREATE TABLE vendors (
     id              BIGSERIAL PRIMARY KEY,
@@ -55,6 +81,11 @@ CREATE TABLE vendors (
     rating_avg      NUMERIC(2,1) NOT NULL DEFAULT 0,
     rating_count    INTEGER NOT NULL DEFAULT 0,
     photo_url       VARCHAR(255),
+    -- Driver-only.
+    vehicle_registration VARCHAR(20),
+    association_id  BIGINT REFERENCES taxi_associations(id),
+    -- Vendor-only.
+    rank_id         BIGINT REFERENCES taxi_ranks(id),
     created_at      TIMESTAMP NOT NULL DEFAULT now()
 );
 
@@ -95,7 +126,7 @@ CREATE INDEX idx_transactions_receiver ON transactions(receiver_id);
 CREATE INDEX idx_transactions_created_at ON transactions(created_at);
 
 -- ============================================================================
--- CASHBACK  (per-transaction cashback ledger for employees/corporate)
+-- CASHBACK  (per-transaction cashback ledger)
 -- ============================================================================
 CREATE TABLE cashback (
     id              BIGSERIAL PRIMARY KEY,
@@ -140,8 +171,11 @@ CREATE TABLE ratings (
 );
 
 -- ============================================================================
--- SEED DATA - matches the 30-step demo script
--- All PINs in this seed = 1234 (bcrypt hash placeholder, backend re-hashes on real signup)
+-- REFERENCE DATA
+-- Taxi associations and ranks are infrastructure lookups the signup dropdowns
+-- need to have anything to select - not demo users/transactions. No user,
+-- wallet, vendor, transaction, cashback, withdrawal, or rating rows are
+-- seeded; every account is created through real signup.
 -- ============================================================================
 
 -- ATM locations (Mbombela / Nelspruit, Mpumalanga)
@@ -152,174 +186,18 @@ INSERT INTO atm_locations (name, address, city, latitude, longitude, bank) VALUE
 ('ABSA ATM - Sonpark Boulevard', 'Nel St, Sonpark', 'Mbombela', -25.4560, 30.9558, 'ABSA'),
 ('ABSA ATM - White River', 'Main Rd, White River', 'Mbombela', -25.3242, 31.0189, 'ABSA');
 
--- Vendors (5) - PIN 1234, bcrypt hash of "1234" (placeholder, real signup rehashes)
-INSERT INTO users (phone_number, pin_hash, user_type, name, email, phone_verified) VALUES
-('0711234501', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'VENDOR', 'Lucky Taxi', 'lucky.taxi@demo.co.za', TRUE),
-('0711234502', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'VENDOR', 'Thandi''s Spaza Shop', 'thandi.spaza@demo.co.za', TRUE),
-('0711234503', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'VENDOR', 'Mama Joy Kitchen', 'mamajoy@demo.co.za', TRUE),
-('0711234504', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'VENDOR', 'Sipho Electrical Services', 'sipho.electrical@demo.co.za', TRUE),
-('0711234505', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'VENDOR', 'Nomsa Fashion Retail', 'nomsa.fashion@demo.co.za', TRUE);
+-- Taxi associations operating in and around Mbombela / Nelspruit
+INSERT INTO taxi_associations (name) VALUES
+('Mbombela Long Distance Taxi Association'),
+('Nelspruit CBD Taxi Association'),
+('KaNyamazane Taxi Association'),
+('White River Taxi Association'),
+('Kabokweni Taxi Association');
 
--- Commuters (10) - PIN 1234, first one matches demo script (0798765432)
-INSERT INTO users (phone_number, pin_hash, user_type, name, email, phone_verified) VALUES
-('0798765432', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'EMPLOYEE', 'Karabo Mokoena', 'karabo.m@corp.co.za', TRUE),
-('0798765433', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'EMPLOYEE', 'Lerato Dube', 'lerato.d@corp.co.za', TRUE),
-('0798765434', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'EMPLOYEE', 'Sizwe Nkosi', 'sizwe.n@corp.co.za', TRUE),
-('0798765435', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'EMPLOYEE', 'Amanda van der Merwe', 'amanda.vdm@corp.co.za', TRUE),
-('0798765436', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'EMPLOYEE', 'Bongani Zulu', 'bongani.z@corp.co.za', TRUE),
-('0798765437', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'EMPLOYEE', 'Precious Khumalo', 'precious.k@corp.co.za', TRUE),
-('0798765438', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'EMPLOYEE', 'Johan Botha', 'johan.b@corp.co.za', TRUE),
-('0798765439', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'EMPLOYEE', 'Zanele Mahlangu', 'zanele.m@corp.co.za', TRUE),
-('0798765440', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'EMPLOYEE', 'Ryan Naidoo', 'ryan.n@corp.co.za', TRUE),
-('0798765441', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'EMPLOYEE', 'Nokuthula Ndlovu', 'nokuthula.n@corp.co.za', TRUE);
-
--- Wallets for all 15 users (drivers, vendors, and taxi-association roles start with R0/earnings)
--- Commuter "wallet" balance is a seed-data bookkeeping convenience only (real
--- commuters pay via their own banking app in the target architecture, not a
--- UKHONA PAY balance) - set high enough to cover 90 days of simulated rides
--- across 10 round-robin commuters without tripping the non-negative constraint.
-INSERT INTO wallets (user_id, balance, cashback_balance)
-SELECT id, CASE WHEN user_type = 'EMPLOYEE' THEN 100000.00 ELSE 0.00 END, 0.00
-FROM users;
-
--- Vendor profiles
-INSERT INTO vendors (user_id, business_name, category, location_name, latitude, longitude, qr_code, verified, rating_avg, rating_count) VALUES
-((SELECT id FROM users WHERE phone_number = '0711234501'), 'Lucky Taxi', 'TAXI', 'Mbombela Taxi Rank, Nelspruit CBD', -25.4745, 30.9703, 'UKP-VENDOR-LUCKYTAXI-001', TRUE, 4.8, 24),
-((SELECT id FROM users WHERE phone_number = '0711234502'), 'Thandi''s Spaza Shop', 'RETAIL', 'KaNyamazane, Mbombela', -25.4308, 31.2085, 'UKP-VENDOR-THANDISPAZA-002', TRUE, 4.6, 18),
-((SELECT id FROM users WHERE phone_number = '0711234503'), 'Mama Joy Kitchen', 'FOOD', 'Sonheuwel, Mbombela', -25.4667, 30.9575, 'UKP-VENDOR-MAMAJOY-003', TRUE, 4.9, 31),
-((SELECT id FROM users WHERE phone_number = '0711234504'), 'Sipho Electrical Services', 'SERVICES', 'Kabokweni, Mbombela', -25.4132, 31.1425, 'UKP-VENDOR-SIPHOELEC-004', TRUE, 4.7, 12),
-((SELECT id FROM users WHERE phone_number = '0711234505'), 'Nomsa Fashion Retail', 'RETAIL', 'Riverside Mall, Mbombela', -25.4501, 31.0126, 'UKP-VENDOR-NOMSAFASHION-005', FALSE, 4.3, 7);
-
--- 20 sample transactions across the month, weighted TAXI 40% / FOOD 30% / SERVICES 20% / OTHER(RETAIL) 10%
--- cashback_rate 2.5%, amounts sum to R5,000
-INSERT INTO transactions (reference, sender_id, receiver_id, vendor_id, amount, cashback_amount, cashback_rate, status, description, created_at) VALUES
-('TXN-0001', (SELECT id FROM users WHERE phone_number='0798765432'), (SELECT id FROM users WHERE phone_number='0711234501'), (SELECT id FROM vendors WHERE qr_code='UKP-VENDOR-LUCKYTAXI-001'), 100.00, 2.50, 0.025, 'COMPLETED', 'Taxi fare - Nelspruit CBD to KaNyamazane', now() - interval '28 days'),
-('TXN-0002', (SELECT id FROM users WHERE phone_number='0798765433'), (SELECT id FROM users WHERE phone_number='0711234501'), (SELECT id FROM vendors WHERE qr_code='UKP-VENDOR-LUCKYTAXI-001'), 150.00, 3.75, 0.025, 'COMPLETED', 'Taxi fare - return trip', now() - interval '27 days'),
-('TXN-0003', (SELECT id FROM users WHERE phone_number='0798765434'), (SELECT id FROM users WHERE phone_number='0711234503'), (SELECT id FROM vendors WHERE qr_code='UKP-VENDOR-MAMAJOY-003'), 85.00, 2.13, 0.025, 'COMPLETED', 'Lunch order - Sonheuwel', now() - interval '26 days'),
-('TXN-0004', (SELECT id FROM users WHERE phone_number='0798765435'), (SELECT id FROM users WHERE phone_number='0711234502'), (SELECT id FROM vendors WHERE qr_code='UKP-VENDOR-THANDISPAZA-002'), 220.00, 5.50, 0.025, 'COMPLETED', 'Groceries - KaNyamazane', now() - interval '25 days'),
-('TXN-0005', (SELECT id FROM users WHERE phone_number='0798765436'), (SELECT id FROM users WHERE phone_number='0711234501'), (SELECT id FROM vendors WHERE qr_code='UKP-VENDOR-LUCKYTAXI-001'), 100.00, 2.50, 0.025, 'COMPLETED', 'Taxi fare - Riverside to Sonheuwel', now() - interval '24 days'),
-('TXN-0006', (SELECT id FROM users WHERE phone_number='0798765437'), (SELECT id FROM users WHERE phone_number='0711234504'), (SELECT id FROM vendors WHERE qr_code='UKP-VENDOR-SIPHOELEC-004'), 450.00, 11.25, 0.025, 'COMPLETED', 'Home wiring repair - Kabokweni', now() - interval '23 days'),
-('TXN-0007', (SELECT id FROM users WHERE phone_number='0798765438'), (SELECT id FROM users WHERE phone_number='0711234503'), (SELECT id FROM vendors WHERE qr_code='UKP-VENDOR-MAMAJOY-003'), 90.00, 2.25, 0.025, 'COMPLETED', 'Lunch order - Sonheuwel', now() - interval '22 days'),
-('TXN-0008', (SELECT id FROM users WHERE phone_number='0798765439'), (SELECT id FROM users WHERE phone_number='0711234501'), (SELECT id FROM vendors WHERE qr_code='UKP-VENDOR-LUCKYTAXI-001'), 200.00, 5.00, 0.025, 'COMPLETED', 'Taxi fare - Kruger Mpumalanga Airport run', now() - interval '21 days'),
-('TXN-0009', (SELECT id FROM users WHERE phone_number='0798765440'), (SELECT id FROM users WHERE phone_number='0711234505'), (SELECT id FROM vendors WHERE qr_code='UKP-VENDOR-NOMSAFASHION-005'), 350.00, 8.75, 0.025, 'COMPLETED', 'Clothing purchase - Riverside Mall', now() - interval '20 days'),
-('TXN-0010', (SELECT id FROM users WHERE phone_number='0798765441'), (SELECT id FROM users WHERE phone_number='0711234501'), (SELECT id FROM vendors WHERE qr_code='UKP-VENDOR-LUCKYTAXI-001'), 100.00, 2.50, 0.025, 'COMPLETED', 'Taxi fare - Nelspruit CBD', now() - interval '19 days'),
-('TXN-0011', (SELECT id FROM users WHERE phone_number='0798765432'), (SELECT id FROM users WHERE phone_number='0711234503'), (SELECT id FROM vendors WHERE qr_code='UKP-VENDOR-MAMAJOY-003'), 120.00, 3.00, 0.025, 'COMPLETED', 'Team lunch order', now() - interval '18 days'),
-('TXN-0012', (SELECT id FROM users WHERE phone_number='0798765433'), (SELECT id FROM users WHERE phone_number='0711234501'), (SELECT id FROM vendors WHERE qr_code='UKP-VENDOR-LUCKYTAXI-001'), 150.00, 3.75, 0.025, 'COMPLETED', 'Taxi fare - White River route', now() - interval '17 days'),
-('TXN-0013', (SELECT id FROM users WHERE phone_number='0798765434'), (SELECT id FROM users WHERE phone_number='0711234502'), (SELECT id FROM vendors WHERE qr_code='UKP-VENDOR-THANDISPAZA-002'), 180.00, 4.50, 0.025, 'COMPLETED', 'Groceries - KaNyamazane', now() - interval '16 days'),
-('TXN-0014', (SELECT id FROM users WHERE phone_number='0798765435'), (SELECT id FROM users WHERE phone_number='0711234501'), (SELECT id FROM vendors WHERE qr_code='UKP-VENDOR-LUCKYTAXI-001'), 100.00, 2.50, 0.025, 'COMPLETED', 'Taxi fare - Mbombela CBD', now() - interval '15 days'),
-('TXN-0015', (SELECT id FROM users WHERE phone_number='0798765436'), (SELECT id FROM users WHERE phone_number='0711234504'), (SELECT id FROM vendors WHERE qr_code='UKP-VENDOR-SIPHOELEC-004'), 380.00, 9.50, 0.025, 'COMPLETED', 'Appliance install - White River', now() - interval '14 days'),
-('TXN-0016', (SELECT id FROM users WHERE phone_number='0798765437'), (SELECT id FROM users WHERE phone_number='0711234501'), (SELECT id FROM vendors WHERE qr_code='UKP-VENDOR-LUCKYTAXI-001'), 200.00, 5.00, 0.025, 'COMPLETED', 'Taxi fare - Kruger Mpumalanga Airport run', now() - interval '13 days'),
-('TXN-0017', (SELECT id FROM users WHERE phone_number='0798765438'), (SELECT id FROM users WHERE phone_number='0711234503'), (SELECT id FROM vendors WHERE qr_code='UKP-VENDOR-MAMAJOY-003'), 95.00, 2.38, 0.025, 'COMPLETED', 'Lunch order - Sonheuwel', now() - interval '10 days'),
-('TXN-0018', (SELECT id FROM users WHERE phone_number='0798765439'), (SELECT id FROM users WHERE phone_number='0711234501'), (SELECT id FROM vendors WHERE qr_code='UKP-VENDOR-LUCKYTAXI-001'), 150.00, 3.75, 0.025, 'COMPLETED', 'Taxi fare - Riverside to CBD', now() - interval '7 days'),
-('TXN-0019', (SELECT id FROM users WHERE phone_number='0798765440'), (SELECT id FROM users WHERE phone_number='0711234502'), (SELECT id FROM vendors WHERE qr_code='UKP-VENDOR-THANDISPAZA-002'), 250.00, 6.25, 0.025, 'COMPLETED', 'Groceries - KaNyamazane', now() - interval '3 days'),
-('TXN-0020', (SELECT id FROM users WHERE phone_number='0798765441'), (SELECT id FROM users WHERE phone_number='0711234501'), (SELECT id FROM vendors WHERE qr_code='UKP-VENDOR-LUCKYTAXI-001'), 100.00, 2.50, 0.025, 'COMPLETED', 'Taxi fare - Nelspruit CBD', now() - interval '1 days');
-
--- ============================================================================
--- BULK 90-DAY FINANCIAL-IDENTITY HISTORY
--- Lucky (taxi driver) and Thandi (vendor) get a realistic trailing daily
--- transaction history so the financial-score / credit-readiness feature has
--- real data to compute against, matching the demo narrative ("90 days of
--- recorded rides makes a driver bank-eligible"). Generated relative to now()
--- so a reset always produces a fresh, current-looking 90-day window.
--- ============================================================================
-DO $$
-DECLARE
-    lucky_user_id BIGINT := (SELECT id FROM users WHERE phone_number = '0711234501');
-    lucky_vendor_id BIGINT := (SELECT id FROM vendors WHERE qr_code = 'UKP-VENDOR-LUCKYTAXI-001');
-    thandi_user_id BIGINT := (SELECT id FROM users WHERE phone_number = '0711234502');
-    thandi_vendor_id BIGINT := (SELECT id FROM vendors WHERE qr_code = 'UKP-VENDOR-THANDISPAZA-002');
-    employee_phones TEXT[] := ARRAY['0798765432','0798765433','0798765434','0798765435','0798765436',
-                                     '0798765437','0798765438','0798765439','0798765440','0798765441'];
-    destinations TEXT[] := ARRAY['Nelspruit CBD','Sonheuwel','White River','KaNyamazane','Riverside Mall','Kabokweni'];
-    spaza_items TEXT[] := ARRAY['Bread & tea','Airtime','Cooldrink & snack','Vetkoek','Phone credit','Sweets & chips'];
-    day_offset INT;
-    ride_num INT;
-    rides_today INT;
-    sender_phone TEXT;
-    fare NUMERIC(12,2);
-    ride_hour INT;
-    ride_minute INT;
-    txn_ts TIMESTAMP;
-    counter INT := 1;
-BEGIN
-    -- Lucky: 90 trailing days, ~88% of days active, 8-15 rides per active day, R10-R30 fares
-    FOR day_offset IN 0..89 LOOP
-        IF random() < 0.88 THEN
-            rides_today := 8 + floor(random() * 8)::int; -- 8-15
-            FOR ride_num IN 1..rides_today LOOP
-                sender_phone := employee_phones[1 + floor(random() * array_length(employee_phones, 1))::int];
-                fare := round((10 + random() * 20)::numeric, 0);
-                ride_hour := 6 + floor(random() * 13)::int; -- 06:00-18:59
-                ride_minute := floor(random() * 60)::int;
-                txn_ts := date_trunc('day', now() - (day_offset || ' days')::interval)
-                          + (ride_hour || ' hours')::interval + (ride_minute || ' minutes')::interval;
-                INSERT INTO transactions (reference, sender_id, receiver_id, vendor_id, amount, cashback_amount, cashback_rate, status, description, created_at)
-                VALUES (
-                    'TXN-LUCKY-' || lpad(counter::text, 6, '0'),
-                    (SELECT id FROM users WHERE phone_number = sender_phone),
-                    lucky_user_id, lucky_vendor_id, fare, round(fare * 0.025, 2), 0.025, 'COMPLETED',
-                    'Passenger - ' || destinations[1 + floor(random() * array_length(destinations, 1))::int],
-                    txn_ts
-                );
-                counter := counter + 1;
-            END LOOP;
-        END IF;
-    END LOOP;
-
-    -- Thandi: 60 trailing days, ~82% of days active, 3-7 sales per active day, R15-R55 baskets
-    counter := 1;
-    FOR day_offset IN 0..59 LOOP
-        IF random() < 0.82 THEN
-            rides_today := 3 + floor(random() * 5)::int; -- 3-7
-            FOR ride_num IN 1..rides_today LOOP
-                sender_phone := employee_phones[1 + floor(random() * array_length(employee_phones, 1))::int];
-                fare := round((15 + random() * 40)::numeric, 0);
-                ride_hour := 6 + floor(random() * 13)::int;
-                ride_minute := floor(random() * 60)::int;
-                txn_ts := date_trunc('day', now() - (day_offset || ' days')::interval)
-                          + (ride_hour || ' hours')::interval + (ride_minute || ' minutes')::interval;
-                INSERT INTO transactions (reference, sender_id, receiver_id, vendor_id, amount, cashback_amount, cashback_rate, status, description, created_at)
-                VALUES (
-                    'TXN-THANDI-' || lpad(counter::text, 6, '0'),
-                    (SELECT id FROM users WHERE phone_number = sender_phone),
-                    thandi_user_id, thandi_vendor_id, fare, round(fare * 0.025, 2), 0.025, 'COMPLETED',
-                    'Sale - ' || spaza_items[1 + floor(random() * array_length(spaza_items, 1))::int],
-                    txn_ts
-                );
-                counter := counter + 1;
-            END LOOP;
-        END IF;
-    END LOOP;
-END $$;
-
--- Cashback ledger mirrors the 20 transactions (all EARNED, none withdrawn yet except employee 1's demo withdrawal)
-INSERT INTO cashback (user_id, transaction_id, amount, status)
-SELECT sender_id, id, cashback_amount, 'EARNED' FROM transactions;
-
--- Credit vendor wallets with what they've received, debit sender wallets
-UPDATE wallets w SET balance = w.balance + sub.total
-FROM (SELECT receiver_id, SUM(amount) AS total FROM transactions GROUP BY receiver_id) sub
-WHERE w.user_id = sub.receiver_id;
-
-UPDATE wallets w SET balance = w.balance - sub.total, cashback_balance = w.cashback_balance + sub.cb
-FROM (SELECT sender_id, SUM(amount) AS total, SUM(cashback_amount) AS cb FROM transactions GROUP BY sender_id) sub
-WHERE w.user_id = sub.sender_id;
-
--- 3 withdrawal requests (ATM cash-out), including the demo employee's completed R250 cashback withdrawal
-INSERT INTO withdrawals (user_id, atm_location_id, amount, withdrawal_pin, status, requested_at, expires_at, completed_at) VALUES
-((SELECT id FROM users WHERE phone_number='0798765432'), (SELECT id FROM atm_locations WHERE name='ABSA ATM - Riverside Mall'), 250.00, '4567', 'COMPLETED', now() - interval '2 days', now() - interval '1 days', now() - interval '2 days' + interval '3 hours'),
-((SELECT id FROM users WHERE phone_number='0711234501'), (SELECT id FROM atm_locations WHERE name='ABSA ATM - Ilanga Mall'), 500.00, '8821', 'COMPLETED', now() - interval '5 days', now() - interval '4 days', now() - interval '5 days' + interval '5 hours'),
-((SELECT id FROM users WHERE phone_number='0798765434'), (SELECT id FROM atm_locations WHERE name='ABSA ATM - Nelspruit CBD'), 75.00, '3390', 'PENDING', now() - interval '2 hours', now() + interval '22 hours', NULL);
-
--- Reflect the cashback withdrawal above: employee 1's cashback moves from EARNED to WITHDRAWN, balance reset
-UPDATE cashback SET status = 'WITHDRAWN'
-WHERE user_id = (SELECT id FROM users WHERE phone_number='0798765432') AND status = 'EARNED';
-
-UPDATE wallets SET cashback_balance = 0
-WHERE user_id = (SELECT id FROM users WHERE phone_number='0798765432');
-
--- Ratings for vendors (sample)
-INSERT INTO ratings (vendor_id, reviewer_id, transaction_id, stars, review) VALUES
-((SELECT id FROM vendors WHERE qr_code='UKP-VENDOR-LUCKYTAXI-001'), (SELECT id FROM users WHERE phone_number='0798765432'), (SELECT id FROM transactions WHERE reference='TXN-0001'), 5, 'Always on time, friendly driver.'),
-((SELECT id FROM vendors WHERE qr_code='UKP-VENDOR-MAMAJOY-003'), (SELECT id FROM users WHERE phone_number='0798765434'), (SELECT id FROM transactions WHERE reference='TXN-0003'), 5, 'Best pap and chicken in Sonheuwel.'),
-((SELECT id FROM vendors WHERE qr_code='UKP-VENDOR-SIPHOELEC-004'), (SELECT id FROM users WHERE phone_number='0798765437'), (SELECT id FROM transactions WHERE reference='TXN-0006'), 4, 'Solid work, a bit late to arrive.');
+-- Taxi ranks / trading points in and around Mbombela / Nelspruit
+INSERT INTO taxi_ranks (name, location_name) VALUES
+('Mbombela Taxi Rank', 'Nelspruit CBD'),
+('KaNyamazane Rank', 'KaNyamazane, Mbombela'),
+('Sonheuwel Rank', 'Sonheuwel, Mbombela'),
+('Kabokweni Rank', 'Kabokweni, Mbombela'),
+('Riverside Mall Rank', 'Riverside Mall, Mbombela');

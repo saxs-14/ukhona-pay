@@ -1,34 +1,45 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, Smartphone, Store } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import client from "../api/client";
 import Button from "../components/ui/Button";
-import { ease, spring } from "../lib/motion";
+import { ease } from "../lib/motion";
+import { dashboardPathFor } from "../lib/roles";
 
-const CATEGORIES = [
-  { value: "TAXI", label: "TAXI (Driver)" },
-  { value: "FOOD", label: "FOOD" },
-  { value: "SERVICES", label: "SERVICES" },
-  { value: "RETAIL", label: "RETAIL" },
-  { value: "OTHER", label: "OTHER" },
+const ROLES = [
+  { value: "TAXI_DRIVER", label: "Taxi Driver" },
+  { value: "VENDOR", label: "Vendor" },
+  { value: "TAXI_ASSOCIATION_ADMIN", label: "Taxi Association Administrator" },
 ];
 
 export default function SignupPage() {
   const { signup } = useAuth();
   const navigate = useNavigate();
+  const [associations, setAssociations] = useState([]);
+  const [ranks, setRanks] = useState([]);
   const [form, setForm] = useState({
+    userType: "TAXI_DRIVER",
     name: "",
+    surname: "",
+    idNumber: "",
     phoneNumber: "",
     pin: "",
     email: "",
-    userType: "EMPLOYEE",
-    businessName: "",
-    category: "TAXI",
-    locationName: "",
+    vehicleRegistration: "",
+    associationId: "",
+    rankId: "",
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    Promise.all([client.get("/taxi-associations"), client.get("/taxi-ranks")]).then(([a, r]) => {
+      setAssociations(a.data);
+      setRanks(r.data);
+    });
+  }, []);
 
   function update(field, value) {
     setForm((f) => ({ ...f, [field]: value }));
@@ -39,8 +50,20 @@ export default function SignupPage() {
     setError("");
     setLoading(true);
     try {
-      const user = await signup(form);
-      navigate(user.userType === "VENDOR" ? "/vendor" : "/dashboard");
+      const payload = {
+        userType: form.userType,
+        name: form.name,
+        surname: form.surname,
+        idNumber: form.idNumber,
+        phoneNumber: form.phoneNumber,
+        pin: form.pin,
+        email: form.email || null,
+        vehicleRegistration: form.userType === "TAXI_DRIVER" ? form.vehicleRegistration : null,
+        associationId: form.associationId ? Number(form.associationId) : null,
+        rankId: form.rankId ? Number(form.rankId) : null,
+      };
+      const user = await signup(payload);
+      navigate(dashboardPathFor(user.userType));
     } catch (err) {
       setError(err.message);
     } finally {
@@ -63,46 +86,42 @@ export default function SignupPage() {
         <p className="mb-6 text-sm text-sand-500">Financial identity for Mbombela's taxi-rank traders</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="flex gap-2">
-            {[
-              { key: "EMPLOYEE", label: "Commuter (demo)", Icon: Smartphone },
-              { key: "VENDOR", label: "Driver / Vendor", Icon: Store },
-            ].map(({ key, label, Icon }) => {
-              const active = form.userType === key;
-              return (
-                <motion.button
-                  type="button"
-                  key={key}
-                  whileTap={{ scale: 0.97 }}
-                  transition={spring}
-                  onClick={() => update("userType", key)}
-                  className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl border py-2.5 text-sm font-medium transition-colors ${
-                    active
-                      ? "border-terracotta-600 bg-terracotta-50 text-terracotta-700"
-                      : "border-sand-300 text-sand-600"
-                  }`}
-                >
-                  <Icon size={15} />
-                  {label}
-                </motion.button>
-              );
-            })}
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-sand-700">I am a</label>
+            <select
+              value={form.userType}
+              onChange={(e) => update("userType", e.target.value)}
+              className={inputClass}
+            >
+              {ROLES.map((r) => (
+                <option key={r.value} value={r.value}>{r.label}</option>
+              ))}
+            </select>
           </div>
-          {form.userType === "EMPLOYEE" && (
-            <p className="rounded-lg bg-sand-50 px-3 py-2 text-xs text-sand-500">
-              In production, commuters pay with their own banking app — no UKHONA PAY account
-              needed. This demo login simulates that payment for testing.
-            </p>
-          )}
 
-          <input placeholder="Full name" value={form.name} onChange={(e) => update("name", e.target.value)} className={inputClass} required />
+          <div className="grid grid-cols-2 gap-3">
+            <input placeholder="Name" value={form.name} onChange={(e) => update("name", e.target.value)} className={inputClass} required />
+            <input placeholder="Surname" value={form.surname} onChange={(e) => update("surname", e.target.value)} className={inputClass} required />
+          </div>
+
           <input
-            placeholder="Phone number (0XXXXXXXXX)"
+            placeholder="ID number"
+            inputMode="numeric"
+            maxLength={13}
+            value={form.idNumber}
+            onChange={(e) => update("idNumber", e.target.value.replace(/\D/g, ""))}
+            className={inputClass}
+            required
+          />
+
+          <input
+            placeholder="Cellphone number (0XXXXXXXXX)"
             value={form.phoneNumber}
             onChange={(e) => update("phoneNumber", e.target.value)}
             className={inputClass}
             required
           />
+
           <input
             type="password"
             inputMode="numeric"
@@ -113,29 +132,62 @@ export default function SignupPage() {
             className={inputClass}
             required
           />
+
           <input type="email" placeholder="Email (optional)" value={form.email} onChange={(e) => update("email", e.target.value)} className={inputClass} />
 
-          {form.userType === "VENDOR" && (
+          {form.userType === "TAXI_DRIVER" && (
             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="space-y-4 overflow-hidden">
               <input
-                placeholder="Business name"
-                value={form.businessName}
-                onChange={(e) => update("businessName", e.target.value)}
+                placeholder="Vehicle registration"
+                value={form.vehicleRegistration}
+                onChange={(e) => update("vehicleRegistration", e.target.value.toUpperCase())}
                 className={inputClass}
                 required
               />
-              <select value={form.category} onChange={(e) => update("category", e.target.value)} className={inputClass}>
-                {CATEGORIES.map((c) => (
-                  <option key={c.value} value={c.value}>{c.label}</option>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-sand-700">Taxi association</label>
+                <select value={form.associationId} onChange={(e) => update("associationId", e.target.value)} className={inputClass} required>
+                  <option value="" disabled>Select the association your taxi belongs to</option>
+                  {associations.map((a) => (
+                    <option key={a.id} value={a.id}>{a.name}</option>
+                  ))}
+                </select>
+              </div>
+            </motion.div>
+          )}
+
+          {form.userType === "VENDOR" && (
+            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="overflow-hidden">
+              <label className="mb-1.5 block text-sm font-medium text-sand-700">Taxi rank</label>
+              <select value={form.rankId} onChange={(e) => update("rankId", e.target.value)} className={inputClass} required>
+                <option value="" disabled>Select the rank you trade at</option>
+                {ranks.map((r) => (
+                  <option key={r.id} value={r.id}>{r.name}</option>
                 ))}
               </select>
-              <input
-                placeholder="Location (e.g. KaNyamazane, Mbombela)"
-                value={form.locationName}
-                onChange={(e) => update("locationName", e.target.value)}
-                className={inputClass}
-                required
-              />
+            </motion.div>
+          )}
+
+          {form.userType === "TAXI_ASSOCIATION_ADMIN" && (
+            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="space-y-4 overflow-hidden">
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-sand-700">Taxi association</label>
+                <select value={form.associationId} onChange={(e) => update("associationId", e.target.value)} className={inputClass} required>
+                  <option value="" disabled>Search the association you work for</option>
+                  {associations.map((a) => (
+                    <option key={a.id} value={a.id}>{a.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-sand-700">Taxi rank</label>
+                <select value={form.rankId} onChange={(e) => update("rankId", e.target.value)} className={inputClass} required>
+                  <option value="" disabled>Select the rank you oversee</option>
+                  {ranks.map((r) => (
+                    <option key={r.id} value={r.id}>{r.name}</option>
+                  ))}
+                </select>
+              </div>
             </motion.div>
           )}
 

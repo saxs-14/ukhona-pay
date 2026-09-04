@@ -14,6 +14,7 @@ public record VendorResponse(
         boolean verified,
         BigDecimal ratingAvg,
         int ratingCount,
-        String photoUrl
+        String photoUrl,
+        String vehicleRegistration
 ) {
 }

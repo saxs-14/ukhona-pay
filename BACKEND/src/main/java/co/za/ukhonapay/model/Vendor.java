@@ -27,6 +27,17 @@ public class Vendor {
     @Column(name = "location_name", nullable = false, length = 150)
     private String locationName;
 
+    // Driver-only.
+    @Column(name = "vehicle_registration", length = 20)
+    private String vehicleRegistration;
+
+    @Column(name = "association_id")
+    private Long associationId;
+
+    // Vendor-only.
+    @Column(name = "rank_id")
+    private Long rankId;
+
     private BigDecimal latitude;
     private BigDecimal longitude;
 
@@ -66,6 +77,12 @@ public class Vendor {
     public void setCategory(VendorCategory category) { this.category = category; }
     public String getLocationName() { return locationName; }
     public void setLocationName(String locationName) { this.locationName = locationName; }
+    public String getVehicleRegistration() { return vehicleRegistration; }
+    public void setVehicleRegistration(String vehicleRegistration) { this.vehicleRegistration = vehicleRegistration; }
+    public Long getAssociationId() { return associationId; }
+    public void setAssociationId(Long associationId) { this.associationId = associationId; }
+    public Long getRankId() { return rankId; }
+    public void setRankId(Long rankId) { this.rankId = rankId; }
     public BigDecimal getLatitude() { return latitude; }
     public void setLatitude(BigDecimal latitude) { this.latitude = latitude; }
     public BigDecimal getLongitude() { return longitude; }
@@ -90,6 +107,9 @@ public class Vendor {
         public Builder businessName(String v) { vendor.businessName = v; return this; }
         public Builder category(VendorCategory v) { vendor.category = v; return this; }
         public Builder locationName(String v) { vendor.locationName = v; return this; }
+        public Builder vehicleRegistration(String v) { vendor.vehicleRegistration = v; return this; }
+        public Builder associationId(Long v) { vendor.associationId = v; return this; }
+        public Builder rankId(Long v) { vendor.rankId = v; return this; }
         public Builder latitude(BigDecimal v) { vendor.latitude = v; return this; }
         public Builder longitude(BigDecimal v) { vendor.longitude = v; return this; }
         public Builder qrCode(String v) { vendor.qrCode = v; return this; }
