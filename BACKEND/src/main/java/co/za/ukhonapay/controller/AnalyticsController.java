@@ -1,6 +1,7 @@
 package co.za.ukhonapay.controller;
 
 import co.za.ukhonapay.dto.AnalyticsResponse;
+import co.za.ukhonapay.dto.FinancialScoreResponse;
 import co.za.ukhonapay.security.CurrentUser;
 import co.za.ukhonapay.service.AnalyticsService;
 import co.za.ukhonapay.service.VendorService;
@@ -32,5 +33,11 @@ public class AnalyticsController {
     public ResponseEntity<Map<String, Object>> myVendorAnalytics() {
         Long vendorId = vendorService.getByUserId(CurrentUser.id()).vendorId();
         return ResponseEntity.ok(analyticsService.vendorAnalytics(vendorId));
+    }
+
+    @GetMapping("/financial-score/me")
+    public ResponseEntity<FinancialScoreResponse> myFinancialScore() {
+        Long vendorId = vendorService.getByUserId(CurrentUser.id()).vendorId();
+        return ResponseEntity.ok(analyticsService.financialScore(vendorId));
     }
 }

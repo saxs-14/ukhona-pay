@@ -56,8 +56,9 @@ export default function LoginPage() {
             U
           </motion.div>
           <h1 className="font-display text-2xl text-sand-900">Ukhona Pay</h1>
-          <p className="mt-1 flex items-center justify-center gap-1 text-sm text-sand-500">
-            <MapPin size={13} /> Mbombela &amp; Nelspruit
+          <p className="text-sm text-sand-500">Financial identity for taxi-rank traders</p>
+          <p className="mt-1 flex items-center justify-center gap-1 text-xs text-sand-400">
+            <MapPin size={12} /> Mbombela &amp; Nelspruit
           </p>
         </div>
 
@@ -112,8 +113,9 @@ export default function LoginPage() {
         </p>
 
         <div className="mt-6 rounded-xl bg-sand-50 p-3 text-xs text-sand-500">
-          Demo login: <strong className="text-sand-700">0798765432</strong> (employee) or{" "}
-          <strong className="text-sand-700">0711234501</strong> (Lucky Taxi vendor), PIN <strong className="text-sand-700">1234</strong>
+          Demo: <strong className="text-sand-700">0711234501</strong> — Lucky, taxi driver (90-day history) ·{" "}
+          <strong className="text-sand-700">0798765432</strong> — commuter (simulates paying via own bank app), PIN{" "}
+          <strong className="text-sand-700">1234</strong>
         </div>
       </motion.div>
     </div>

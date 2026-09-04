@@ -1,12 +1,18 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, Briefcase, Store } from "lucide-react";
+import { ArrowRight, Smartphone, Store } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import Button from "../components/ui/Button";
 import { ease, spring } from "../lib/motion";
 
-const CATEGORIES = ["TAXI", "FOOD", "SERVICES", "RETAIL", "OTHER"];
+const CATEGORIES = [
+  { value: "TAXI", label: "TAXI (Driver)" },
+  { value: "FOOD", label: "FOOD" },
+  { value: "SERVICES", label: "SERVICES" },
+  { value: "RETAIL", label: "RETAIL" },
+  { value: "OTHER", label: "OTHER" },
+];
 
 export default function SignupPage() {
   const { signup } = useAuth();
@@ -54,13 +60,13 @@ export default function SignupPage() {
         className="w-full max-w-sm rounded-2xl border border-sand-200 bg-white p-8 shadow-warm-lg"
       >
         <h1 className="mb-1 font-display text-2xl text-sand-900">Create your account</h1>
-        <p className="mb-6 text-sm text-sand-500">Join Mbombela's connected marketplace</p>
+        <p className="mb-6 text-sm text-sand-500">Financial identity for Mbombela's taxi-rank traders</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="flex gap-2">
             {[
-              { key: "EMPLOYEE", label: "Employee", Icon: Briefcase },
-              { key: "VENDOR", label: "Vendor", Icon: Store },
+              { key: "EMPLOYEE", label: "Commuter (demo)", Icon: Smartphone },
+              { key: "VENDOR", label: "Driver / Vendor", Icon: Store },
             ].map(({ key, label, Icon }) => {
               const active = form.userType === key;
               return (
@@ -82,6 +88,12 @@ export default function SignupPage() {
               );
             })}
           </div>
+          {form.userType === "EMPLOYEE" && (
+            <p className="rounded-lg bg-sand-50 px-3 py-2 text-xs text-sand-500">
+              In production, commuters pay with their own banking app — no UKHONA PAY account
+              needed. This demo login simulates that payment for testing.
+            </p>
+          )}
 
           <input placeholder="Full name" value={form.name} onChange={(e) => update("name", e.target.value)} className={inputClass} required />
           <input
@@ -114,7 +126,7 @@ export default function SignupPage() {
               />
               <select value={form.category} onChange={(e) => update("category", e.target.value)} className={inputClass}>
                 {CATEGORIES.map((c) => (
-                  <option key={c} value={c}>{c}</option>
+                  <option key={c.value} value={c.value}>{c.label}</option>
                 ))}
               </select>
               <input
