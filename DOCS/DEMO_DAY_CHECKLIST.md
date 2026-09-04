@@ -22,7 +22,17 @@
 
 ## Right before you actually present
 
-Run `scripts/reset-demo-data.ps1` **one more time** immediately before the real run-through if you rehearsed even once. Every payment, withdrawal, or rating made during rehearsal shifts the wallet balances and transaction counts away from the numbers in your pitch narrative (5 vendors, 20 transactions, ~R3,570 volume). This bit us during development — we forgot this exact thing and had to add the reset script for it.
+Run `scripts/reset-demo-data.ps1` **one more time** immediately before the real run-through if you rehearsed even once. Every payment, withdrawal, or rating made during rehearsal shifts the wallet balances and transaction counts away from the numbers in your pitch narrative (5 vendors, ~1,150-1,200 transactions across a 90-day history for Lucky and a 60-day history for Thandi, ~R30,000 volume). This bit us during development — we forgot this exact thing and had to add the reset script for it. **After resetting, always restart the backend** (`mvn spring-boot:run`) so its connection pool picks up the fresh database — the script prints this reminder.
+
+## Suggested pitch flow — financial identity, not just payments
+
+The core demo beat isn't "scan a QR code" — it's "90 days of informal income becomes a bank-legible credit history." Walk it as:
+
+1. Log in as **Lucky** (`0711234501` / PIN `1234`) — a taxi driver with 80+ days of recorded income.
+2. Point at the **Income received** card — commuters paid via their own banking app, no UKHONA PAY account on their side.
+3. Point at the **Financial Identity** card: score **93/100**, "Credit eligible", 80/90 days recorded, ~89% consistency, ~R19,400 verified income, and a computed lending range (~R7,500–R13,000). Say the words: *this is a readiness indicator, not a guaranteed loan* — the score comes straight out of transaction history, nothing self-reported.
+4. Contrast with **Thandi** (a food vendor, shorter 60-day history) to show the score adapting to a different trader profile, and optionally **Nomsa** (`0711234505` / PIN `1234`, near-zero history) to show what "not yet eligible" looks like and why (the card states the reason in plain language).
+5. Close on the reframe: UKHONA PAY isn't a wallet competing with banks — it's the record-keeping layer banks don't have for informal traders today.
 
 ## Known risks we already hit — and fixed
 
@@ -35,6 +45,7 @@ These are documented so if you set the project up on a **different machine**, yo
 - **Postgres restarts itself once during first-time init** (it loads `schema.sql` against a temporary server, then restarts as the real one). A single `pg_isready` check can report healthy during that brief restart window. The reset script retries the *actual* summary query instead, which only succeeds once the schema is fully loaded.
 - **PowerShell's array truthiness silently breaks "did this succeed" checks.** A `docker exec ... | psql` call whose output is blank still comes back as a non-empty *array of blank lines*, and `if ($output)` treats any non-empty array as truthy — so a check can report success on a blank result. Always `($output -join "`n").Trim()` before testing truthiness, not the raw captured output.
 - **A stale Service Worker from a completely different project can hijack `localhost:5173`.** Service workers are scoped to the *origin* (host+port), not to whichever dev server happens to be running there — if any earlier project ever registered one on port 5173, Chrome will keep serving its cached shell instead of UKHONA PAY, even though `curl` (no service worker support) correctly reaches the real server. Symptom: the browser shows a completely unrelated app/title on `localhost:5173` while the terminal log looks fine. Fix: DevTools → Application → Service Workers → Unregister (and Clear storage), or run this in the console: `navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.unregister()))`.
+- **`GET /api/transactions/me` hung for ~20 seconds once we added the 90-day bulk seed data.** `TransactionService` was looking up the sender, receiver, and vendor for every transaction with a separate `findById` call — fine for the original 20 hand-written rows, but ~2,700 sequential DB round-trips for Lucky's 900+ transactions, which silently hung the vendor dashboard (skeleton loaders stuck forever, no console error). Fixed by batching those lookups with `findAllById` into in-memory maps before mapping the response — same endpoint now responds in well under a second regardless of history length.
 - **Installing new npm packages while `npm run dev` is already running can corrupt the session.** Vite's dependency optimizer detects the new packages mid-session, does a partial reload, and can leave the page in a half-updated state — we saw this as React "Invalid hook call" crashes from a newly-added icon library, and separately as entire custom Tailwind color classes silently failing to generate. Symptom is easy to miss since the page *looks* like it's rendering, just wrong. Fix: stop the dev server, delete `FRONTEND/node_modules/.vite`, restart `npm run dev`, hard-reload the browser. Safest habit: install new packages with the dev server stopped.
 
 ## Fallback paths if something breaks live
