@@ -12,7 +12,7 @@ public record SignupRequest(
         @NotNull UserType userType,
         @NotBlank String name,
         String email,
-        // vendor-only fields, ignored for EMPLOYEE/CORPORATE
+        // merchant / driver specific fields
         String businessName,
         String category,
         String locationName
