@@ -1,4 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import { BarChart3, LogOut } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 export default function NavBar() {
@@ -15,22 +17,26 @@ export default function NavBar() {
   const homePath = user.userType === "VENDOR" ? "/vendor" : "/dashboard";
 
   return (
-    <nav className="sticky top-0 z-10 flex items-center justify-between bg-white border-b border-slate-200 px-4 py-3 shadow-sm">
+    <nav className="sticky top-0 z-20 flex items-center justify-between border-b border-sand-200 bg-white/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-white/80">
       <Link to={homePath} className="flex items-center gap-2">
-        <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white font-bold">U</span>
-        <span className="font-semibold text-slate-800">UKHONA PAY</span>
+        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-terracotta-600 font-display text-base text-white">
+          U
+        </span>
+        <span className="font-display text-lg text-sand-900">Ukhona Pay</span>
       </Link>
       <div className="flex items-center gap-3 text-sm">
-        <Link to="/platform" title="Platform overview" className="text-lg" aria-label="Platform overview">
-          📊
+        <Link to="/platform" title="Platform overview" aria-label="Platform overview" className="text-sand-500 hover:text-terracotta-700">
+          <BarChart3 size={20} />
         </Link>
-        <span className="text-slate-500 hidden sm:inline">{user.name}</span>
-        <button
+        <span className="hidden text-sand-500 sm:inline">{user.name}</span>
+        <motion.button
+          whileTap={{ scale: 0.94 }}
           onClick={handleLogout}
-          className="rounded-md border border-slate-300 px-3 py-1.5 text-slate-600 hover:bg-slate-50"
+          className="flex items-center gap-1.5 rounded-lg border border-sand-300 px-3 py-1.5 text-sand-600 hover:bg-sand-50"
         >
+          <LogOut size={14} />
           Log out
-        </button>
+        </motion.button>
       </div>
     </nav>
   );

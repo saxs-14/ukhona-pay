@@ -1,14 +1,15 @@
 # UKHONA PAY
 
-South African fintech payment & savings platform — EDHE Studentpreneurs Indaba 2026, **Market Connectivity** challenge (with a light **Data Analytics** touch via the vendor insights tile).
+South African fintech payment & savings platform for **Mbombela / Nelspruit** — EDHE Studentpreneurs Indaba 2026, **Market Connectivity** challenge (with a light **Data Analytics** touch via the vendor insights tile).
 
-Connects informal vendors (taxi drivers, spaza shops, food sellers, service providers) to corporate buyers through QR-code payments. Every payment earns the payer cashback, which can **only** be withdrawn as physical cash at an ABSA ATM (mocked) — never a bank transfer.
+Connects informal vendors (taxi drivers, spaza shops, food sellers, service providers) around Mbombela to corporate buyers through QR-code payments. Every payment earns the payer cashback, which can **only** be withdrawn as physical cash at an ABSA ATM (mocked) — never a bank transfer.
 
 ## Stack
 
 - **Backend**: Java 21 / Spring Boot 3.3, Spring Data JPA, Spring Security + JWT, PostgreSQL, zxing (QR generation)
-- **Frontend**: React 19 + Vite, React Router, Tailwind CSS, html5-qrcode (camera scanning)
-- **Database**: PostgreSQL 16 (Docker), seeded with 15 users, 5 vendors, 20 transactions matching the demo script
+- **Frontend**: React 19 + Vite, React Router, Tailwind CSS, Framer Motion, Chart.js, html5-qrcode (camera scanning)
+- **Design**: a custom terracotta/bushveld-green/gold palette (not default Tailwind blue) with Calistoga + Inter typography, self-hosted via `@fontsource` (zero CDN dependency — works offline). `lucide-react` icons throughout, no emoji.
+- **Database**: PostgreSQL 16 (Docker), seeded with 15 users, 5 vendors, 20 transactions across real Mbombela locations (Nelspruit CBD, KaNyamazane, Sonheuwel, Kabokweni, Riverside Mall, White River)
 
 ## Running it
 
@@ -64,14 +65,14 @@ Two helper scripts in `scripts/` (PowerShell, tested working; `.sh` equivalents 
 - Vendor analytics tile (transaction count, total earned, average sale, busiest hour) — derived entirely from existing transaction data, no extra input required from the vendor
 - Platform-wide analytics endpoint (`/api/analytics/platform`) for a judges-facing stats dashboard
 - **Ratings UI**: after a payment, the payer can leave a 1–5 star rating + optional review for that specific transaction (duplicate ratings on the same transaction are rejected with a clean 400); vendor pages show their existing reviews, and the vendor's average/count updates live
-- **Chart.js dashboards**: employee dashboard shows a spending-by-category doughnut; vendor insights page shows an earnings-by-hour bar chart (peak hour highlighted) and an earnings trend line chart; a new `/platform` overview page (📊 icon in the top nav, any logged-in user) shows category breakdown and top-vendors charts for a judges-facing demo view
+- **Chart.js dashboards**: employee dashboard shows a spending-by-category doughnut; vendor insights page shows an earnings-by-hour bar chart (peak hour highlighted) and an earnings trend line chart; a `/platform` overview page (📊 icon in the top nav, any logged-in user) shows category breakdown and top-vendors charts for a judges-facing demo view
+- **Motion**: Framer Motion route transitions, staggered list entrances, spring press feedback on every button/card, an animated checkmark draw on payment success, animated counting numbers on wallet balances and stat tiles, a sliding active-tab indicator on the bottom nav, skeleton loading states
 
 ## Verified end-to-end
 
-Login → wallet → vendor search → QR payment → cashback credited → transaction appears in history for both sender and vendor → ATM withdrawal requested and completed → rating submitted against the new transaction, duplicate rating attempt correctly rejected, vendor's rating average recalculated → vendor and platform analytics (including the new chart data) all confirmed working via direct API testing, and the frontend production build compiles clean.
+Login → wallet → vendor search → QR payment → cashback credited → transaction appears in history for both sender and vendor → ATM withdrawal requested and completed → rating submitted against the new transaction, duplicate rating attempt correctly rejected, vendor's rating average recalculated → vendor and platform analytics (including the new chart data) all confirmed working via direct API testing, and the frontend production build compiles clean. **Also since click-through-tested live in Chrome**: login, dashboard, vendor search, a real QR payment end to end (checkmark animation, cashback credited, star rating submitted with a review), the cashback wallet, and the vendor-side dashboard + insights charts — all render correctly and match the design.
 
 ## Known gaps for the remaining hackathon time
 
 - No PDF export of transaction history
 - No automated tests
-- No visual/UI click-through testing was done in this session (browser automation wasn't connected) — worth a manual pass through the app before the demo

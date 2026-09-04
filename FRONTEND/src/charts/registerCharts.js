@@ -13,19 +13,20 @@ import {
 // Registering is idempotent, so every page that needs charts can import this safely.
 ChartJS.register(ArcElement, BarElement, CategoryScale, LinearScale, LineElement, PointElement, Tooltip, Legend);
 
+// Matches the tailwind.config.js terracotta/bushveld/gold/sand palette so
+// charts read as part of the same product, not a bolted-on default theme.
 export const CHART_COLORS = {
-  blue: "#2563eb",
-  emerald: "#10b981",
-  amber: "#f59e0b",
-  slate: "#64748b",
-  rose: "#f43f5e",
-  violet: "#8b5cf6",
+  terracotta: "#C96328",
+  bushveld: "#2F8F4E",
+  gold: "#E2971E",
+  violet: "#8B5CF6",
+  slate: "#8A6E4C",
 };
 
 export const CATEGORY_COLORS = {
-  TAXI: CHART_COLORS.blue,
-  FOOD: CHART_COLORS.emerald,
-  SERVICES: CHART_COLORS.amber,
+  TAXI: CHART_COLORS.terracotta,
+  FOOD: CHART_COLORS.bushveld,
+  SERVICES: CHART_COLORS.gold,
   RETAIL: CHART_COLORS.violet,
   OTHER: CHART_COLORS.slate,
 };

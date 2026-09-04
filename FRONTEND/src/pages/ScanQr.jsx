@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import { Camera } from "lucide-react";
 import { Html5Qrcode } from "html5-qrcode";
+import Button from "../components/ui/Button";
 
 const SCANNER_ID = "ukp-qr-reader";
 
@@ -49,27 +52,35 @@ export default function ScanQr() {
 
   return (
     <div className="mx-auto max-w-md px-4 py-6">
-      <h1 className="mb-1 text-lg font-semibold text-slate-800">Scan to pay</h1>
-      <p className="mb-4 text-sm text-slate-500">Point your camera at the vendor's UKHONA PAY QR code</p>
+      <h1 className="mb-1 flex items-center gap-2 font-display text-xl text-sand-900">
+        <Camera size={20} className="text-terracotta-600" /> Scan to pay
+      </h1>
+      <p className="mb-4 text-sm text-sand-500">Point your camera at the vendor's Ukhona Pay QR code</p>
 
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-black">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.97 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="relative overflow-hidden rounded-2xl border border-sand-200 bg-black shadow-warm"
+      >
         <div id={SCANNER_ID} className="mx-auto w-full" />
-      </div>
-      {starting && <p className="mt-2 text-center text-sm text-slate-400">Starting camera...</p>}
-      {error && <p className="mt-2 text-sm text-amber-600">{error}</p>}
+        {starting && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/40 text-sm text-white">
+            Starting camera...
+          </div>
+        )}
+      </motion.div>
+      {error && <p className="mt-2 text-sm text-gold-600">{error}</p>}
 
       <form onSubmit={handleManualSubmit} className="mt-6 flex gap-2">
         <input
           placeholder="Or enter vendor QR code manually"
           value={manualCode}
           onChange={(e) => setManualCode(e.target.value)}
-          className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="flex-1 rounded-xl border border-sand-300 px-3.5 py-2.5 text-sm focus:border-terracotta-500 focus:outline-none focus:ring-2 focus:ring-terracotta-100"
         />
-        <button type="submit" className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
-          Go
-        </button>
+        <Button type="submit">Go</Button>
       </form>
-      <p className="mt-2 text-xs text-slate-400">Try Lucky Taxi's demo code: UKP-VENDOR-LUCKYTAXI-001</p>
+      <p className="mt-2 text-xs text-sand-400">Try Lucky Taxi's demo code: UKP-VENDOR-LUCKYTAXI-001</p>
     </div>
   );
 }

@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { motion } from "framer-motion";
+import { ArrowRight, Briefcase, Store } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import Button from "../components/ui/Button";
+import { ease, spring } from "../lib/motion";
 
 const CATEGORIES = ["TAXI", "FOOD", "SERVICES", "RETAIL", "OTHER"];
 
@@ -38,42 +42,53 @@ export default function SignupPage() {
     }
   }
 
+  const inputClass =
+    "w-full rounded-xl border border-sand-300 bg-sand-50/50 px-3.5 py-2.5 text-sand-900 transition-colors focus:border-terracotta-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-terracotta-100";
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-8">
-      <div className="w-full max-w-sm rounded-2xl bg-white p-8 shadow-sm border border-slate-200">
-        <h1 className="mb-1 text-xl font-semibold text-slate-800">Create your account</h1>
-        <p className="mb-6 text-sm text-slate-500">Join UKHONA PAY's connected marketplace</p>
+    <div className="flex min-h-dvh items-center justify-center bg-sand-50 px-4 py-8">
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: ease.enter }}
+        className="w-full max-w-sm rounded-2xl border border-sand-200 bg-white p-8 shadow-warm-lg"
+      >
+        <h1 className="mb-1 font-display text-2xl text-sand-900">Create your account</h1>
+        <p className="mb-6 text-sm text-sand-500">Join Mbombela's connected marketplace</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="flex gap-2">
-            {["EMPLOYEE", "VENDOR"].map((t) => (
-              <button
-                type="button"
-                key={t}
-                onClick={() => update("userType", t)}
-                className={`flex-1 rounded-lg border py-2 text-sm font-medium ${
-                  form.userType === t
-                    ? "border-blue-600 bg-blue-50 text-blue-700"
-                    : "border-slate-300 text-slate-600"
-                }`}
-              >
-                {t === "EMPLOYEE" ? "Corporate Employee" : "Vendor"}
-              </button>
-            ))}
+            {[
+              { key: "EMPLOYEE", label: "Employee", Icon: Briefcase },
+              { key: "VENDOR", label: "Vendor", Icon: Store },
+            ].map(({ key, label, Icon }) => {
+              const active = form.userType === key;
+              return (
+                <motion.button
+                  type="button"
+                  key={key}
+                  whileTap={{ scale: 0.97 }}
+                  transition={spring}
+                  onClick={() => update("userType", key)}
+                  className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl border py-2.5 text-sm font-medium transition-colors ${
+                    active
+                      ? "border-terracotta-600 bg-terracotta-50 text-terracotta-700"
+                      : "border-sand-300 text-sand-600"
+                  }`}
+                >
+                  <Icon size={15} />
+                  {label}
+                </motion.button>
+              );
+            })}
           </div>
 
-          <input
-            placeholder="Full name"
-            value={form.name}
-            onChange={(e) => update("name", e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            required
-          />
+          <input placeholder="Full name" value={form.name} onChange={(e) => update("name", e.target.value)} className={inputClass} required />
           <input
             placeholder="Phone number (0XXXXXXXXX)"
             value={form.phoneNumber}
             onChange={(e) => update("phoneNumber", e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className={inputClass}
             required
           />
           <input
@@ -83,60 +98,49 @@ export default function SignupPage() {
             placeholder="4-digit PIN"
             value={form.pin}
             onChange={(e) => update("pin", e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className={inputClass}
             required
           />
-          <input
-            type="email"
-            placeholder="Email (optional)"
-            value={form.email}
-            onChange={(e) => update("email", e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-          />
+          <input type="email" placeholder="Email (optional)" value={form.email} onChange={(e) => update("email", e.target.value)} className={inputClass} />
 
           {form.userType === "VENDOR" && (
-            <>
+            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="space-y-4 overflow-hidden">
               <input
                 placeholder="Business name"
                 value={form.businessName}
                 onChange={(e) => update("businessName", e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className={inputClass}
                 required
               />
-              <select
-                value={form.category}
-                onChange={(e) => update("category", e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              >
+              <select value={form.category} onChange={(e) => update("category", e.target.value)} className={inputClass}>
                 {CATEGORIES.map((c) => (
                   <option key={c} value={c}>{c}</option>
                 ))}
               </select>
               <input
-                placeholder="Location (e.g. Soweto, Johannesburg)"
+                placeholder="Location (e.g. KaNyamazane, Mbombela)"
                 value={form.locationName}
                 onChange={(e) => update("locationName", e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className={inputClass}
                 required
               />
-            </>
+            </motion.div>
           )}
 
           {error && <p className="text-sm text-red-600">{error}</p>}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-lg bg-blue-600 py-2.5 font-medium text-white hover:bg-blue-700 disabled:opacity-60"
-          >
-            {loading ? "Creating account..." : "Sign up"}
-          </button>
+          <Button type="submit" loading={loading} className="w-full">
+            Sign up <ArrowRight size={16} />
+          </Button>
         </form>
 
-        <p className="mt-4 text-center text-sm text-slate-500">
-          Already have an account? <Link to="/login" className="text-blue-600 font-medium">Log in</Link>
+        <p className="mt-5 text-center text-sm text-sand-500">
+          Already have an account?{" "}
+          <Link to="/login" className="font-semibold text-terracotta-700">
+            Log in
+          </Link>
         </p>
-      </div>
+      </motion.div>
     </div>
   );
 }

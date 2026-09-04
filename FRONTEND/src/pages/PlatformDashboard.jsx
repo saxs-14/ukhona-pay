@@ -1,7 +1,13 @@
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { Bar, Doughnut } from "react-chartjs-2";
+import { MapPin } from "lucide-react";
 import client from "../api/client";
 import { CATEGORY_COLORS, CHART_COLORS } from "../charts/registerCharts";
+import Card from "../components/ui/Card";
+import AnimatedNumber from "../components/ui/AnimatedNumber";
+import { SkeletonCard } from "../components/ui/Skeleton";
+import { listContainer, listItem } from "../lib/motion";
 
 export default function PlatformDashboard() {
   const [data, setData] = useState(null);
@@ -10,7 +16,13 @@ export default function PlatformDashboard() {
     client.get("/analytics/platform").then((res) => setData(res.data));
   }, []);
 
-  if (!data) return <div className="mx-auto max-w-md px-4 py-6 text-sm text-slate-400">Loading platform stats...</div>;
+  if (!data) {
+    return (
+      <div className="mx-auto max-w-md space-y-3 px-4 py-6">
+        <SkeletonCard /><SkeletonCard />
+      </div>
+    );
+  }
 
   const categoryLabels = Object.keys(data.categoryBreakdown);
   const categoryChart = {
@@ -30,45 +42,46 @@ export default function PlatformDashboard() {
       {
         label: "Transactions",
         data: data.topVendors.map((v) => v.transactionCount),
-        backgroundColor: CHART_COLORS.blue,
+        backgroundColor: CHART_COLORS.terracotta,
         borderRadius: 4,
       },
     ],
   };
 
+  const stats = [
+    { label: "Total transactions", value: data.totalTransactions, decimals: 0, gradient: "from-terracotta-600 to-terracotta-700" },
+    { label: "Transaction volume", value: Number(data.totalVolume), decimals: 0, prefix: "R", gradient: "from-bushveld-600 to-bushveld-700" },
+    { label: "Cashback paid out", value: Number(data.totalCashback), decimals: 2, prefix: "R", gradient: "from-gold-500 to-gold-600" },
+    { label: "Active vendors", value: data.activeVendors, decimals: 0, gradient: "from-sand-700 to-sand-800" },
+  ];
+
   return (
     <div className="mx-auto max-w-md px-4 py-6">
-      <h1 className="mb-1 text-lg font-semibold text-slate-800">UKHONA PAY — Platform overview</h1>
-      <p className="mb-4 text-sm text-slate-500">Live stats across the whole marketplace</p>
+      <h1 className="mb-1 font-display text-xl text-sand-900">Ukhona Pay — Platform overview</h1>
+      <p className="mb-4 flex items-center gap-1 text-sm text-sand-500">
+        <MapPin size={13} /> Live stats across Mbombela &amp; Nelspruit
+      </p>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-2xl bg-blue-600 p-4 text-white shadow-sm">
-          <p className="text-xs text-blue-100">Total transactions</p>
-          <p className="text-2xl font-semibold">{data.totalTransactions}</p>
-        </div>
-        <div className="rounded-2xl bg-emerald-500 p-4 text-white shadow-sm">
-          <p className="text-xs text-emerald-100">Transaction volume</p>
-          <p className="text-2xl font-semibold">R{Number(data.totalVolume).toFixed(0)}</p>
-        </div>
-        <div className="rounded-2xl bg-amber-500 p-4 text-white shadow-sm">
-          <p className="text-xs text-amber-100">Cashback paid out</p>
-          <p className="text-2xl font-semibold">R{Number(data.totalCashback).toFixed(2)}</p>
-        </div>
-        <div className="rounded-2xl bg-violet-500 p-4 text-white shadow-sm">
-          <p className="text-xs text-violet-100">Active vendors</p>
-          <p className="text-2xl font-semibold">{data.activeVendors}</p>
-        </div>
-      </div>
+      <motion.div variants={listContainer} initial="initial" animate="animate" className="grid grid-cols-2 gap-3">
+        {stats.map((s) => (
+          <motion.div key={s.label} variants={listItem} className={`rounded-2xl bg-gradient-to-br p-4 text-white shadow-warm ${s.gradient}`}>
+            <p className="text-xs text-white/80">{s.label}</p>
+            <p className="text-2xl font-semibold">
+              <AnimatedNumber value={s.value} prefix={s.prefix || ""} decimals={s.decimals} />
+            </p>
+          </motion.div>
+        ))}
+      </motion.div>
 
-      <div className="mt-5 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <h2 className="mb-3 text-sm font-semibold text-slate-700">Category breakdown</h2>
+      <Card className="mt-5">
+        <h2 className="mb-3 text-sm font-semibold text-sand-700">Category breakdown</h2>
         <div className="mx-auto max-w-[220px]">
           <Doughnut data={categoryChart} options={{ plugins: { legend: { position: "bottom", labels: { boxWidth: 10, font: { size: 11 } } } } }} />
         </div>
-      </div>
+      </Card>
 
-      <div className="mt-5 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <h2 className="mb-3 text-sm font-semibold text-slate-700">Top vendors by transactions</h2>
+      <Card className="mt-5">
+        <h2 className="mb-3 text-sm font-semibold text-sand-700">Top vendors by transactions</h2>
         <div className="h-48">
           <Bar
             data={topVendorsChart}
@@ -79,7 +92,7 @@ export default function PlatformDashboard() {
             }}
           />
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

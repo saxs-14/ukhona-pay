@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { motion } from "framer-motion";
+import { ArrowRight, Lock, MapPin, Phone } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import Button from "../components/ui/Button";
+import { ease } from "../lib/motion";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -25,59 +29,93 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
-      <div className="w-full max-w-sm rounded-2xl bg-white p-8 shadow-sm border border-slate-200">
-        <div className="mb-6 text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600 text-xl font-bold text-white">U</div>
-          <h1 className="text-xl font-semibold text-slate-800">UKHONA PAY</h1>
-          <p className="text-sm text-slate-500">Pay. Save. Earn Cashback. Connect.</p>
+    <div className="relative flex min-h-dvh items-center justify-center overflow-hidden bg-sand-50 px-4">
+      {/* Lowveld skyline motif - stylised escarpment silhouette, not literal/kitsch */}
+      <svg
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-40 w-full text-terracotta-100"
+        viewBox="0 0 800 160"
+        preserveAspectRatio="none"
+        fill="currentColor"
+        aria-hidden="true"
+      >
+        <path d="M0,160 L0,90 L90,55 L160,95 L230,40 L310,80 L390,20 L460,70 L540,45 L620,100 L700,60 L800,90 L800,160 Z" />
+      </svg>
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: ease.enter }}
+        className="relative w-full max-w-sm rounded-2xl border border-sand-200 bg-white p-8 shadow-warm-lg"
+      >
+        <div className="mb-7 text-center">
+          <motion.div
+            initial={{ scale: 0.6, rotate: -8 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: "spring", stiffness: 260, damping: 16, delay: 0.1 }}
+            className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-terracotta-600 font-display text-2xl text-white shadow-warm"
+          >
+            U
+          </motion.div>
+          <h1 className="font-display text-2xl text-sand-900">Ukhona Pay</h1>
+          <p className="mt-1 flex items-center justify-center gap-1 text-sm text-sand-500">
+            <MapPin size={13} /> Mbombela &amp; Nelspruit
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-600">Phone number</label>
-            <input
-              type="tel"
-              placeholder="0798765432"
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              required
-            />
+            <label className="mb-1.5 block text-sm font-medium text-sand-700">Phone number</label>
+            <div className="relative">
+              <Phone size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sand-400" />
+              <input
+                type="tel"
+                placeholder="0798765432"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                className="w-full rounded-xl border border-sand-300 bg-sand-50/50 py-2.5 pl-10 pr-3 text-sand-900 transition-colors focus:border-terracotta-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-terracotta-100"
+                required
+              />
+            </div>
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-600">PIN</label>
-            <input
-              type="password"
-              inputMode="numeric"
-              maxLength={4}
-              placeholder="****"
-              value={pin}
-              onChange={(e) => setPin(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 tracking-widest focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              required
-            />
+            <label className="mb-1.5 block text-sm font-medium text-sand-700">PIN</label>
+            <div className="relative">
+              <Lock size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sand-400" />
+              <input
+                type="password"
+                inputMode="numeric"
+                maxLength={4}
+                placeholder="****"
+                value={pin}
+                onChange={(e) => setPin(e.target.value)}
+                className="w-full rounded-xl border border-sand-300 bg-sand-50/50 py-2.5 pl-10 pr-3 tracking-[0.4em] text-sand-900 transition-colors focus:border-terracotta-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-terracotta-100"
+                required
+              />
+            </div>
           </div>
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && (
+            <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-sm text-red-600">
+              {error}
+            </motion.p>
+          )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-lg bg-blue-600 py-2.5 font-medium text-white hover:bg-blue-700 disabled:opacity-60"
-          >
-            {loading ? "Logging in..." : "Log in"}
-          </button>
+          <Button type="submit" loading={loading} className="w-full">
+            Log in <ArrowRight size={16} />
+          </Button>
         </form>
 
-        <p className="mt-4 text-center text-sm text-slate-500">
-          New here? <Link to="/signup" className="text-blue-600 font-medium">Create an account</Link>
+        <p className="mt-5 text-center text-sm text-sand-500">
+          New here?{" "}
+          <Link to="/signup" className="font-semibold text-terracotta-700">
+            Create an account
+          </Link>
         </p>
 
-        <div className="mt-6 rounded-lg bg-slate-50 p-3 text-xs text-slate-500">
-          Demo login: <strong>0798765432</strong> (employee) or <strong>0711234501</strong> (Lucky Taxi vendor), PIN <strong>1234</strong>
+        <div className="mt-6 rounded-xl bg-sand-50 p-3 text-xs text-sand-500">
+          Demo login: <strong className="text-sand-700">0798765432</strong> (employee) or{" "}
+          <strong className="text-sand-700">0711234501</strong> (Lucky Taxi vendor), PIN <strong className="text-sand-700">1234</strong>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }
