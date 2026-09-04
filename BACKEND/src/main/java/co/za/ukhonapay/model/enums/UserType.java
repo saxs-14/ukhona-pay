@@ -1,7 +1,7 @@
 package co.za.ukhonapay.model.enums;
 
 public enum UserType {
-    VENDOR,
-    EMPLOYEE,
-    CORPORATE
+    TAXI_DRIVER,
+    TAXI_ASSOCIATION_ADMIN,
+    VENDOR
 }
