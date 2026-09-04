@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, Lock, MapPin, Phone } from "lucide-react";
+import { ArrowRight, Lock, Phone } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import Button from "../components/ui/Button";
 import { ease } from "../lib/motion";
+import { dashboardPathFor } from "../lib/roles";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -20,7 +21,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const user = await login(phoneNumber, pin);
-      navigate(user.userType === "VENDOR" ? "/vendor" : "/dashboard");
+      navigate(dashboardPathFor(user.userType));
     } catch (err) {
       setError(err.message);
     } finally {
@@ -56,10 +57,6 @@ export default function LoginPage() {
             U
           </motion.div>
           <h1 className="font-display text-2xl text-sand-900">Ukhona Pay</h1>
-          <p className="text-sm text-sand-500">Financial identity for taxi-rank traders</p>
-          <p className="mt-1 flex items-center justify-center gap-1 text-xs text-sand-400">
-            <MapPin size={12} /> Mbombela &amp; Nelspruit
-          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -111,12 +108,6 @@ export default function LoginPage() {
             Create an account
           </Link>
         </p>
-
-        <div className="mt-6 rounded-xl bg-sand-50 p-3 text-xs text-sand-500">
-          Demo: <strong className="text-sand-700">0711234501</strong> — Lucky, taxi driver (90-day history) ·{" "}
-          <strong className="text-sand-700">0798765432</strong> — commuter (simulates paying via own bank app), PIN{" "}
-          <strong className="text-sand-700">1234</strong>
-        </div>
       </motion.div>
     </div>
   );

@@ -26,8 +26,21 @@ public class User {
     @Column(nullable = false, length = 120)
     private String name;
 
+    @Column(nullable = false, length = 120)
+    private String surname;
+
+    @Column(name = "id_number", nullable = false, unique = true, length = 13)
+    private String idNumber;
+
     @Column(length = 150)
     private String email;
+
+    // Only set for TAXI_ASSOCIATION_ADMIN - which association/rank they administer.
+    @Column(name = "association_id")
+    private Long associationId;
+
+    @Column(name = "rank_id")
+    private Long rankId;
 
     @Column(name = "phone_verified", nullable = false)
     private boolean phoneVerified;
@@ -60,8 +73,16 @@ public class User {
     public void setUserType(UserType userType) { this.userType = userType; }
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
+    public String getSurname() { return surname; }
+    public void setSurname(String surname) { this.surname = surname; }
+    public String getIdNumber() { return idNumber; }
+    public void setIdNumber(String idNumber) { this.idNumber = idNumber; }
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
+    public Long getAssociationId() { return associationId; }
+    public void setAssociationId(Long associationId) { this.associationId = associationId; }
+    public Long getRankId() { return rankId; }
+    public void setRankId(Long rankId) { this.rankId = rankId; }
     public boolean isPhoneVerified() { return phoneVerified; }
     public void setPhoneVerified(boolean phoneVerified) { this.phoneVerified = phoneVerified; }
     public LocalDateTime getCreatedAt() { return createdAt; }
@@ -75,7 +96,11 @@ public class User {
         public Builder pinHash(String v) { user.pinHash = v; return this; }
         public Builder userType(UserType v) { user.userType = v; return this; }
         public Builder name(String v) { user.name = v; return this; }
+        public Builder surname(String v) { user.surname = v; return this; }
+        public Builder idNumber(String v) { user.idNumber = v; return this; }
         public Builder email(String v) { user.email = v; return this; }
+        public Builder associationId(Long v) { user.associationId = v; return this; }
+        public Builder rankId(Long v) { user.rankId = v; return this; }
         public Builder phoneVerified(boolean v) { user.phoneVerified = v; return this; }
         public User build() { return user; }
     }

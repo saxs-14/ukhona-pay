@@ -1,27 +1,27 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { BarChart3, History, Home, QrCode, Search, Wallet } from "lucide-react";
+import { BarChart3, History, Home } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
-const employeeLinks = [
-  { to: "/dashboard", label: "Home", icon: Home },
-  { to: "/vendors", label: "Vendors", icon: Search },
-  { to: "/scan", label: "Scan", icon: QrCode },
-  { to: "/transactions", label: "History", icon: History },
-  { to: "/cashback", label: "Cashback", icon: Wallet },
-];
-
-const vendorLinks = [
-  { to: "/vendor", label: "Home", icon: Home },
+const traderLinks = (home) => [
+  { to: home, label: "Home", icon: Home },
   { to: "/vendor/analytics", label: "Insights", icon: BarChart3 },
   { to: "/transactions", label: "History", icon: History },
+];
+
+const adminLinks = [
+  { to: "/association-admin", label: "Home", icon: Home },
 ];
 
 export default function BottomNav() {
   const { user } = useAuth();
   const location = useLocation();
   if (!user) return null;
-  const links = user.userType === "VENDOR" ? vendorLinks : employeeLinks;
+
+  let links;
+  if (user.userType === "VENDOR") links = traderLinks("/vendor");
+  else if (user.userType === "TAXI_DRIVER") links = traderLinks("/driver");
+  else links = adminLinks;
 
   return (
     <nav className="sticky bottom-0 z-10 flex justify-around border-t border-sand-200 bg-white/95 py-1.5 backdrop-blur supports-[backdrop-filter]:bg-white/80">
@@ -30,7 +30,7 @@ export default function BottomNav() {
         const Icon = l.icon;
         return (
           <NavLink
-            key={l.to}
+            key={l.label}
             to={l.to}
             className="relative flex flex-col items-center gap-0.5 px-4 py-1.5 text-xs"
           >

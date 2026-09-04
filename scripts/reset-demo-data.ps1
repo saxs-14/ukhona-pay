@@ -1,7 +1,7 @@
-# Wipes the UKHONA PAY database and reseeds it from DATABASE/schema.sql.
-# Run this right before your real demo/pitch - every test payment, withdrawal,
-# or rating you or a judge makes during rehearsal drifts the numbers away from
-# the rehearsed narrative (5 vendors / 20 transactions / ~R3,670 volume).
+# Wipes the UKHONA PAY database and reloads DATABASE/schema.sql.
+# Schema.sql no longer seeds any user/vendor/transaction data - every account
+# is created through real signup. This just reloads the reference data (ATM
+# locations, taxi associations, taxi ranks) the signup dropdowns need.
 #
 # Usage: powershell -ExecutionPolicy Bypass -File scripts/reset-demo-data.ps1
 
@@ -16,51 +16,40 @@ try {
 
     # Postgres restarts itself once mid-init (it applies schema.sql against a
     # temporary server, then restarts as the real one) - pg_isready alone can
-    # report healthy during that brief window. schema.sql also seeds ~1,100
-    # bulk transactions via a row-by-row PL/pgSQL loop (for the 90-day
-    # financial-identity history), which takes noticeably longer than the
-    # handful of hand-written INSERTs - a single successful-but-early read
-    # can catch the 20 hand-written rows before the bulk block finishes, and
-    # `if ($output)` truthiness treats any non-empty result as "done" even
-    # when the real target is still loading. So this polls the actual
-    # transaction COUNT and requires it to clear a threshold safely below the
-    # realistic minimum (~630 in the worst-case random draw) but far above
-    # the 20-row false-positive, not just "the query returned something".
-    Write-Host "Waiting for Postgres to finish initializing and loading the schema (seeding ~1,100+ rows can take a minute)..." -ForegroundColor Yellow
-    $txnCount = 0
+    # report healthy during that brief window. Poll the actual reference-data
+    # count instead of just "the query returned something", since a blank
+    # PowerShell array is still truthy.
+    Write-Host "Waiting for Postgres to finish initializing and loading the schema..." -ForegroundColor Yellow
+    $rankCount = 0
     $prevEap = $ErrorActionPreference
     $ErrorActionPreference = "Continue"
-    for ($i = 0; $i -lt 40; $i++) {
+    for ($i = 0; $i -lt 30; $i++) {
         Start-Sleep -Seconds 2
         try {
-            $raw = docker exec ukhonapay-postgres psql -U ukhonapay -d ukhonapay -t -c "SELECT count(*) FROM transactions;" 2>$null
+            $raw = docker exec ukhonapay-postgres psql -U ukhonapay -d ukhonapay -t -c "SELECT count(*) FROM taxi_ranks;" 2>$null
         } catch {
             $raw = $null
         }
         $joined = (($raw -join "") -replace '\s', '')
         if ($LASTEXITCODE -eq 0 -and $joined -match '^\d+$') {
-            $txnCount = [int]$joined
-            if ($txnCount -gt 200) { break }
+            $rankCount = [int]$joined
+            if ($rankCount -gt 0) { break }
         }
     }
     $ErrorActionPreference = $prevEap
 
-    if ($txnCount -le 200) {
-        Write-Host "Postgres did not finish seeding in time (saw only $txnCount transactions) - check 'docker logs ukhonapay-postgres'." -ForegroundColor Red
+    if ($rankCount -le 0) {
+        Write-Host "Postgres did not finish loading the schema in time - check 'docker logs ukhonapay-postgres'." -ForegroundColor Red
         exit 1
     }
 
-    # The transaction-count threshold above confirms the bulk seed finished,
-    # but Postgres can still be mid-restart at this exact instant (same
-    # transient window as before) - so this summary fetch gets its own short
-    # retry rather than trusting a single attempt.
     $summary = ""
     $prevEap2 = $ErrorActionPreference
     $ErrorActionPreference = "Continue"
     for ($j = 0; $j -lt 5; $j++) {
         try {
             $raw2 = docker exec ukhonapay-postgres psql -U ukhonapay -d ukhonapay -t -c `
-                "SELECT (SELECT count(*) FROM users) || ' users, ' || (SELECT count(*) FROM vendors) || ' vendors, ' || (SELECT count(*) FROM transactions) || ' transactions, R' || (SELECT round(sum(amount)) FROM transactions) || ' volume';" 2>$null
+                "SELECT (SELECT count(*) FROM taxi_associations) || ' taxi associations, ' || (SELECT count(*) FROM taxi_ranks) || ' taxi ranks, ' || (SELECT count(*) FROM atm_locations) || ' ATM locations, ' || (SELECT count(*) FROM users) || ' registered users';" 2>$null
         } catch {
             $raw2 = $null
         }

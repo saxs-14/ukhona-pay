@@ -1,15 +1,13 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { BadgeCheck, Clock, MapPin, Star } from "lucide-react";
+import { BadgeCheck, Car, Clock, Star, Users } from "lucide-react";
 import client from "../api/client";
-import { useAuth } from "../context/AuthContext";
 import AnimatedNumber from "../components/ui/AnimatedNumber";
 import FinancialScoreCard from "../components/ui/FinancialScoreCard";
 import { SkeletonCard } from "../components/ui/Skeleton";
 import { listContainer, listItem } from "../lib/motion";
 
-export default function VendorDashboard() {
-  const { user } = useAuth();
+export default function DriverDashboard() {
   const [vendor, setVendor] = useState(null);
   const [qrImage, setQrImage] = useState(null);
   const [wallet, setWallet] = useState(null);
@@ -43,12 +41,12 @@ export default function VendorDashboard() {
 
   return (
     <div className="mx-auto max-w-md px-4 py-6">
-      <p className="mb-1 text-xs font-medium uppercase tracking-wide text-terracotta-600">Vendor</p>
+      <p className="mb-1 text-xs font-medium uppercase tracking-wide text-terracotta-600">Driver</p>
       <h1 className="flex items-center gap-1.5 font-display text-xl text-sand-900">
         {vendor.businessName} {vendor.verified && <BadgeCheck size={17} className="text-terracotta-600" />}
       </h1>
       <p className="mb-4 flex items-center gap-1 text-sm text-sand-500">
-        <MapPin size={12} /> {vendor.locationName}
+        <Users size={12} /> {vendor.locationName}
       </p>
 
       <div className="rounded-2xl bg-gradient-to-br from-terracotta-600 to-terracotta-700 p-4 text-white shadow-warm">
@@ -61,6 +59,14 @@ export default function VendorDashboard() {
         </p>
       </div>
 
+      {vendor.vehicleRegistration && (
+        <div className="mt-3 flex items-center gap-2 rounded-xl border border-sand-200 bg-white px-4 py-3 text-sm">
+          <Car size={16} className="text-terracotta-600" />
+          <span className="text-sand-500">Vehicle</span>
+          <span className="ml-auto font-medium text-sand-800">{vendor.vehicleRegistration}</span>
+        </div>
+      )}
+
       <FinancialScoreCard />
 
       <motion.div
@@ -70,7 +76,7 @@ export default function VendorDashboard() {
         className="mt-5 rounded-2xl border border-sand-200 bg-white p-5 text-center shadow-sm"
       >
         <p className="mb-3 text-sm font-medium text-sand-600">Your payment QR code</p>
-        {qrImage && <img src={qrImage} alt="Vendor QR code" className="mx-auto h-48 w-48 rounded-lg" />}
+        {qrImage && <img src={qrImage} alt="Driver QR code" className="mx-auto h-48 w-48 rounded-lg" />}
         <p className="mt-2 break-all text-xs text-sand-400">{vendor.qrCode}</p>
       </motion.div>
 

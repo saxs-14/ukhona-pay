@@ -46,6 +46,7 @@ public class VendorService {
         return new VendorResponse(
                 v.getId(), v.getUserId(), v.getBusinessName(), v.getCategory().name(),
                 v.getLocationName(), v.getLatitude(), v.getLongitude(), v.getQrCode(),
-                v.isVerified(), v.getRatingAvg(), v.getRatingCount(), v.getPhotoUrl());
+                v.isVerified(), v.getRatingAvg(), v.getRatingCount(), v.getPhotoUrl(),
+                v.getVehicleRegistration());
     }
 }
