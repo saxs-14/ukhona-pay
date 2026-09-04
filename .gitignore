@@ -1,0 +1,23 @@
+# Backend (Maven)
+BACKEND/target/
+*.class
+
+# Frontend (Node/Vite)
+FRONTEND/node_modules/
+FRONTEND/dist/
+FRONTEND/.vite/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.iml
+
+# Env files that might hold real secrets if ever added later
+.env
+.env.local

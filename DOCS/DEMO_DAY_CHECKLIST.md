@@ -1,0 +1,49 @@
+# UKHONA PAY — Demo Day Checklist
+
+## Before you leave for the venue
+
+1. Confirm Docker Desktop starts and the app runs on this exact laptop (not a machine you haven't tested on).
+2. Run the reset script once, right before you pack up, so the data matches your rehearsed narrative:
+   ```
+   powershell -ExecutionPolicy Bypass -File scripts/reset-demo-data.ps1
+   ```
+3. Run the preflight check to confirm everything is green:
+   ```
+   powershell -ExecutionPolicy Bypass -File scripts/preflight-check.ps1
+   ```
+
+## Startup order at the venue
+
+1. Start Docker Desktop manually if it isn't already running (it does **not** auto-start on login by default, and takes ~30-60s to come up).
+2. `docker compose up -d` (from the project root)
+3. `cd BACKEND && mvn spring-boot:run`
+4. `cd FRONTEND && npm run dev`
+5. Run `scripts/preflight-check.ps1` one more time. If anything's red, fix it before you're called up to present — don't discover it on stage.
+
+## Right before you actually present
+
+Run `scripts/reset-demo-data.ps1` **one more time** immediately before the real run-through if you rehearsed even once. Every payment, withdrawal, or rating made during rehearsal shifts the wallet balances and transaction counts away from the numbers in your pitch narrative (5 vendors, 20 transactions, ~R3,570 volume). This bit us during development — we forgot this exact thing and had to add the reset script for it.
+
+## Known risks we already hit — and fixed
+
+These are documented so if you set the project up on a **different machine**, you know what to expect:
+
+- **Lombok doesn't work on this machine's JDK (26).** We removed Lombok entirely and wrote plain getters/setters/builders by hand. If a fresh machine has an older JDK (17/21), this isn't an issue either way — the code no longer depends on Lombok at all.
+- **Port 5432 was already taken by a native Windows Postgres service**, which silently intercepted the Docker container's traffic and caused confusing "password authentication failed" errors even though the password was correct. Fixed by moving the Docker Postgres container to port **5442** — `docker-compose.yml` and `BACKEND/src/main/resources/application.yml` are already updated to match. If you move to a machine where 5442 is *also* taken, change both files together.
+- **PowerShell scripts silently corrupt on em-dashes/curly quotes.** Windows PowerShell 5.1 reads `.ps1` files without a BOM using the system ANSI codepage, not UTF-8 — a UTF-8 em-dash's raw bytes get misread as a stray smart-quote character, which prematurely terminates string literals elsewhere in the file with baffling "missing terminator" errors far from the real cause. Keep any new script edits to plain ASCII punctuation (use `-` not `—`).
+- **`2>$null` on a native command (docker, psql, etc.) inside a PowerShell script with `$ErrorActionPreference = "Stop"` throws a terminating exception** even for expected/harmless stderr output — this broke the reset script's retry loop. Wrap native-command calls expected to fail transiently in `try/catch` with `$ErrorActionPreference = "Continue"` for that scope.
+- **Postgres restarts itself once during first-time init** (it loads `schema.sql` against a temporary server, then restarts as the real one). A single `pg_isready` check can report healthy during that brief restart window. The reset script retries the *actual* summary query instead, which only succeeds once the schema is fully loaded.
+
+## Fallback paths if something breaks live
+
+- **Camera QR scan doesn't work / camera permission denied**: use the manual QR-code text entry field already built into the Scan screen. Lucky Taxi's demo code: `UKP-VENDOR-LUCKYTAXI-001`.
+- **Want to test the camera scanner before going live**: do it with two browser tabs on the *same* demo laptop, both on `http://localhost:5173` — one logged in as the vendor (showing their QR code), one logged in as the employee (scanning it with the laptop's webcam pointed at the first tab). Browsers only treat `localhost` as a secure context without HTTPS, so testing from a second device over the venue Wi-Fi (a LAN IP, not localhost) will silently fail camera access — this is a browser security rule, not a bug in the app.
+- **Wi-Fi at the venue is bad or absent**: this doesn't block the demo. All Maven and npm dependencies are already downloaded and cached locally (`~/.m2`, `node_modules`), so `mvn spring-boot:run` and `npm run dev` work fully offline once started. Docker's `postgres:16-alpine` image is also already pulled locally.
+- **Backend or frontend crashes mid-demo**: re-run the exact startup commands above. The database is untouched by a backend/frontend restart — only `scripts/reset-demo-data.ps1` wipes it.
+- **A judge wants to sign up a live account on stage**: this works end-to-end and was tested (both EMPLOYEE and VENDOR signup). New employees start with R1,000 wallet balance; new vendors start at R0 with an auto-generated QR code.
+
+## What's intentionally not production-hardened (fine for a same-day local demo)
+
+- All demo accounts share PIN `1234` — deliberate, for speed during the pitch.
+- The JWT signing secret and database password are plaintext defaults in `application.yml`/`docker-compose.yml`, clearly labeled as demo-only. Do not reuse these values if this ever becomes a real deployment.
+- CORS is opened to `localhost`, `127.0.0.1`, and common private LAN ranges (`192.168.*`, `10.*`) so judges can browse from their own devices on the venue network — this is appropriately scoped for a local-network-only demo and would need tightening for any public deployment.

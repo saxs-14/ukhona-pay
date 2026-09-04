@@ -1,0 +1,32 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: ukhona-pay
+  datasource:
+    url: jdbc:postgresql://localhost:5442/ukhonapay
+    username: ukhonapay
+    password: ukhonapay
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+    open-in-view: false
+
+ukhonapay:
+  jwt:
+    secret: ${JWT_SECRET:demo-only-secret-key-for-hackathon-do-not-use-in-production-1234567890}
+    expiry-minutes: 720
+  cashback:
+    default-rate: 0.025
+  withdrawal:
+    pin-valid-hours: 24
+
+logging:
+  level:
+    co.za.ukhonapay: INFO

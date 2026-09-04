@@ -1,0 +1,239 @@
+================================================================================
+🚀 UKHONA PAY - QUICK START (Copy & Paste Into Claude Code)
+================================================================================
+
+Project Name: UKHONA PAY (South African Fintech Payment Platform)
+Challenge: Market Connectivity (100%)
+
+KEY CHANGES FROM PREVIOUS VERSION:
+  ✓ Name changed to UKHONA PAY (Zulu word - "There is")
+  ✓ QR code scanning for vendor payments
+  ✓ Cash withdrawals ONLY at ATM (no bank transfers)
+  ✓ All amounts in South African Rand (R)
+  ✓ South African context (Soweto, Bruma, ATM locations)
+  ✓ Complete transaction tracking/history
+  ✓ Real demo with 20 transactions
+
+COMPLETE PROMPT TO COPY:
+================================================================================
+
+I'm building UKHONA PAY - a South African fintech payment & savings platform
+for the EDHE Hackathon 2026 Market Connectivity Challenge.
+
+PROJECT NAME: UKHONA PAY
+(Meaning "There is" in Zulu - representing availability/existence of market connectivity)
+
+CHALLENGE: Market Connectivity (100%)
+
+VISION:
+Connect informal vendors (spaza shops, taxi drivers, service providers) with 
+corporate buyers through a unified digital payment ecosystem. Transactions = 
+vendor payment + employee savings. Cashback withdrawn ONLY as physical cash 
+at ATMs (not bank transfers).
+
+TECH STACK:
+- Frontend: React.js + Tailwind CSS
+- Backend: Java Spring Boot
+- Database: PostgreSQL
+- Integration: ABSA ATM network (mocked)
+- QR Code: For vendor payment scanning
+
+TARGET:
+- Vendors: spaza shops, taxi drivers, service providers
+- Employees: corporate buyers who pay vendors
+- ABSA: ATM settlement infrastructure
+
+CORE FEATURES (MVP):
+
+1. PAYMENT & WALLET
+   - Digital wallet for all users
+   - Send/receive money P2P
+   - Transaction notifications
+   - Transaction history
+
+2. QR CODE PAYMENT
+   - Vendors generate unique QR codes
+   - Employees scan to initiate payment
+   - Enter amount and confirm
+   - Instant payment to vendor
+
+3. VENDOR MANAGEMENT
+   - Vendor profile (name, category, location)
+   - Phone verification + OTP
+   - Upload business photo
+   - Generate QR code
+   - View earnings & ratings
+
+4. CORPORATE/EMPLOYEE
+   - Search vendors by category/location
+   - Scan QR code to pay
+   - Quick pay buttons (R50, R100, R200)
+   - Save favorite vendors
+   - Ratings & reviews
+
+5. SAVINGS & CASHBACK
+   - Earn 2-5% cashback per transaction
+   - Cashback auto to savings wallet
+   - View total cashback earned
+   - NO bank transfer option
+   - ONLY withdrawal: Physical cash at ATM
+
+6. ATM CASH WITHDRAWAL
+   - Request cash withdrawal from app
+   - Generate withdrawal PIN/OTP
+   - Show nearby ATM locations
+   - Go to ATM, enter PIN, withdraw
+   - All withdrawals at ABSA ATM network (mocked)
+   - Withdrawal confirmation in app
+
+7. TRANSACTION TRACKING
+   - Complete transaction history
+   - Timestamp, amount, vendor, status
+   - Filter by date/category/amount
+   - Export transaction report
+   - Real-time updates
+
+8. DASHBOARDS
+   Vendor: earnings, transaction count, ratings, withdrawal history, QR code
+   Employee: spending, cashback earned, savings chart, category breakdown, 
+             recent transactions, ATM withdrawal history
+
+DEMO FLOW (30 steps):
+   1. Employee logs in (phone: 0798765432, PIN: 1234)
+   2. Dashboard shows balance R1,000, cashback R0
+   3. Searches vendors → filters by TAXI
+   4. Finds "Lucky Taxi - Soweto" (4.8 stars)
+   5. Clicks vendor details
+   6. Option A: Scan QR code OR Option B: Pay R100 button
+   7. Scans QR code with camera
+   8. Payment screen: "Pay Lucky Taxi R100?"
+   9. Enters PIN (1234) to confirm
+   10. Payment successful! R100 sent
+   11. Employee earns R2.50 cashback (2.5%)
+   12. Notification: "Payment successful to Lucky Taxi"
+   13. Transaction in history with timestamp
+   14. Taxi driver gets notification: "Received R100"
+   15. Vendor dashboard updates: R100 in wallet
+   16. Employee views transaction details (to, amount, cashback, time)
+   17. Employee views cashback wallet (R250 accumulated)
+   18. Clicks "Withdraw Cash"
+   19. ATM withdrawal screen appears
+   20. Shows nearest ATMs: 3 locations with distance
+   21. Selects: "ABSA ATM - Bruma Mall (2.3km)"
+   22. System generates withdrawal PIN: 4567
+   23. Instructions: "Go to ATM, enter PIN 4567, withdraw cash"
+   24. PIN valid for 24 hours
+   25. Employee goes to ATM (simulated)
+   26. Returns to app after withdrawal
+   27. Status shows: "COMPLETED at 14:35"
+   28. Cash received: R250
+   29. Wallet updated: Cashback = R0 (withdrawn)
+   30. Transaction log shows: "ATM Withdrawal - R250 - Bruma Mall ATM"
+
+Analytics Dashboard:
+   • 20 total transactions (demo data)
+   • R5,000 total transaction volume
+   • R250 total cashback earned
+   • 5 vendors active
+   • Top vendor: Lucky Taxi (8 transactions)
+   • Category breakdown: TAXI (40%), FOOD (30%), SERVICES (20%), OTHER (10%)
+
+CRITICAL REQUIREMENTS:
+
+1. QR CODE PAYMENT
+   - Vendors have unique QR per account
+   - QR contains: vendor_id + vendor_name
+   - Employees scan with phone camera
+   - Direct payment to vendor (no middleman)
+
+2. CASH ONLY WITHDRAWAL
+   - NO bank transfers allowed
+   - NO direct bank account linking
+   - ONLY withdrawal: Physical cash at ATM
+   - ABSA ATM network (mocked)
+   - Withdrawal PIN generated by app
+   - Employee goes to ATM to complete
+   - Status updates in app
+
+3. TRANSACTION TRACKING
+   - EVERY transaction recorded with timestamp
+   - Immutable record (cannot delete)
+   - Includes: sender, receiver, amount, cashback, status, time
+   - Demo must show 20 transactions clearly
+
+4. SOUTH AFRICAN CONTEXT
+   - All amounts in South African Rand (R)
+   - Phone numbers: SA format (10 digits, starting 0)
+   - ATM locations: Johannesburg, Pretoria, Cape Town
+   - ABSA Bank as primary partner
+   - References: spaza, taxi, Soweto, Bruma, etc.
+   - SMS verification via ABSA (mocked)
+
+5. THEMELESS & ADAPTABLE
+   - Clean, minimal interface
+   - Blue & white (payment app aesthetic)
+   - No bright colors or branded themes
+   - Can adapt to any hackathon theme
+
+BUILD FILES LOCATION:
+   Read ALL files in: C:\Users\mamag\Documents\Projects\marketplace-connect-pay\RESEARCH\
+   
+   @C:\Users\mamag\Documents\Projects\marketplace-connect-pay\RESEARCH\PLATFORM_CONCEPT.md
+   @C:\Users\mamag\Documents\Projects\marketplace-connect-pay\RESEARCH\FEATURES_BREAKDOWN.md
+   @C:\Users\mamag\Documents\Projects\marketplace-connect-pay\RESEARCH\MARKET_ANALYSIS.md
+
+USE THESE FILES AS COMPLETE REFERENCE FOR:
+   - Platform architecture
+   - All features
+   - Database schema
+   - API endpoints
+   - Market opportunity
+   - Business model
+
+BUILD STAGES (6-8 HOURS):
+
+Stage 1: Database (30 min)
+   Create PostgreSQL schema.sql with:
+   - Users, Wallets, Vendors, Transactions, Cashback, Withdrawals, Ratings
+   - Relationships & constraints
+   - Sample data: 5 vendors, 10 employees, 20 transactions
+
+Stage 2: Backend APIs (2-3 hours)
+   Create Java services:
+   - AuthService, PaymentService, WalletService
+   - VendorService, TransactionService, WithdrawalService, RatingService
+
+Stage 3: Frontend Components (2-3 hours)
+   Create React components:
+   - Auth, Wallet, Vendor, QR Scanner/Generator
+   - Payment, Transaction History, Cashback, ATM Locator
+   - All with Tailwind CSS
+
+Stage 4: Integration (1-2 hours)
+   - Connect APIs, wire demo data, test flow
+
+Stage 5: Demo (30 min)
+   - Prepare 30-step demo, verify all features
+
+TOOLS:
+Frontend: React Router, Axios, Tailwind CSS, React QR Code, html5-qrcode, 
+          Chart.js, Leaflet
+Backend: Spring Boot 3.x, Spring Data JPA, Security, JWT, PostgreSQL, 
+         Lombok, zxing, JUnit 5, Mockito
+
+SUCCESS CRITERIA:
+✅ Working MVP in 48 hours
+✅ All 8 features implemented
+✅ 20 transactions in demo data
+✅ QR code payment working end-to-end
+✅ Cash withdrawal (ATM only) working
+✅ All transactions visible in history
+✅ Analytics dashboard complete
+✅ All database tables created
+✅ All backend APIs working
+✅ Frontend UI complete
+✅ Demo runs without errors
+
+Let's build UKHONA PAY!
+
+================================================================================
