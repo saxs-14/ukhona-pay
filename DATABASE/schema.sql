@@ -19,7 +19,7 @@ CREATE TABLE users (
     id              BIGSERIAL PRIMARY KEY,
     phone_number    VARCHAR(10) NOT NULL UNIQUE CHECK (phone_number ~ '^0[0-9]{9}$'),
     pin_hash        VARCHAR(255) NOT NULL,
-    user_type       VARCHAR(25) NOT NULL CHECK (user_type IN ('TAXI_DRIVER', 'TAXI_ASSOCIATION_ADMIN', 'VENDOR')),
+    user_type       VARCHAR(25) NOT NULL CHECK (user_type IN ('VENDOR', 'EMPLOYEE', 'TAXI_DRIVER', 'TAXI_ASSOCIATION_ADMIN')),
     name            VARCHAR(120) NOT NULL,
     email           VARCHAR(150),
     phone_verified  BOOLEAN NOT NULL DEFAULT FALSE,
@@ -160,22 +160,26 @@ INSERT INTO users (phone_number, pin_hash, user_type, name, email, phone_verifie
 ('0711234504', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'VENDOR', 'Sipho Electrical Services', 'sipho.electrical@demo.co.za', TRUE),
 ('0711234505', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'VENDOR', 'Nomsa Fashion Retail', 'nomsa.fashion@demo.co.za', TRUE);
 
--- Taxi drivers and Association Admins - PIN 1234, first one matches demo script (0798765432)
+-- Commuters (10) - PIN 1234, first one matches demo script (0798765432)
 INSERT INTO users (phone_number, pin_hash, user_type, name, email, phone_verified) VALUES
-('0798765432', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'TAXI_DRIVER', 'Karabo Mokoena', 'karabo.m@taxi.co.za', TRUE),
-('0798765433', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'TAXI_DRIVER', 'Lerato Dube', 'lerato.d@taxi.co.za', TRUE),
-('0798765434', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'TAXI_DRIVER', 'Sizwe Nkosi', 'sizwe.n@taxi.co.za', TRUE),
-('0798765435', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'TAXI_DRIVER', 'Amanda van der Merwe', 'amanda.vdm@taxi.co.za', TRUE),
-('0798765436', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'TAXI_DRIVER', 'Bongani Zulu', 'bongani.z@taxi.co.za', TRUE),
-('0798765437', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'TAXI_ASSOCIATION_ADMIN', 'Precious Khumalo', 'precious.k@taxiassoc.co.za', TRUE),
-('0798765438', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'TAXI_ASSOCIATION_ADMIN', 'Johan Botha', 'johan.b@taxiassoc.co.za', TRUE),
-('0798765439', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'TAXI_DRIVER', 'Zanele Mahlangu', 'zanele.m@taxi.co.za', TRUE),
-('0798765440', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'TAXI_DRIVER', 'Ryan Naidoo', 'ryan.n@taxi.co.za', TRUE),
-('0798765441', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'TAXI_DRIVER', 'Nokuthula Ndlovu', 'nokuthula.n@taxi.co.za', TRUE);
+('0798765432', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'EMPLOYEE', 'Karabo Mokoena', 'karabo.m@corp.co.za', TRUE),
+('0798765433', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'EMPLOYEE', 'Lerato Dube', 'lerato.d@corp.co.za', TRUE),
+('0798765434', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'EMPLOYEE', 'Sizwe Nkosi', 'sizwe.n@corp.co.za', TRUE),
+('0798765435', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'EMPLOYEE', 'Amanda van der Merwe', 'amanda.vdm@corp.co.za', TRUE),
+('0798765436', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'EMPLOYEE', 'Bongani Zulu', 'bongani.z@corp.co.za', TRUE),
+('0798765437', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'EMPLOYEE', 'Precious Khumalo', 'precious.k@corp.co.za', TRUE),
+('0798765438', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'EMPLOYEE', 'Johan Botha', 'johan.b@corp.co.za', TRUE),
+('0798765439', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'EMPLOYEE', 'Zanele Mahlangu', 'zanele.m@corp.co.za', TRUE),
+('0798765440', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'EMPLOYEE', 'Ryan Naidoo', 'ryan.n@corp.co.za', TRUE),
+('0798765441', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'EMPLOYEE', 'Nokuthula Ndlovu', 'nokuthula.n@corp.co.za', TRUE);
 
--- Wallets for all 15 users (association admins start with operational funds, drivers & vendors start with R0/earnings)
+-- Wallets for all 15 users (drivers, vendors, and taxi-association roles start with R0/earnings)
+-- Commuter "wallet" balance is a seed-data bookkeeping convenience only (real
+-- commuters pay via their own banking app in the target architecture, not a
+-- UKHONA PAY balance) - set high enough to cover 90 days of simulated rides
+-- across 10 round-robin commuters without tripping the non-negative constraint.
 INSERT INTO wallets (user_id, balance, cashback_balance)
-SELECT id, CASE WHEN user_type = 'EMPLOYEE' THEN 1000.00 ELSE 0.00 END, 0.00
+SELECT id, CASE WHEN user_type = 'EMPLOYEE' THEN 100000.00 ELSE 0.00 END, 0.00
 FROM users;
 
 -- Vendor profiles
