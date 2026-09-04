@@ -30,8 +30,16 @@ try {
         } catch {
             $output = $null
         }
-        if ($LASTEXITCODE -eq 0 -and $output) {
-            $counts = $output
+        # $output can arrive as a string[] (one element per line) even when every
+        # line is blank - a non-empty array is truthy in PowerShell regardless of
+        # its contents, so this join+trim is required, not cosmetic. A blank
+        # result also occurs for one real reason: if this query runs in the
+        # instant between schema creation and the seed INSERTs committing, the
+        # SUM(amount) is still NULL and NULL propagates through the whole
+        # concatenated string, printing an empty line that looks "successful".
+        $joined = ($output -join "`n").Trim()
+        if ($LASTEXITCODE -eq 0 -and $joined) {
+            $counts = $joined
             break
         }
     }
