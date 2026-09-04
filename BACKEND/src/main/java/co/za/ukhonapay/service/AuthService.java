@@ -59,20 +59,26 @@ public class AuthService {
                 .build();
         user = userRepository.save(user);
 
+        boolean isMerchantOrDriver = req.userType() == UserType.VENDOR || req.userType() == UserType.TAXI_DRIVER;
+
         Wallet wallet = Wallet.builder()
                 .userId(user.getId())
-                .balance(req.userType() == UserType.VENDOR ? BigDecimal.ZERO : new BigDecimal("1000.00"))
+                .balance(isMerchantOrDriver ? BigDecimal.ZERO : new BigDecimal("1000.00"))
                 .cashbackBalance(BigDecimal.ZERO)
                 .currency("ZAR")
                 .build();
         walletRepository.save(wallet);
 
-        if (req.userType() == UserType.VENDOR) {
+        if (isMerchantOrDriver) {
+            VendorCategory category = req.category() != null
+                    ? VendorCategory.valueOf(req.category())
+                    : (req.userType() == UserType.TAXI_DRIVER ? VendorCategory.TAXI : VendorCategory.OTHER);
+
             Vendor vendor = Vendor.builder()
                     .userId(user.getId())
                     .businessName(req.businessName() != null ? req.businessName() : req.name())
-                    .category(req.category() != null ? VendorCategory.valueOf(req.category()) : VendorCategory.OTHER)
-                    .locationName(req.locationName() != null ? req.locationName() : "South Africa")
+                    .category(category)
+                    .locationName(req.locationName() != null ? req.locationName() : "Mbombela")
                     .qrCode(generateQrCode(user.getId()))
                     .verified(false)
                     .ratingAvg(BigDecimal.ZERO)

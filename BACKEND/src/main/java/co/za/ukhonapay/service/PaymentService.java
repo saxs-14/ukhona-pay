@@ -82,7 +82,10 @@ public class PaymentService {
             throw new InsufficientFundsException("Insufficient wallet balance for this payment");
         }
 
-        BigDecimal cashbackRate = sender.getUserType() == UserType.VENDOR ? BigDecimal.ZERO : defaultCashbackRate;
+        boolean isBusinessOrDriver = sender.getUserType() == UserType.VENDOR 
+                || sender.getUserType() == UserType.TAXI_DRIVER 
+                || sender.getUserType() == UserType.TAXI_ASSOCIATION_ADMIN;
+        BigDecimal cashbackRate = isBusinessOrDriver ? BigDecimal.ZERO : defaultCashbackRate;
         BigDecimal cashbackAmount = amount.multiply(cashbackRate).setScale(2, RoundingMode.HALF_UP);
 
         senderWallet.setBalance(senderWallet.getBalance().subtract(amount));

@@ -19,7 +19,7 @@ CREATE TABLE users (
     id              BIGSERIAL PRIMARY KEY,
     phone_number    VARCHAR(10) NOT NULL UNIQUE CHECK (phone_number ~ '^0[0-9]{9}$'),
     pin_hash        VARCHAR(255) NOT NULL,
-    user_type       VARCHAR(20) NOT NULL CHECK (user_type IN ('VENDOR', 'EMPLOYEE', 'CORPORATE')),
+    user_type       VARCHAR(25) NOT NULL CHECK (user_type IN ('VENDOR', 'EMPLOYEE', 'TAXI_DRIVER', 'TAXI_ASSOCIATION_ADMIN')),
     name            VARCHAR(120) NOT NULL,
     email           VARCHAR(150),
     phone_verified  BOOLEAN NOT NULL DEFAULT FALSE,
