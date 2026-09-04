@@ -15,6 +15,7 @@ public record VendorResponse(
         BigDecimal ratingAvg,
         int ratingCount,
         String photoUrl,
-        String vehicleRegistration
+        String vehicleRegistration,
+        BigDecimal walletBalance
 ) {
 }
