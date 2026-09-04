@@ -220,6 +220,9 @@ export default function VendorDetail() {
               className="w-full rounded-xl border border-sand-300 px-3.5 py-2.5 tracking-[0.4em] focus:border-terracotta-500 focus:outline-none focus:ring-2 focus:ring-terracotta-100"
               required
             />
+            <p className="mt-1.5 text-xs text-sand-400">
+              This demo PIN simulates confirming from your own banking app — real commuters never create a UKHONA PAY account.
+            </p>
           </div>
 
           {error && <p className="text-sm text-red-600">{error}</p>}
