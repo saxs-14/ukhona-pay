@@ -16,7 +16,7 @@ export default function DriverScanPay() {
       isOpen={true}
       onClose={() => navigate("/driver")}
       walletBalance={wallet?.balance || 0}
-      onSuccess={() => navigate("/driver")}
+      onSuccess={() => client.get("/wallet/me").then((res) => setWallet(res.data)).catch(() => {})}
     />
   );
 }
