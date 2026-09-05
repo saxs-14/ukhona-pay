@@ -13,8 +13,11 @@ public class Wallet {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "user_id", nullable = false, unique = true)
+    @Column(name = "user_id", unique = true)
     private Long userId;
+
+    @Column(name = "association_id", unique = true)
+    private Long associationId;
 
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal balance;
@@ -38,6 +41,8 @@ public class Wallet {
     public void setId(Long id) { this.id = id; }
     public Long getUserId() { return userId; }
     public void setUserId(Long userId) { this.userId = userId; }
+    public Long getAssociationId() { return associationId; }
+    public void setAssociationId(Long associationId) { this.associationId = associationId; }
     public BigDecimal getBalance() { return balance; }
     public void setBalance(BigDecimal balance) { this.balance = balance; }
     public BigDecimal getCashbackBalance() { return cashbackBalance; }
@@ -51,6 +56,7 @@ public class Wallet {
     public static final class Builder {
         private final Wallet wallet = new Wallet();
         public Builder userId(Long v) { wallet.userId = v; return this; }
+        public Builder associationId(Long v) { wallet.associationId = v; return this; }
         public Builder balance(BigDecimal v) { wallet.balance = v; return this; }
         public Builder cashbackBalance(BigDecimal v) { wallet.cashbackBalance = v; return this; }
         public Builder currency(String v) { wallet.currency = v; return this; }

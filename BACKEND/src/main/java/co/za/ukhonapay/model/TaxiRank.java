@@ -12,7 +12,9 @@ public class TaxiRank {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 150)
+    // Uniqueness is case-insensitive, enforced by a LOWER(name) index rather
+    // than a plain unique column - see schema.sql.
+    @Column(nullable = false, length = 150)
     private String name;
 
     @Column(name = "location_name", length = 150)

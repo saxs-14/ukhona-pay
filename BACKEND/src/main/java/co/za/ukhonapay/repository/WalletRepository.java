@@ -12,4 +12,9 @@ public interface WalletRepository extends JpaRepository<Wallet, Long> {
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<Wallet> findWithLockByUserId(Long userId);
+
+    Optional<Wallet> findByAssociationId(Long associationId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    Optional<Wallet> findWithLockByAssociationId(Long associationId);
 }

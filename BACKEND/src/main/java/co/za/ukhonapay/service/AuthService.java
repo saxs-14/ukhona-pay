@@ -12,6 +12,7 @@ import co.za.ukhonapay.model.Vendor;
 import co.za.ukhonapay.model.Wallet;
 import co.za.ukhonapay.model.enums.UserType;
 import co.za.ukhonapay.model.enums.VendorCategory;
+import co.za.ukhonapay.model.enums.VendorStatus;
 import co.za.ukhonapay.repository.TaxiAssociationRepository;
 import co.za.ukhonapay.repository.TaxiRankRepository;
 import co.za.ukhonapay.repository.UserRepository;
@@ -112,10 +113,25 @@ public class AuthService {
                 .build();
         walletRepository.save(wallet);
 
+<<<<<<< HEAD
         boolean isDriver = req.userType() == UserType.TAXI_DRIVER;
         boolean isAdmin = req.userType() == UserType.TAXI_ASSOCIATION_ADMIN;
         
         VendorCategory category = isDriver ? VendorCategory.TAXI : (isAdmin ? VendorCategory.SERVICES : VendorCategory.OTHER);
+=======
+        if (req.userType() == UserType.TAXI_DRIVER || req.userType() == UserType.VENDOR) {
+            boolean isDriver = req.userType() == UserType.TAXI_DRIVER;
+            Vendor.Builder vendorBuilder = Vendor.builder()
+                    .userId(user.getId())
+                    .businessName(req.name() + " " + req.surname())
+                    .category(isDriver ? VendorCategory.TAXI : VendorCategory.OTHER)
+                    .qrCode(generateQrCode(user.getId()))
+                    .verified(false)
+                    // A driver can't accept payments until their taxi association
+                    // approves the registration (see PaymentService.requireApproved).
+                    // A vendor has no equivalent review step.
+                    .status(isDriver ? VendorStatus.PENDING : VendorStatus.APPROVED);
+>>>>>>> 64b97030878b67831e527c719de4297ec8551cac
 
         Vendor.Builder vendorBuilder = Vendor.builder()
                 .userId(user.getId())

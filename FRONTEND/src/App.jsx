@@ -12,9 +12,13 @@ import SignupPage from "./pages/SignupPage";
 import TransactionHistory from "./pages/TransactionHistory";
 import VendorDashboard from "./pages/VendorDashboard";
 import DriverDashboard from "./pages/DriverDashboard";
+import DriverWithdraw from "./pages/DriverWithdraw";
+import DriverSendMoney from "./pages/DriverSendMoney";
+import DriverScanPay from "./pages/DriverScanPay";
 import AssociationAdminDashboard from "./pages/AssociationAdminDashboard";
 import VendorAnalytics from "./pages/VendorAnalytics";
 import PlatformDashboard from "./pages/PlatformDashboard";
+import PayVendor from "./pages/PayVendor";
 
 function Home() {
   const { user } = useAuth();
@@ -41,9 +45,13 @@ export default function App() {
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<SignupPage />} />
+              <Route path="/pay/:qrCode" element={<PayVendor />} />
 
               <Route path="/vendor" element={<ProtectedRoute allow={["VENDOR"]}><VendorDashboard /></ProtectedRoute>} />
               <Route path="/driver" element={<ProtectedRoute allow={["TAXI_DRIVER"]}><DriverDashboard /></ProtectedRoute>} />
+              <Route path="/driver/withdraw" element={<ProtectedRoute allow={["TAXI_DRIVER"]}><DriverWithdraw /></ProtectedRoute>} />
+              <Route path="/driver/send" element={<ProtectedRoute allow={["TAXI_DRIVER"]}><DriverSendMoney /></ProtectedRoute>} />
+              <Route path="/driver/scan" element={<ProtectedRoute allow={["TAXI_DRIVER"]}><DriverScanPay /></ProtectedRoute>} />
               <Route path="/association-admin" element={<ProtectedRoute allow={["TAXI_ASSOCIATION_ADMIN"]}><AssociationAdminDashboard /></ProtectedRoute>} />
               <Route path="/vendor/analytics" element={<ProtectedRoute allow={["VENDOR", "TAXI_DRIVER"]}><VendorAnalytics /></ProtectedRoute>} />
 

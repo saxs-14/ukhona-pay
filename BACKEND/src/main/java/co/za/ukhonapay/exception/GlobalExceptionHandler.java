@@ -1,5 +1,6 @@
 package co.za.ukhonapay.exception;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -55,6 +56,17 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException ex) {
         return ResponseEntity.badRequest().body(body(HttpStatus.BAD_REQUEST, ex.getMessage()));
+    }
+
+    // A unique/foreign-key/check constraint fired at the DB layer - usually a
+    // duplicate (phone number, ID number, an existing association/rank name a
+    // race slipped past). Without this, it would fall through to the generic
+    // handler below and leak the raw SQL statement and constraint name to the
+    // client.
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, Object>> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(body(HttpStatus.CONFLICT, "That value conflicts with an existing record - it may already be registered."));
     }
 
     @ExceptionHandler(Exception.class)

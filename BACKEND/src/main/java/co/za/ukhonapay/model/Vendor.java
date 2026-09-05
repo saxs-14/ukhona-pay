@@ -1,6 +1,7 @@
 package co.za.ukhonapay.model;
 
 import co.za.ukhonapay.model.enums.VendorCategory;
+import co.za.ukhonapay.model.enums.VendorStatus;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
@@ -27,6 +28,11 @@ public class Vendor {
     @Column(name = "location_name", nullable = false, length = 150)
     private String locationName;
 
+    // Only meaningful for TAXI_DRIVER - see VendorStatus.
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private VendorStatus status;
+
     // Driver-only.
     @Column(name = "vehicle_registration", length = 20)
     private String vehicleRegistration;
@@ -47,12 +53,6 @@ public class Vendor {
     @Column(nullable = false)
     private boolean verified;
 
-    @Column(name = "rating_avg", nullable = false, precision = 2, scale = 1)
-    private BigDecimal ratingAvg;
-
-    @Column(name = "rating_count", nullable = false)
-    private int ratingCount;
-
     @Column(name = "photo_url", length = 255)
     private String photoUrl;
 
@@ -62,8 +62,8 @@ public class Vendor {
     @PrePersist
     void onCreate() {
         createdAt = LocalDateTime.now();
-        if (ratingAvg == null) {
-            ratingAvg = BigDecimal.ZERO;
+        if (status == null) {
+            status = VendorStatus.APPROVED;
         }
     }
 
@@ -77,6 +77,8 @@ public class Vendor {
     public void setCategory(VendorCategory category) { this.category = category; }
     public String getLocationName() { return locationName; }
     public void setLocationName(String locationName) { this.locationName = locationName; }
+    public VendorStatus getStatus() { return status; }
+    public void setStatus(VendorStatus status) { this.status = status; }
     public String getVehicleRegistration() { return vehicleRegistration; }
     public void setVehicleRegistration(String vehicleRegistration) { this.vehicleRegistration = vehicleRegistration; }
     public Long getAssociationId() { return associationId; }
@@ -91,10 +93,6 @@ public class Vendor {
     public void setQrCode(String qrCode) { this.qrCode = qrCode; }
     public boolean isVerified() { return verified; }
     public void setVerified(boolean verified) { this.verified = verified; }
-    public BigDecimal getRatingAvg() { return ratingAvg; }
-    public void setRatingAvg(BigDecimal ratingAvg) { this.ratingAvg = ratingAvg; }
-    public int getRatingCount() { return ratingCount; }
-    public void setRatingCount(int ratingCount) { this.ratingCount = ratingCount; }
     public String getPhotoUrl() { return photoUrl; }
     public void setPhotoUrl(String photoUrl) { this.photoUrl = photoUrl; }
     public LocalDateTime getCreatedAt() { return createdAt; }
@@ -107,6 +105,7 @@ public class Vendor {
         public Builder businessName(String v) { vendor.businessName = v; return this; }
         public Builder category(VendorCategory v) { vendor.category = v; return this; }
         public Builder locationName(String v) { vendor.locationName = v; return this; }
+        public Builder status(VendorStatus v) { vendor.status = v; return this; }
         public Builder vehicleRegistration(String v) { vendor.vehicleRegistration = v; return this; }
         public Builder associationId(Long v) { vendor.associationId = v; return this; }
         public Builder rankId(Long v) { vendor.rankId = v; return this; }
@@ -114,8 +113,6 @@ public class Vendor {
         public Builder longitude(BigDecimal v) { vendor.longitude = v; return this; }
         public Builder qrCode(String v) { vendor.qrCode = v; return this; }
         public Builder verified(boolean v) { vendor.verified = v; return this; }
-        public Builder ratingAvg(BigDecimal v) { vendor.ratingAvg = v; return this; }
-        public Builder ratingCount(int v) { vendor.ratingCount = v; return this; }
         public Builder photoUrl(String v) { vendor.photoUrl = v; return this; }
         public Vendor build() { return vendor; }
     }
