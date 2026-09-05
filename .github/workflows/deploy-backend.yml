@@ -33,10 +33,25 @@ jobs:
       - uses: google-github-actions/setup-gcloud@v2
 
       - name: Build and push image via Cloud Build
+        # --async + poll instead of letting gcloud stream logs directly: log
+        # streaming needs project Viewer/Owner on the caller, which this
+        # deploy-only service account deliberately doesn't have. The build
+        # itself doesn't need that permission, only watching it live does.
         run: |
-          gcloud builds submit BACKEND \
+          BUILD_ID=$(gcloud builds submit BACKEND \
             --project=${{ secrets.GCP_PROJECT_ID }} \
-            --tag=${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPOSITORY }}/backend:${{ github.sha }}
+            --tag=${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPOSITORY }}/backend:${{ github.sha }} \
+            --async --format="value(id)")
+          echo "Build submitted: $BUILD_ID - polling for completion..."
+          while true; do
+            STATUS=$(gcloud builds describe "$BUILD_ID" --project=${{ secrets.GCP_PROJECT_ID }} --format="value(status)")
+            echo "Status: $STATUS"
+            case "$STATUS" in
+              SUCCESS) break ;;
+              FAILURE|INTERNAL_ERROR|TIMEOUT|CANCELLED|EXPIRED) echo "::error::Build $STATUS"; exit 1 ;;
+            esac
+            sleep 10
+          done
 
       - name: Deploy to Cloud Run
         run: |
