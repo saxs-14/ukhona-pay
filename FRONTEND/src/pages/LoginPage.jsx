@@ -21,7 +21,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const user = await login(phoneNumber, pin);
-      navigate(dashboardPathFor(user.userType));
+      navigate(dashboardPathFor(user.userType), { replace: true });
     } catch (err) {
       setError(err.message);
     } finally {

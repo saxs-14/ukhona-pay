@@ -138,7 +138,7 @@ export default function SignupPage() {
         rankId,
       };
       const user = await signup(payload);
-      navigate(dashboardPathFor(user.userType));
+      navigate(dashboardPathFor(user.userType), { replace: true });
     } catch (err) {
       setError(err.message);
     } finally {
