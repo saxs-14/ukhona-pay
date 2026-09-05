@@ -1,9 +1,5 @@
 package co.za.ukhonapay.controller;
 
-<<<<<<< HEAD
-=======
-import co.za.ukhonapay.dto.AssociationDriverResponse;
->>>>>>> origin/main
 import co.za.ukhonapay.dto.PendingDriverResponse;
 import co.za.ukhonapay.dto.VendorResponse;
 import co.za.ukhonapay.exception.ResourceNotFoundException;
@@ -69,17 +65,6 @@ public class VendorController {
         return ResponseEntity.ok(vendorService.pendingDriversForAssociation(associationId));
     }
 
-<<<<<<< HEAD
-=======
-    // Full roster (every status), not just the pending queue - lets the admin
-    // see everyone currently registered to their association.
-    @GetMapping("/association/roster")
-    public ResponseEntity<List<AssociationDriverResponse>> associationRoster() {
-        Long associationId = requireAdminAssociation();
-        return ResponseEntity.ok(vendorService.driversForAssociation(associationId));
-    }
-
->>>>>>> origin/main
     @PostMapping("/{vendorId}/approve")
     public ResponseEntity<Void> approveDriver(@PathVariable Long vendorId) {
         Long associationId = requireAdminAssociation();
