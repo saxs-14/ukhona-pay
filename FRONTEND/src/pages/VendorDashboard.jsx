@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { BadgeCheck, Camera, Clock, Landmark, MapPin, QrCode, TrendingUp, ArrowUpRight, ArrowDownLeft } from "lucide-react";
+import { BadgeCheck, Camera, Clock, Landmark, MapPin, QrCode, ShoppingBag, TrendingUp, ArrowUpRight, ArrowDownLeft } from "lucide-react";
 import client from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import AnimatedNumber from "../components/ui/AnimatedNumber";
@@ -71,18 +71,27 @@ export default function VendorDashboard() {
       </div>
 
       {/* Action Buttons Row (under the wallet card) */}
-      <div className="mt-3 grid grid-cols-2 gap-3">
+      <div className="mt-3 grid grid-cols-3 gap-2">
         <button
           onClick={() => setIsScanModalOpen(true)}
-          className="flex items-center justify-center gap-2 rounded-xl bg-terracotta-600 py-3 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-terracotta-700 active:scale-98"
+          className="flex flex-col items-center justify-center gap-1 rounded-xl bg-terracotta-600 py-2.5 px-2 text-center text-xs font-semibold text-white shadow-sm transition hover:bg-terracotta-700 active:scale-98"
         >
-          <Camera size={18} /> Scan & Pay
+          <Camera size={18} />
+          <span>Scan & Pay</span>
         </button>
+        <Link
+          to="/vendor/buy"
+          className="flex flex-col items-center justify-center gap-1 rounded-xl border border-sand-200 bg-white py-2.5 px-2 text-center text-xs font-semibold text-sand-800 shadow-sm transition hover:border-terracotta-300 hover:bg-terracotta-50 active:scale-98"
+        >
+          <ShoppingBag size={18} className="text-terracotta-600" />
+          <span>Buy Services</span>
+        </Link>
         <button
           onClick={() => setIsBankModalOpen(true)}
-          className="flex items-center justify-center gap-2 rounded-xl bg-bushveld-600 py-3 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-bushveld-700 active:scale-98"
+          className="flex flex-col items-center justify-center gap-1 rounded-xl bg-bushveld-600 py-2.5 px-2 text-center text-xs font-semibold text-white shadow-sm transition hover:bg-bushveld-700 active:scale-98"
         >
-          <Landmark size={18} /> Bank Payout
+          <Landmark size={18} />
+          <span>Bank Payout</span>
         </button>
       </div>
 

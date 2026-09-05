@@ -1,17 +1,18 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { BarChart3, History, Home, QrCode, ScanLine, Users } from "lucide-react";
+import { BarChart3, History, Home, QrCode, ScanLine, ShoppingBag, Users } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 const traderLinks = (home) => [
   { to: home, label: "Home", icon: Home },
+  { to: "/vendor/buy", label: "Buy", icon: ShoppingBag },
   { to: "/vendor/analytics", label: "Insights", icon: BarChart3 },
   { to: "/transactions", label: "History", icon: History },
 ];
 
 const driverLinks = [
   { to: "/driver", label: "Home", icon: Home },
-  { to: "/driver/scan", label: "Pay", icon: ScanLine },
+  { to: "/driver/buy", label: "Buy", icon: ShoppingBag },
   { to: "/driver/analytics", label: "Insights", icon: BarChart3 },
   { to: "/transactions", label: "History", icon: History },
 ];
