@@ -39,13 +39,13 @@ export default function App() {
   const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
-    const timer = setTimeout(() => setShowSplash(false), 1700);
+    const timer = setTimeout(() => setShowSplash(false), 30000);
     return () => clearTimeout(timer);
   }, []);
 
   return (
     <div className="flex min-h-dvh flex-col bg-sand-50">
-      <AnimatePresence>{showSplash && <SplashScreen />}</AnimatePresence>
+      <AnimatePresence>{showSplash && <SplashScreen onSkip={() => setShowSplash(false)} />}</AnimatePresence>
       <NavBar />
       <main className="flex-1 pb-4">
         <AnimatePresence mode="wait" initial={false}>

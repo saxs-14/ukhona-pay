@@ -1,15 +1,27 @@
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import logo from "../assets/Ukhona Logo.png";
 
 // Shown once per app boot (see App.jsx) - a branded first impression while
-// the shell mounts, not a loading gate for real data.
-export default function SplashScreen() {
+// the shell mounts, not a loading gate for real data. Auto-advances after a
+// long beat (good for holding on a pitch screen while presenting) but stays
+// tappable throughout so it never traps a real user - or a developer
+// refreshing the page - for the full duration.
+export default function SplashScreen({ onSkip }) {
+  const [showHint, setShowHint] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setShowHint(true), 2500);
+    return () => clearTimeout(t);
+  }, []);
+
   return (
     <motion.div
       initial={{ opacity: 1 }}
       exit={{ opacity: 0, scale: 1.06 }}
       transition={{ duration: 0.45, ease: [0.4, 0, 1, 1] }}
-      className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-sand-50"
+      onClick={onSkip}
+      className="fixed inset-0 z-[100] flex cursor-pointer flex-col items-center justify-center bg-sand-50"
     >
       <motion.div
         animate={{ scale: [1, 1.05, 1] }}
@@ -46,6 +58,15 @@ export default function SplashScreen() {
         className="mt-1 text-sm text-sand-500"
       >
         Financial identity for taxi-rank traders
+      </motion.p>
+
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: showHint ? 1 : 0 }}
+        transition={{ duration: 0.6 }}
+        className="absolute bottom-10 text-xs text-sand-400"
+      >
+        Tap anywhere to continue
       </motion.p>
     </motion.div>
   );
