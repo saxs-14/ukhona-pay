@@ -94,12 +94,30 @@ export default function ScanAndPayModal({ isOpen, onClose, walletBalance, onSucc
     };
   }, [isOpen, step]);
 
+  // A vendor's own "Get paid by QR code" screen encodes a full pay link
+  // (.../pay/{code}?amount=X), meant for a phone's native camera app. Someone
+  // scanning that same code with THIS in-app scanner instead would otherwise
+  // get the raw URL back as decodedText, which never matches a stored vendor
+  // code - extract the {code} segment so both QR formats work here.
+  const extractVendorCode = (raw) => {
+    const trimmed = raw.trim();
+    try {
+      const url = new URL(trimmed);
+      const match = url.pathname.match(/\/pay\/([^/]+)/);
+      if (match) return decodeURIComponent(match[1]);
+    } catch {
+      // Not a URL - already a bare vendor code.
+    }
+    return trimmed;
+  };
+
   const handleCodeScanned = async (code) => {
-    setScannedCode(code);
+    const vendorCode = extractVendorCode(code);
+    setScannedCode(vendorCode);
     setError("");
     setLoading(true);
     try {
-      const res = await client.get(`/vendors/qr/${encodeURIComponent(code)}`);
+      const res = await client.get(`/vendors/qr/${encodeURIComponent(vendorCode)}`);
       setRecipient(res.data);
       setStep("AMOUNT");
     } catch (err) {
