@@ -21,19 +21,27 @@ DROP TABLE IF EXISTS taxi_associations CASCADE;
 -- ============================================================================
 CREATE TABLE taxi_associations (
     id              BIGSERIAL PRIMARY KEY,
-    name            VARCHAR(150) NOT NULL UNIQUE,
+    name            VARCHAR(150) NOT NULL,
     created_at      TIMESTAMP NOT NULL DEFAULT now()
 );
+
+-- Case-insensitive uniqueness ("Top Star" and "top star" are the same
+-- association) - a plain UNIQUE on name is case-sensitive and would let two
+-- concurrent signups create duplicate rows differing only by case.
+CREATE UNIQUE INDEX ux_taxi_associations_name_lower ON taxi_associations (LOWER(name));
 
 -- ============================================================================
 -- TAXI RANKS  (reference data - which rank a vendor trades at / admin oversees)
 -- ============================================================================
 CREATE TABLE taxi_ranks (
     id              BIGSERIAL PRIMARY KEY,
-    name            VARCHAR(150) NOT NULL UNIQUE,
+    name            VARCHAR(150) NOT NULL,
     location_name   VARCHAR(150),
     created_at      TIMESTAMP NOT NULL DEFAULT now()
 );
+
+-- Same case-insensitive uniqueness reasoning as taxi_associations above.
+CREATE UNIQUE INDEX ux_taxi_ranks_name_lower ON taxi_ranks (LOWER(name));
 
 -- ============================================================================
 -- USERS

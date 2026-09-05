@@ -6,12 +6,16 @@ import co.za.ukhonapay.dto.TaxiAssociationResponse;
 import co.za.ukhonapay.dto.TaxiRankResponse;
 import co.za.ukhonapay.model.TaxiAssociation;
 import co.za.ukhonapay.model.TaxiRank;
+import co.za.ukhonapay.model.Wallet;
 import co.za.ukhonapay.repository.TaxiAssociationRepository;
 import co.za.ukhonapay.repository.TaxiRankRepository;
+import co.za.ukhonapay.repository.WalletRepository;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 // Lookup + create endpoints for the signup dropdowns (taxi association, taxi
@@ -25,11 +29,14 @@ public class ReferenceDataController {
 
     private final TaxiAssociationRepository taxiAssociationRepository;
     private final TaxiRankRepository taxiRankRepository;
+    private final WalletRepository walletRepository;
 
     public ReferenceDataController(TaxiAssociationRepository taxiAssociationRepository,
-                                    TaxiRankRepository taxiRankRepository) {
+                                    TaxiRankRepository taxiRankRepository,
+                                    WalletRepository walletRepository) {
         this.taxiAssociationRepository = taxiAssociationRepository;
         this.taxiRankRepository = taxiRankRepository;
+        this.walletRepository = walletRepository;
     }
 
     @GetMapping("/api/taxi-associations")
@@ -41,17 +48,29 @@ public class ReferenceDataController {
     }
 
     // Idempotent by name (case-insensitive): returns the existing association if
-    // one already matches, otherwise creates it. Lets an Association
-    // Administrator register their (real) association during signup instead of
-    // picking from a pre-loaded list.
+    // one already matches, otherwise creates it - and, only on that first
+    // creation, its wallet too, so a transfer can never race the wallet into
+    // existence (see WalletService.getOrCreateLockedAssociationWallet, which
+    // stays as a safety net for any row that predates this). insertIfAbsent
+    // uses INSERT ... ON CONFLICT DO NOTHING, so two concurrent requests for
+    // the same new name never throw - one wins the insert, the other just
+    // reads the row the winner created.
+    @Transactional
     @PostMapping("/api/taxi-associations")
     public ResponseEntity<TaxiAssociationResponse> createAssociation(@Valid @RequestBody CreateTaxiAssociationRequest req) {
-        TaxiAssociation association = taxiAssociationRepository.findByNameIgnoreCase(req.name().trim())
-                .orElseGet(() -> {
-                    TaxiAssociation a = new TaxiAssociation();
-                    a.setName(req.name().trim());
-                    return taxiAssociationRepository.save(a);
-                });
+        String name = req.name().trim();
+        boolean createdNow = taxiAssociationRepository.insertIfAbsent(name) == 1;
+        TaxiAssociation association = taxiAssociationRepository.findByNameIgnoreCase(name)
+                .orElseThrow(() -> new IllegalStateException("Association insert raced but the row is missing"));
+
+        if (createdNow) {
+            walletRepository.save(Wallet.builder()
+                    .associationId(association.getId())
+                    .balance(BigDecimal.ZERO)
+                    .cashbackBalance(BigDecimal.ZERO)
+                    .currency("ZAR")
+                    .build());
+        }
         return ResponseEntity.ok(new TaxiAssociationResponse(association.getId(), association.getName()));
     }
 
@@ -61,17 +80,15 @@ public class ReferenceDataController {
         return ResponseEntity.ok(ranks.stream().map(r -> new TaxiRankResponse(r.getId(), r.getName(), r.getLocationName())).toList());
     }
 
-    // Same idempotent-by-name pattern as associations, for a vendor or admin
-    // registering a rank that doesn't exist on the platform yet.
+    // Same idempotent-by-name + race-safe pattern as associations, for a vendor
+    // or admin registering a rank that doesn't exist on the platform yet.
+    @Transactional
     @PostMapping("/api/taxi-ranks")
     public ResponseEntity<TaxiRankResponse> createRank(@Valid @RequestBody CreateTaxiRankRequest req) {
-        TaxiRank rank = taxiRankRepository.findByNameIgnoreCase(req.name().trim())
-                .orElseGet(() -> {
-                    TaxiRank r = new TaxiRank();
-                    r.setName(req.name().trim());
-                    r.setLocationName(req.locationName());
-                    return taxiRankRepository.save(r);
-                });
+        String name = req.name().trim();
+        taxiRankRepository.insertIfAbsent(name, req.locationName());
+        TaxiRank rank = taxiRankRepository.findByNameIgnoreCase(name)
+                .orElseThrow(() -> new IllegalStateException("Rank insert raced but the row is missing"));
         return ResponseEntity.ok(new TaxiRankResponse(rank.getId(), rank.getName(), rank.getLocationName()));
     }
 }

@@ -37,25 +37,30 @@ public class VendorService {
         } else {
             vendors = vendorRepository.findAll();
         }
-        return vendors.stream().map(this::toResponse).toList();
+        return vendors.stream().map(v -> toResponse(v, false)).toList();
     }
 
+    // Public lookup (see SecurityConfig - GET /api/vendors/qr/* is unauthenticated
+    // so a commuter can look up who they're paying before they have an account).
+    // Deliberately omits the wallet balance: an anonymous visitor who scans or
+    // guesses a QR code has no business seeing that trader's bank balance.
     public VendorResponse getByQrCode(String qrCode) {
         Vendor vendor = vendorRepository.findByQrCode(qrCode)
                 .orElseThrow(() -> new VendorNotFoundException("No vendor found for QR code " + qrCode));
-        return toResponse(vendor);
+        return toResponse(vendor, false);
     }
 
+    // The account owner viewing their own profile - the only case that should
+    // ever see the wallet balance.
     public VendorResponse getByUserId(Long userId) {
         Vendor vendor = vendorRepository.findByUserId(userId)
                 .orElseThrow(() -> new VendorNotFoundException("No vendor profile for user " + userId));
-        return toResponse(vendor);
+        return toResponse(vendor, true);
     }
 
-    private VendorResponse toResponse(Vendor v) {
-        BigDecimal walletBalance = walletRepository.findByUserId(v.getUserId())
-                .map(Wallet::getBalance)
-                .orElse(BigDecimal.ZERO);
+    private VendorResponse toResponse(Vendor v, boolean includeWalletBalance) {
+        BigDecimal walletBalance = !includeWalletBalance ? null
+                : walletRepository.findByUserId(v.getUserId()).map(Wallet::getBalance).orElse(BigDecimal.ZERO);
         String associationName = v.getAssociationId() == null ? null
                 : taxiAssociationRepository.findById(v.getAssociationId()).map(TaxiAssociation::getName).orElse(null);
 
