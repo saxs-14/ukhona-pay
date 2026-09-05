@@ -1,13 +1,17 @@
 server:
-  port: 8080
+  # Cloud Run assigns the listening port via $PORT at runtime - falls back to
+  # 8080 for local dev where nothing sets that variable.
+  port: ${PORT:8080}
 
 spring:
   application:
     name: ukhona-pay
   datasource:
-    url: jdbc:postgresql://localhost:5442/ukhonapay
-    username: ukhonapay
-    password: ukhonapay
+    # Local dev defaults match docker-compose.yml unchanged. In production
+    # these are set via Cloud Run environment variables - see DOCS/DEPLOYMENT.md.
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5442/ukhonapay}
+    username: ${DB_USERNAME:ukhonapay}
+    password: ${DB_PASSWORD:ukhonapay}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
