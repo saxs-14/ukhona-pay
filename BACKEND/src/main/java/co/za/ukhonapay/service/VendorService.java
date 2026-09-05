@@ -1,5 +1,6 @@
 package co.za.ukhonapay.service;
 
+import co.za.ukhonapay.dto.AssociationDriverResponse;
 import co.za.ukhonapay.dto.PendingDriverResponse;
 import co.za.ukhonapay.dto.VendorResponse;
 import co.za.ukhonapay.exception.ResourceNotFoundException;
@@ -80,6 +81,19 @@ public class VendorService {
                     .orElseThrow(() -> new ResourceNotFoundException("User not found for pending driver"));
             return new PendingDriverResponse(v.getId(), user.getName(), user.getSurname(),
                     user.getPhoneNumber(), v.getVehicleRegistration(), v.getCreatedAt());
+        }).toList();
+    }
+
+    // Every driver linked to this admin's association, at any review status -
+    // unlike pendingDriversForAssociation, this is the full roster so an
+    // admin can also revoke a driver they'd previously approved.
+    public List<AssociationDriverResponse> rosterForAssociation(Long associationId) {
+        List<Vendor> vendors = vendorRepository.findByAssociationIdOrderByCreatedAt(associationId);
+        return vendors.stream().map(v -> {
+            User user = userRepository.findById(v.getUserId())
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found for driver"));
+            return new AssociationDriverResponse(v.getId(), user.getName(), user.getSurname(),
+                    user.getPhoneNumber(), v.getVehicleRegistration(), v.getStatus().name(), v.getCreatedAt());
         }).toList();
     }
 

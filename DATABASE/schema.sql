@@ -42,11 +42,7 @@ CREATE TABLE users (
     id              BIGSERIAL PRIMARY KEY,
     phone_number    VARCHAR(10) NOT NULL UNIQUE CHECK (phone_number ~ '^0[0-9]{9}$'),
     pin_hash        VARCHAR(255) NOT NULL,
-<<<<<<< HEAD
-    user_type       VARCHAR(25) NOT NULL CHECK (user_type IN ('VENDOR', 'TAXI_DRIVER', 'TAXI_ASSOCIATION_ADMIN')),
-=======
     user_type       VARCHAR(25) NOT NULL CHECK (user_type IN ('VENDOR', 'TAXI_DRIVER', 'TAXI_ASSOCIATION_ADMIN', 'ADMIN')),
->>>>>>> origin/main
     name            VARCHAR(120) NOT NULL,
     surname         VARCHAR(120) NOT NULL,
     id_number       VARCHAR(13) NOT NULL UNIQUE CHECK (id_number ~ '^[0-9]{13}$'),
@@ -168,33 +164,13 @@ SELECT setval('taxi_associations_id_seq', (SELECT max(id) FROM taxi_associations
 SELECT setval('taxi_ranks_id_seq', (SELECT max(id) FROM taxi_ranks));
 
 -- ============================================================================
-<<<<<<< HEAD
--- SEED DATA: USERS (All PINs: 1234)
--- BCrypt: $2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O
-=======
 -- SEED DATA: USERS
 -- Each account below has its own unique PIN hash - PINs are distributed to
 -- the team privately, not committed here. See README.md.
->>>>>>> origin/main
 -- ============================================================================
 
 INSERT INTO users (id, phone_number, pin_hash, user_type, name, surname, id_number, email, phone_verified, association_id, rank_id) VALUES
 -- Demo Accounts
-<<<<<<< HEAD
-(1, '0711234501', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'TAXI_DRIVER', 'Lucky', 'Taxi', '9001015001081', 'lucky.taxi@demo.co.za', TRUE, 1, 1),
-(2, '0798765432', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'TAXI_DRIVER', 'Karabo', 'Mokoena', '9506065006086', 'karabo.m@taxi.co.za', TRUE, 1, 1),
-(3, '0711234502', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'VENDOR', 'Thandi', 'Spaza', '9102025002082', 'thandi.spaza@demo.co.za', TRUE, NULL, 2),
-(4, '0711234503', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'VENDOR', 'Mama', 'Joy', '9203035003083', 'mamajoy@demo.co.za', TRUE, NULL, 3),
-(5, '0711234504', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'VENDOR', 'Sipho', 'Electrical', '9304045004084', 'sipho.electrical@demo.co.za', TRUE, NULL, 4),
-(6, '0711234505', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'VENDOR', 'Nomsa', 'Fashion', '9405055005085', 'nomsa.fashion@demo.co.za', TRUE, NULL, 5),
-(7, '0798765437', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'TAXI_ASSOCIATION_ADMIN', 'Precious', 'Khumalo', '8511115011081', 'precious.k@taxiassoc.co.za', TRUE, 1, 1),
-
--- Dedicated Collaborator Accounts (All PIN: 1234)
-(8, '0712345678', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'TAXI_DRIVER', 'Hlayiseko', 'Bennet', '9601015001082', 'nhlayisekobennet07@gmail.com', TRUE, 1, 1),
-(9, '0712345679', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'TAXI_DRIVER', 'Vuyo', 'Mthembu', '9702025002083', 'vuyo@demo.co.za', TRUE, 1, 1),
-(10, '0712345680', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'TAXI_DRIVER', 'Banele', 'Sithole', '9803035003084', 'banele@demo.co.za', TRUE, 1, 1),
-(11, '0791234567', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'TAXI_ASSOCIATION_ADMIN', 'Phathutshedzo', 'Mamagau', '9904045004085', '230157688@ump.ac.za', TRUE, 1, 1);
-=======
 -- Each row below has its own unique PIN hash (never share one hash across
 -- accounts in a public repo: a leaked/cracked hash would unlock every
 -- account that reused it, including the platform ADMIN). The actual PINs
@@ -217,7 +193,6 @@ INSERT INTO users (id, phone_number, pin_hash, user_type, name, surname, id_numb
 -- signup (AuthService rejects userType=ADMIN there). No association/rank: an
 -- admin oversees the whole platform, not one association.
 (12, '0700000001', '$2a$10$qhnPaI6mM/bSDVf5lHi6FekKh4dG8dF8/UlIqocbrt/XmS7CGd76a', 'ADMIN', 'Platform', 'Admin', '0000000000001', 'admin@ukhonapay.co.za', TRUE, NULL, NULL);
->>>>>>> origin/main
 
 SELECT setval('users_id_seq', (SELECT max(id) FROM users));
 

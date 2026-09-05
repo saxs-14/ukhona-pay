@@ -12,8 +12,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-<<<<<<< HEAD
-=======
         with:
           fetch-depth: 0
       - name: Verify Clean Contributor Attribution
@@ -32,7 +30,6 @@ jobs:
             exit 1
           fi
           echo "Attribution check passed."
->>>>>>> origin/main
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
