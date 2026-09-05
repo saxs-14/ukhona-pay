@@ -78,7 +78,11 @@ export default function DriverDashboard() {
           });
         }
         setWallet(w.data);
-        setTransactions(t.data.slice(0, 10));
+        // "Recent payments received" should only ever show money coming in -
+        // /transactions/me includes the driver's own outgoing payments too
+        // (Scan & Pay, association dues), which this widget was previously
+        // showing unfiltered, always with a misleading "+".
+        setTransactions(t.data.filter((txn) => txn.direction === "RECEIVED").slice(0, 10));
       })
       .finally(() => setLoading(false));
   };

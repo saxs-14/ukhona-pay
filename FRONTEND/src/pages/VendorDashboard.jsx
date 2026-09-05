@@ -4,16 +4,15 @@ import { AnimatePresence, motion } from "framer-motion";
 import { QRCodeSVG } from "qrcode.react";
 import { BadgeCheck, Banknote, Camera, Clock, Landmark, MapPin, QrCode, TrendingUp, ArrowUpRight, ArrowDownLeft } from "lucide-react";
 import client from "../api/client";
-import { useAuth } from "../context/AuthContext";
 import AnimatedNumber from "../components/ui/AnimatedNumber";
 import { SkeletonCard } from "../components/ui/Skeleton";
 import ScanAndPayModal from "../components/ScanAndPayModal";
 import VendorBankWithdrawModal from "../components/VendorBankWithdrawModal";
 import CashSendModal from "../components/CashSendModal";
 import { listContainer, listItem, spring } from "../lib/motion";
+import { mergeTransactionHistory } from "../lib/transactionHistory";
 
 export default function VendorDashboard() {
-  const { user } = useAuth();
   const [vendor, setVendor] = useState(null);
   const [wallet, setWallet] = useState(null);
   const [transactions, setTransactions] = useState([]);
@@ -28,11 +27,15 @@ export default function VendorDashboard() {
       client.get("/vendors/me"),
       client.get("/wallet/me"),
       client.get("/transactions/me"),
+      client.get("/services/history").then((res) => res.data).catch(() => []),
     ])
-      .then(([v, w, t]) => {
+      .then(([v, w, t, purchases]) => {
         setVendor(v.data);
         setWallet(w.data);
-        setTransactions(t.data.slice(0, 10));
+        // Same merge as the full Transaction History page, just capped to the
+        // 10 most recent, so this widget is a true subset of History rather
+        // than a separately-computed (and previously incomplete/mislabeled) list.
+        setTransactions(mergeTransactionHistory(t.data, purchases).slice(0, 10));
       })
       .finally(() => setLoading(false));
   };
@@ -181,7 +184,10 @@ export default function VendorDashboard() {
         </h2>
         <motion.div variants={listContainer} initial="initial" animate="animate" className="space-y-2">
           {transactions.map((t) => {
-            const isReceived = t.receiverId === user.id && !t.description?.includes("Bank Cashout");
+            // Same direction the full History page uses (server-computed, or
+            // "SENT" for merged-in service purchases) - not re-derived here,
+            // so this widget can never disagree with History for the same data.
+            const isReceived = t.direction === "RECEIVED";
             return (
               <motion.div key={t.reference} variants={listItem} className="flex items-center justify-between rounded-xl border border-sand-200 bg-white px-4 py-3">
                 <div className="flex items-center gap-3">
@@ -190,8 +196,9 @@ export default function VendorDashboard() {
                   </div>
                   <div>
                     <p className="text-sm font-medium text-sand-800">
-                      {t.description ? t.description : (isReceived ? t.senderName : `Paid to ${t.receiverName || t.vendorName || "Vendor"}`)}
+                      {isReceived ? t.senderName : t.receiverName}
                     </p>
+                    {t.description && <p className="text-xs text-sand-500">{t.description}</p>}
                     <p className="text-xs text-sand-400">{new Date(t.createdAt).toLocaleString("en-ZA")}</p>
                   </div>
                 </div>
