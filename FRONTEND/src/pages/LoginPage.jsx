@@ -55,7 +55,7 @@ export default function LoginPage() {
             initial={{ scale: 0.6, rotate: -8 }}
             animate={{ scale: 1, rotate: 0 }}
             transition={{ type: "spring", stiffness: 260, damping: 16, delay: 0.1 }}
-            className="mx-auto mb-4 h-16 w-16 object-contain"
+            className="mx-auto mb-4 h-24 w-24 object-contain"
           />
           <h1 className="font-display text-2xl text-sand-900">Ukhona Pay</h1>
         </div>

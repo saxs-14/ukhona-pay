@@ -21,7 +21,7 @@ export default function NavBar() {
   return (
     <nav className="sticky top-0 z-20 flex items-center justify-between border-b border-sand-200 bg-white/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-white/80">
       <Link to={homePath} className="flex items-center gap-2">
-        <img src={logo} alt="Ukhona Pay" className="h-8 w-8 object-contain" />
+        <img src={logo} alt="Ukhona Pay" className="h-10 w-10 object-contain" />
         <span className="font-display text-lg text-sand-900">Ukhona Pay</span>
       </Link>
       <div className="flex items-center gap-3 text-sm">
