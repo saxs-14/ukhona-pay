@@ -9,6 +9,10 @@ export default function ScanAndPayModal({ isOpen, onClose, walletBalance, onSucc
   const [scannedCode, setScannedCode] = useState("");
   const [recipient, setRecipient] = useState(null);
   const [amount, setAmount] = useState("");
+  // Set when the QR itself carries a price (a vendor/driver/association's
+  // "Get paid by QR code" link, ?amount=X) - the payer then only confirms
+  // and enters their PIN instead of typing an amount themselves.
+  const [amountLocked, setAmountLocked] = useState(false);
   const [pin, setPin] = useState("");
   const [loading, setLoading] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
@@ -98,27 +102,42 @@ export default function ScanAndPayModal({ isOpen, onClose, walletBalance, onSucc
   // (.../pay/{code}?amount=X), meant for a phone's native camera app. Someone
   // scanning that same code with THIS in-app scanner instead would otherwise
   // get the raw URL back as decodedText, which never matches a stored vendor
-  // code - extract the {code} segment so both QR formats work here.
-  const extractVendorCode = (raw) => {
+  // code - extract the {code} (and any preset amount) so both QR formats
+  // work here, and a price the recipient set is carried through rather than
+  // discarded.
+  const parseScannedCode = (raw) => {
     const trimmed = raw.trim();
     try {
       const url = new URL(trimmed);
       const match = url.pathname.match(/\/pay\/([^/]+)/);
-      if (match) return decodeURIComponent(match[1]);
+      if (match) {
+        const presetAmount = url.searchParams.get("amount");
+        return {
+          vendorCode: decodeURIComponent(match[1]),
+          presetAmount: presetAmount && Number(presetAmount) > 0 ? presetAmount : null,
+        };
+      }
     } catch {
-      // Not a URL - already a bare vendor code.
+      // Not a URL - already a bare vendor code, no preset amount.
     }
-    return trimmed;
+    return { vendorCode: trimmed, presetAmount: null };
   };
 
   const handleCodeScanned = async (code) => {
-    const vendorCode = extractVendorCode(code);
+    const { vendorCode, presetAmount } = parseScannedCode(code);
     setScannedCode(vendorCode);
     setError("");
     setLoading(true);
     try {
       const res = await client.get(`/vendors/qr/${encodeURIComponent(vendorCode)}`);
       setRecipient(res.data);
+      if (presetAmount) {
+        setAmount(presetAmount);
+        setAmountLocked(true);
+      } else {
+        setAmount("");
+        setAmountLocked(false);
+      }
       setStep("AMOUNT");
     } catch (err) {
       setError("Vendor not found for this QR code. Please verify and try again.");
@@ -175,6 +194,7 @@ export default function ScanAndPayModal({ isOpen, onClose, walletBalance, onSucc
     setScannedCode("");
     setRecipient(null);
     setAmount("");
+    setAmountLocked(false);
     setPin("");
     setError("");
     onClose();
@@ -257,26 +277,36 @@ export default function ScanAndPayModal({ isOpen, onClose, walletBalance, onSucc
                 <p className="text-xs text-sand-500">{recipient.locationName}</p>
               </div>
 
-              <div className="rounded-2xl border border-sand-200 bg-sand-50 p-4">
-                <label className="mb-1 block text-xs font-medium text-sand-600">Amount (ZAR)</label>
-                <div className="relative flex items-center">
-                  <span className="absolute left-3 text-lg font-bold text-sand-400">R</span>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="2.00"
-                    placeholder="0.00"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    className="w-full rounded-xl border border-sand-300 bg-white py-2.5 pl-8 pr-4 text-lg font-semibold text-sand-900 focus:border-terracotta-600 focus:outline-none"
-                    required
-                  />
+              {amountLocked ? (
+                <div className="flex items-center gap-2 rounded-2xl border border-terracotta-200 bg-terracotta-50 px-4 py-3">
+                  <Lock size={15} className="shrink-0 text-terracotta-500" />
+                  <div>
+                    <p className="text-xs text-terracotta-600">Amount set by {recipient.businessName}</p>
+                    <p className="text-lg font-semibold text-terracotta-800">R{Number(amount).toFixed(2)}</p>
+                  </div>
                 </div>
-                <p className="mt-1.5 text-xs text-sand-500">
-                  Available wallet balance: <span className="font-semibold text-bushveld-700">R{walletBalance?.toFixed(2)}</span>
-                  {" · "}A R1 platform fee applies.
-                </p>
-              </div>
+              ) : (
+                <div className="rounded-2xl border border-sand-200 bg-sand-50 p-4">
+                  <label className="mb-1 block text-xs font-medium text-sand-600">Amount (ZAR)</label>
+                  <div className="relative flex items-center">
+                    <span className="absolute left-3 text-lg font-bold text-sand-400">R</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="2.00"
+                      placeholder="0.00"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      className="w-full rounded-xl border border-sand-300 bg-white py-2.5 pl-8 pr-4 text-lg font-semibold text-sand-900 focus:border-terracotta-600 focus:outline-none"
+                      required
+                    />
+                  </div>
+                </div>
+              )}
+              <p className="-mt-2 text-xs text-sand-500">
+                Available wallet balance: <span className="font-semibold text-bushveld-700">R{walletBalance?.toFixed(2)}</span>
+                {" · "}A R1 platform fee applies.
+              </p>
 
               <div>
                 <label className="mb-1 block text-xs font-medium text-sand-600">Enter Your 4-Digit PIN</label>
@@ -304,7 +334,12 @@ export default function ScanAndPayModal({ isOpen, onClose, walletBalance, onSucc
               <div className="flex gap-2 pt-2">
                 <button
                   type="button"
-                  onClick={() => setStep("SCAN")}
+                  onClick={() => {
+                    setStep("SCAN");
+                    setAmount("");
+                    setAmountLocked(false);
+                    setPin("");
+                  }}
                   className="w-1/3 rounded-xl border border-sand-300 py-3 text-sm font-semibold text-sand-700 hover:bg-sand-50"
                 >
                   Back
