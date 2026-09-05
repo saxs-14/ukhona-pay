@@ -3,6 +3,7 @@ package co.za.ukhonapay.service;
 import co.za.ukhonapay.dto.AssociationDriverResponse;
 import co.za.ukhonapay.dto.PendingDriverResponse;
 import co.za.ukhonapay.dto.VendorResponse;
+import co.za.ukhonapay.dto.VendorSelfUpdateRequest;
 import co.za.ukhonapay.exception.ResourceNotFoundException;
 import co.za.ukhonapay.exception.VendorNotFoundException;
 import co.za.ukhonapay.model.TaxiAssociation;
@@ -15,6 +16,7 @@ import co.za.ukhonapay.repository.TaxiAssociationRepository;
 import co.za.ukhonapay.repository.UserRepository;
 import co.za.ukhonapay.repository.VendorRepository;
 import co.za.ukhonapay.repository.WalletRepository;
+import co.za.ukhonapay.validation.VehicleRegistrationValidator;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -118,6 +120,29 @@ public class VendorService {
         }
         vendor.setStatus(status);
         vendorRepository.save(vendor);
+    }
+
+    // Self-service correction for the account owner's own business name and
+    // (drivers only) vehicle registration - deliberately can't touch
+    // category, status, verified, locationName, associationId, or rankId
+    // (see VendorSelfUpdateRequest for why).
+    @Transactional
+    public VendorResponse updateSelfProfile(Long userId, VendorSelfUpdateRequest req) {
+        Vendor vendor = vendorRepository.findByUserId(userId)
+                .orElseThrow(() -> new VendorNotFoundException("No vendor profile for this user"));
+        vendor.setBusinessName(req.businessName());
+        if (vendor.getVehicleRegistration() != null) {
+            String vehicleRegistration = req.vehicleRegistration();
+            if (vehicleRegistration == null || vehicleRegistration.isBlank()) {
+                throw new IllegalArgumentException("Vehicle registration is required");
+            }
+            if (!VehicleRegistrationValidator.isValid(vehicleRegistration)) {
+                throw new IllegalArgumentException("Not a valid South African number plate");
+            }
+            vendor.setVehicleRegistration(VehicleRegistrationValidator.normalize(vehicleRegistration));
+        }
+        vendorRepository.save(vendor);
+        return toResponse(vendor, true);
     }
 
     private VendorResponse toResponse(Vendor v, boolean includeWalletBalance) {

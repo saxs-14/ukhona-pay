@@ -1,12 +1,14 @@
 package co.za.ukhonapay.service;
 
 import co.za.ukhonapay.dto.UserResponse;
+import co.za.ukhonapay.dto.UserSelfUpdateRequest;
 import co.za.ukhonapay.exception.ResourceNotFoundException;
 import co.za.ukhonapay.model.User;
 import co.za.ukhonapay.repository.TaxiAssociationRepository;
 import co.za.ukhonapay.repository.TaxiRankRepository;
 import co.za.ukhonapay.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class UserService {
@@ -44,5 +46,19 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         return user.getAssociationId();
+    }
+
+    // Self-service correction for the account owner's own name/surname/email -
+    // deliberately can't touch phoneNumber, idNumber, userType, associationId,
+    // or rankId (see UserSelfUpdateRequest for why).
+    @Transactional
+    public UserResponse updateSelf(Long userId, UserSelfUpdateRequest req) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        user.setName(req.name());
+        user.setSurname(req.surname());
+        user.setEmail(req.email());
+        userRepository.save(user);
+        return getById(userId);
     }
 }

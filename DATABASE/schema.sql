@@ -3,6 +3,7 @@
 -- EDHE Studentpreneurs Indaba 2026 - Market Connectivity Challenge
 -- ============================================================================
 
+DROP TABLE IF EXISTS service_purchases CASCADE;
 DROP TABLE IF EXISTS bank_withdrawals CASCADE;
 DROP TABLE IF EXISTS bank_accounts CASCADE;
 DROP TABLE IF EXISTS transactions CASCADE;
@@ -147,6 +148,31 @@ CREATE TABLE bank_withdrawals (
 );
 
 CREATE INDEX idx_bank_withdrawals_user ON bank_withdrawals(user_id);
+
+-- ============================================================================
+-- SERVICE PURCHASES  (airtime, prepaid electricity, Pay@ bills - real,
+-- server-recorded purchases; see ServicePurchaseService for why the money
+-- leaves the wallet without crediting any other UKHONA PAY wallet)
+-- ============================================================================
+CREATE TABLE service_purchases (
+    id                  BIGSERIAL PRIMARY KEY,
+    user_id             BIGINT NOT NULL REFERENCES users(id),
+    type                VARCHAR(20) NOT NULL CHECK (type IN ('AIRTIME', 'ELECTRICITY', 'PAYAT_BILL')),
+    reference           VARCHAR(20) NOT NULL UNIQUE,
+    amount              NUMERIC(12,2) NOT NULL CHECK (amount > 0),
+    network             VARCHAR(20),
+    recipient_phone     VARCHAR(15),
+    meter_number        VARCHAR(20),
+    municipality        VARCHAR(100),
+    biller_name         VARCHAR(100),
+    biller_category     VARCHAR(60),
+    payat_reference     VARCHAR(30),
+    account_name        VARCHAR(150),
+    voucher_token       VARCHAR(40) NOT NULL,
+    created_at          TIMESTAMP NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_service_purchases_user ON service_purchases(user_id);
 
 -- ============================================================================
 -- SEED DATA: REFERENCE ASSOCIATIONS & RANKS

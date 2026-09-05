@@ -5,6 +5,7 @@ import co.za.ukhonapay.dto.AssociationTransferResponse;
 import co.za.ukhonapay.dto.IssueFineRequest;
 import co.za.ukhonapay.dto.PendingDriverResponse;
 import co.za.ukhonapay.dto.VendorResponse;
+import co.za.ukhonapay.dto.VendorSelfUpdateRequest;
 import co.za.ukhonapay.exception.ResourceNotFoundException;
 import co.za.ukhonapay.security.CurrentUser;
 import co.za.ukhonapay.service.PaymentService;
@@ -53,6 +54,11 @@ public class VendorController {
     @GetMapping("/me")
     public ResponseEntity<VendorResponse> myProfile() {
         return ResponseEntity.ok(vendorService.getByUserId(CurrentUser.id()));
+    }
+
+    @PutMapping("/me")
+    public ResponseEntity<VendorResponse> updateMyProfile(@Valid @RequestBody VendorSelfUpdateRequest req) {
+        return ResponseEntity.ok(vendorService.updateSelfProfile(CurrentUser.id(), req));
     }
 
     @GetMapping("/me/qr-image")

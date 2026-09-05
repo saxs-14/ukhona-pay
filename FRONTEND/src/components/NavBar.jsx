@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { BarChart3, LogOut, ShieldCheck } from "lucide-react";
+import { BarChart3, LogOut, ShieldCheck, UserCog } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { dashboardPathFor } from "../lib/roles";
 
@@ -36,6 +36,9 @@ export default function NavBar() {
             <ShieldCheck size={20} />
           </Link>
         )}
+        <Link to="/profile" title="Edit profile" aria-label="Edit profile" className="text-sand-500 hover:text-terracotta-700">
+          <UserCog size={20} />
+        </Link>
         <span className="hidden text-sand-500 sm:inline">{user.name}</span>
         <motion.button
           whileTap={{ scale: 0.94 }}

@@ -24,6 +24,7 @@ import VendorAnalytics from "./pages/VendorAnalytics";
 import DriverAnalytics from "./pages/DriverAnalytics";
 import PlatformDashboard from "./pages/PlatformDashboard";
 import PayVendor from "./pages/PayVendor";
+import EditProfile from "./pages/EditProfile";
 
 function Home() {
   const { user } = useAuth();
@@ -67,6 +68,7 @@ export default function App() {
               <Route path="/vendor/analytics" element={<ProtectedRoute allow={["VENDOR"]}><VendorAnalytics /></ProtectedRoute>} />
 
               <Route path="/transactions" element={<ProtectedRoute allow={["VENDOR", "TAXI_DRIVER"]}><TransactionHistory /></ProtectedRoute>} />
+              <Route path="/profile" element={<ProtectedRoute><EditProfile /></ProtectedRoute>} />
               <Route path="/platform" element={<ProtectedRoute allow={["ADMIN"]}><PlatformDashboard /></ProtectedRoute>} />
 
               <Route path="*" element={<Navigate to="/" replace />} />

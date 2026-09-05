@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { QRCodeSVG } from "qrcode.react";
 import {
   Smartphone,
   Zap,
@@ -48,10 +49,6 @@ const PAYAT_BILLERS = [
   { id: "pep", name: "Pep Stores / Ackermans", category: "Retail Account", prefix: "11720" },
 ];
 
-// Utility vendor for processing driver & vendor service purchases
-const UTILITY_VENDOR_QR = "UKP-VENDOR-SIPHOELEC-005";
-const FALLBACK_VENDOR_QR = "UKP-VENDOR-NOMSA-006";
-
 export default function BuyServices() {
   const navigate = useNavigate();
   const { user: authUser } = useAuth();
@@ -97,25 +94,13 @@ export default function BuyServices() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Helper to generate simulated STS 20-digit token
-  function generateStsToken() {
-    const chunk = () => Math.floor(1000 + Math.random() * 9000);
-    return `${chunk()} - ${chunk()} - ${chunk()} - ${chunk()} - ${chunk()}`;
-  }
-
-  // Helper to generate airtime topup pin
-  function generateAirtimePin() {
-    return `${Math.floor(1000 + Math.random() * 9000)} ${Math.floor(1000 + Math.random() * 9000)} ${Math.floor(1000 + Math.random() * 9000)}`;
-  }
-
   async function handlePurchase(e) {
     e.preventDefault();
     setError("");
     setPurchasing(true);
 
     let amountToPay = 0;
-    let description = "";
-    let receiptDetails = {};
+    let payload = { pin };
 
     if (activeTab === "airtime") {
       amountToPay = Number(airtimeAmount);
@@ -124,18 +109,7 @@ export default function BuyServices() {
         setPurchasing(false);
         return;
       }
-      description = `Airtime: ${network.toUpperCase()} R${amountToPay} (${recipientPhone})`;
-      receiptDetails = {
-        type: "AIRTIME",
-        network: network,
-        title: `${network.toUpperCase()} Airtime Recharge`,
-        subtitle: `Top-up sent to ${recipientPhone}`,
-        token: generateAirtimePin(),
-        tokenLabel: "Recharge Voucher PIN",
-        dialInstruction: `Dial *130*7467*${Math.floor(100000 + Math.random() * 900000)}# or load directly on your SIM`,
-        extraLabel: "Network Provider",
-        extraValue: network.toUpperCase(),
-      };
+      payload = { ...payload, type: "AIRTIME", amount: amountToPay, network, recipientPhone };
     } else if (activeTab === "electricity") {
       amountToPay = Number(electricityAmount);
       const cleanMeter = meterNumber.replace(/\s+/g, "");
@@ -144,18 +118,7 @@ export default function BuyServices() {
         setPurchasing(false);
         return;
       }
-      const estimatedKwh = (amountToPay / 2.85).toFixed(1);
-      description = `Electricity: Eskom/Mbombela R${amountToPay} (Meter: ${cleanMeter})`;
-      receiptDetails = {
-        type: "ELECTRICITY",
-        title: "Prepaid Electricity Token",
-        subtitle: `Meter: ${cleanMeter} • ${municipality}`,
-        token: generateStsToken(),
-        tokenLabel: "20-Digit STS Keypad Token",
-        dialInstruction: `Enter these 20 digits into your in-home CIU keypad, then press # or Enter`,
-        extraLabel: "Units Purchased",
-        extraValue: `~${estimatedKwh} kWh`,
-      };
+      payload = { ...payload, type: "ELECTRICITY", amount: amountToPay, meterNumber: cleanMeter, municipality };
     } else if (activeTab === "payat") {
       amountToPay = Number(billAmount);
       const cleanRef = payAtRef.replace(/\s+/g, "");
@@ -164,16 +127,15 @@ export default function BuyServices() {
         setPurchasing(false);
         return;
       }
-      description = `Pay@: ${selectedBiller.name} R${amountToPay} (Ref: ${cleanRef})`;
-      receiptDetails = {
-        type: "PAYAT",
-        title: "Pay@ Bill Payment Clearance",
-        subtitle: `${selectedBiller.name} • ${selectedBiller.category}`,
-        token: `PA-${cleanRef.slice(-6)}-${Math.floor(1000 + Math.random() * 9000)}`,
-        tokenLabel: "Pay@ Clearance Code",
-        dialInstruction: "Retain this clearance code as official proof of municipal/retail settlement",
-        extraLabel: "Biller Account / Reference",
-        extraValue: cleanRef,
+      payload = {
+        ...payload,
+        type: "PAYAT_BILL",
+        amount: amountToPay,
+        billerId: selectedBiller.id,
+        billerName: selectedBiller.name,
+        billerCategory: selectedBiller.category,
+        payAtReference: cleanRef,
+        accountName,
       };
     }
 
@@ -196,26 +158,26 @@ export default function BuyServices() {
     }
 
     try {
-      // Pick a vendor QR that does not belong to the current user
-      const targetVendor = (user?.id === 5) ? FALLBACK_VENDOR_QR : UTILITY_VENDOR_QR;
+      // Real, server-recorded purchase: deducts the wallet, generates and
+      // persists the voucher token server-side, and records both a
+      // service_purchases row and a transaction - see ServicePurchaseService.
+      const res = await client.post("/services/purchase", payload);
 
-      // Execute payment via backend payment endpoint
-      const res = await client.post("/payments/pay", {
-        vendorQrCode: targetVendor,
-        amount: amountToPay,
-        pin: pin,
-        description: description,
-      });
-
-      // Update wallet balance locally
       setWallet((w) => ({ ...w, balance: res.data.newWalletBalance }));
-      
-      // Set receipt data
+
       setReceipt({
-        ...receiptDetails,
-        amount: amountToPay,
+        type: res.data.type,
+        network: res.data.network,
+        title: res.data.title,
+        subtitle: res.data.subtitle,
+        token: res.data.voucherToken,
+        tokenLabel: res.data.tokenLabel,
+        dialInstruction: res.data.dialInstruction,
+        extraLabel: res.data.extraLabel,
+        extraValue: res.data.extraValue,
+        amount: res.data.amount,
         reference: res.data.reference,
-        timestamp: new Date().toLocaleString("en-ZA"),
+        timestamp: new Date(res.data.timestamp).toLocaleString("en-ZA"),
       });
       setPin("");
     } catch (err) {
@@ -648,6 +610,16 @@ export default function BuyServices() {
               <span>Payment Ref:</span>
               <span className="font-mono text-[11px] text-sand-700">{receipt.reference}</span>
             </div>
+          </div>
+
+          {/* Scannable proof-of-purchase - encodes the real, server-recorded
+              transaction reference, so it can be verified against the
+              transaction ledger, not just displayed as text */}
+          <div className="mt-4 flex flex-col items-center gap-1.5">
+            <div className="rounded-xl bg-white p-2.5 shadow-sm border border-sand-200">
+              <QRCodeSVG value={`UKP-SERVICE-${receipt.reference}`} size={104} level="M" />
+            </div>
+            <p className="text-[10px] text-sand-400">Scan to verify this purchase</p>
           </div>
 
           <div className="mt-5 flex gap-2">

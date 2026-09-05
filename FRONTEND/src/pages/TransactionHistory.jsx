@@ -4,13 +4,44 @@ import client from "../api/client";
 import { SkeletonCard } from "../components/ui/Skeleton";
 import { listContainer, listItem, spring } from "../lib/motion";
 
+const PURCHASE_LABELS = {
+  AIRTIME: (p) => `Airtime: ${p.network} (${p.recipientPhone})`,
+  ELECTRICITY: (p) => `Electricity: ${p.municipality} (Meter: ${p.meterNumber})`,
+  PAYAT_BILL: (p) => `Pay@: ${p.billerName} (Ref: ${p.payAtReference})`,
+};
+
 export default function TransactionHistory() {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("ALL");
 
   useEffect(() => {
-    client.get("/transactions/me").then((res) => setTransactions(res.data)).finally(() => setLoading(false));
+    Promise.all([
+      client.get("/transactions/me").then((res) => res.data),
+      client.get("/services/history").then((res) => res.data).catch(() => []),
+    ])
+      .then(([txns, purchases]) => {
+        // Service purchases (airtime/electricity/Pay@ bills) live in their own
+        // table, not transactions - the money leaves the wallet without
+        // crediting any other UKHONA PAY wallet, the same way a bank
+        // withdrawal does, so it can't satisfy the transactions table's
+        // "receiver is a user or an association" constraint. Merged here so
+        // they still show up in one unified, chronological history.
+        const purchasesAsEntries = purchases.map((p) => ({
+          reference: p.reference,
+          direction: "SENT",
+          receiverName: PURCHASE_LABELS[p.type]?.(p) || p.type,
+          amount: p.amount,
+          status: "COMPLETED",
+          description: `Voucher: ${p.voucherToken}`,
+          createdAt: p.createdAt,
+        }));
+        const merged = [...txns, ...purchasesAsEntries].sort(
+          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+        );
+        setTransactions(merged);
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   const filtered = useMemo(() => {
