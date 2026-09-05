@@ -20,6 +20,10 @@ const adminLinks = [
   { to: "/association-admin", label: "Home", icon: Home },
 ];
 
+const platformAdminLinks = [
+  { to: "/admin", label: "Home", icon: Home },
+];
+
 export default function BottomNav() {
   const { user } = useAuth();
   const location = useLocation();
@@ -28,6 +32,7 @@ export default function BottomNav() {
   let links;
   if (user.userType === "VENDOR") links = traderLinks("/vendor");
   else if (user.userType === "TAXI_DRIVER") links = driverLinks;
+  else if (user.userType === "ADMIN") links = platformAdminLinks;
   else links = adminLinks;
 
   return (

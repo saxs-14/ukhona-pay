@@ -1,16 +1,23 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Building2, Car, Check, Clock, Hourglass, MapPin, Phone, ShieldCheck, User, Wallet, X } from "lucide-react";
+import { Building2, Car, Check, Clock, Hourglass, MapPin, Phone, ShieldCheck, User, Users, Wallet, X } from "lucide-react";
 import client from "../api/client";
 import AnimatedNumber from "../components/ui/AnimatedNumber";
 import { SkeletonCard } from "../components/ui/Skeleton";
 import { listContainer, listItem, spring } from "../lib/motion";
+
+const STATUS_BADGE = {
+  APPROVED: "bg-bushveld-100 text-bushveld-700",
+  PENDING: "bg-gold-100 text-gold-700",
+  REJECTED: "bg-red-100 text-red-600",
+};
 
 export default function AssociationAdminDashboard() {
   const [profile, setProfile] = useState(null);
   const [wallet, setWallet] = useState(null);
   const [transfers, setTransfers] = useState([]);
   const [pendingDrivers, setPendingDrivers] = useState([]);
+  const [roster, setRoster] = useState([]);
   const [decidingId, setDecidingId] = useState(null);
   const [decisionError, setDecisionError] = useState("");
 
@@ -18,8 +25,13 @@ export default function AssociationAdminDashboard() {
     client.get("/users/me").then((res) => setProfile(res.data));
     client.get("/wallet/association/me").then((res) => setWallet(res.data)).catch(() => setWallet(null));
     client.get("/transactions/association/me").then((res) => setTransfers(res.data)).catch(() => setTransfers([]));
-    client.get("/vendors/pending").then((res) => setPendingDrivers(res.data)).catch(() => setPendingDrivers([]));
+    loadDrivers();
   }, []);
+
+  function loadDrivers() {
+    client.get("/vendors/pending").then((res) => setPendingDrivers(res.data)).catch(() => setPendingDrivers([]));
+    client.get("/vendors/association/roster").then((res) => setRoster(res.data)).catch(() => setRoster([]));
+  }
 
   async function decide(vendorId, decision) {
     setDecisionError("");
@@ -27,6 +39,7 @@ export default function AssociationAdminDashboard() {
     try {
       await client.post(`/vendors/${vendorId}/${decision}`);
       setPendingDrivers((prev) => prev.filter((d) => d.vendorId !== vendorId));
+      setRoster((prev) => prev.map((d) => (d.vendorId === vendorId ? { ...d, status: decision === "approve" ? "APPROVED" : "REJECTED" } : d)));
     } catch (err) {
       setDecisionError(err.message);
     } finally {
@@ -178,10 +191,56 @@ export default function AssociationAdminDashboard() {
         </motion.div>
       </div>
 
-      <div className="mt-6 rounded-xl bg-sand-50 p-4 text-sm text-sand-600">
-        Driver and vendor oversight for {profile.associationName || "your association"} — member management and
-        rank-level reporting are next on the roadmap.
-      </div>
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="mt-6 rounded-2xl border border-sand-200 bg-white p-5 shadow-sm"
+      >
+        <div className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-sand-700">
+          <Users size={15} className="text-terracotta-600" /> Registered drivers
+        </div>
+        {roster.length === 0 ? (
+          <p className="text-sm text-sand-400">No drivers registered to {profile.associationName || "your association"} yet.</p>
+        ) : (
+          <div className="space-y-2">
+            {roster.map((d) => (
+              <div key={d.vendorId} className="flex items-center justify-between gap-3 rounded-xl border border-sand-100 bg-sand-50/50 px-3 py-2.5">
+                <div>
+                  <p className="text-sm font-medium text-sand-800">{d.name} {d.surname}</p>
+                  <p className="text-xs text-sand-400">{d.phoneNumber} · {d.vehicleRegistration}</p>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${STATUS_BADGE[d.status] || "bg-sand-100 text-sand-600"}`}>
+                    {d.status}
+                  </span>
+                  {d.status !== "APPROVED" && (
+                    <button
+                      disabled={decidingId === d.vendorId}
+                      onClick={() => decide(d.vendorId, "approve")}
+                      className="text-xs font-semibold text-bushveld-600 hover:underline disabled:opacity-50"
+                    >
+                      Approve
+                    </button>
+                  )}
+                  {d.status !== "REJECTED" && (
+                    <button
+                      disabled={decidingId === d.vendorId}
+                      onClick={() => decide(d.vendorId, "reject")}
+                      className="text-xs font-semibold text-red-600 hover:underline disabled:opacity-50"
+                    >
+                      {d.status === "APPROVED" ? "Revoke" : "Reject"}
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        <p className="mt-3 text-xs text-sand-400">
+          Only verify and approve drivers you know are genuinely registered to {profile.associationName || "your association"} — rank-level reporting is next on the roadmap.
+        </p>
+      </motion.div>
     </div>
   );
 }

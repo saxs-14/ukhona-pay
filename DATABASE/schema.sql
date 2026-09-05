@@ -42,7 +42,7 @@ CREATE TABLE users (
     id              BIGSERIAL PRIMARY KEY,
     phone_number    VARCHAR(10) NOT NULL UNIQUE CHECK (phone_number ~ '^0[0-9]{9}$'),
     pin_hash        VARCHAR(255) NOT NULL,
-    user_type       VARCHAR(25) NOT NULL CHECK (user_type IN ('VENDOR', 'TAXI_DRIVER', 'TAXI_ASSOCIATION_ADMIN')),
+    user_type       VARCHAR(25) NOT NULL CHECK (user_type IN ('VENDOR', 'TAXI_DRIVER', 'TAXI_ASSOCIATION_ADMIN', 'ADMIN')),
     name            VARCHAR(120) NOT NULL,
     surname         VARCHAR(120) NOT NULL,
     id_number       VARCHAR(13) NOT NULL UNIQUE CHECK (id_number ~ '^[0-9]{13}$'),
@@ -182,7 +182,12 @@ INSERT INTO users (id, phone_number, pin_hash, user_type, name, surname, id_numb
 (8, '0712345678', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'TAXI_DRIVER', 'Hlayiseko', 'Bennet', '9601015001082', 'nhlayisekobennet07@gmail.com', TRUE, 1, 1),
 (9, '0712345679', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'TAXI_DRIVER', 'Vuyo', 'Mthembu', '9702025002083', 'vuyo@demo.co.za', TRUE, 1, 1),
 (10, '0712345680', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'TAXI_DRIVER', 'Banele', 'Sithole', '9803035003084', 'banele@demo.co.za', TRUE, 1, 1),
-(11, '0791234567', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'TAXI_ASSOCIATION_ADMIN', 'Phathutshedzo', 'Mamagau', '9904045004085', '230157688@ump.ac.za', TRUE, 1, 1);
+(11, '0791234567', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'TAXI_ASSOCIATION_ADMIN', 'Phathutshedzo', 'Mamagau', '9904045004085', '230157688@ump.ac.za', TRUE, 1, 1),
+
+-- Platform administrator - full-control account, not reachable through public
+-- signup (AuthService rejects userType=ADMIN there). No association/rank: an
+-- admin oversees the whole platform, not one association.
+(12, '0700000001', '$2a$10$3Qc.4DmIvCCW4zKtF4w//ebf8KJRJxV3iGHTv1IDRAjw60W6UZT5O', 'ADMIN', 'Platform', 'Admin', '0000000000001', 'admin@ukhonapay.co.za', TRUE, NULL, NULL);
 
 SELECT setval('users_id_seq', (SELECT max(id) FROM users));
 
