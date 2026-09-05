@@ -37,7 +37,7 @@ public class UserService {
         return new UserResponse(
                 user.getId(), user.getPhoneNumber(), user.getUserType().name(),
                 user.getName(), user.getSurname(), user.getEmail(),
-                associationName, rankName);
+                user.getAssociationId(), associationName, rankName);
     }
 
     public Long getAssociationIdForUser(Long userId) {

@@ -1,6 +1,6 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { BarChart3, History, Home, ScanLine } from "lucide-react";
+import { BarChart3, History, Home, QrCode, ScanLine, Users } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 const traderLinks = (home) => [
@@ -18,6 +18,8 @@ const driverLinks = [
 
 const adminLinks = [
   { to: "/association-admin", label: "Home", icon: Home },
+  { to: "/association-admin/drivers", label: "Drivers", icon: Users },
+  { to: "/association-admin/qr", label: "QR Code", icon: QrCode },
 ];
 
 const platformAdminLinks = [

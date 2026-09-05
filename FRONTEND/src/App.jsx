@@ -16,6 +16,8 @@ import DriverWithdraw from "./pages/DriverWithdraw";
 import DriverSendMoney from "./pages/DriverSendMoney";
 import DriverScanPay from "./pages/DriverScanPay";
 import AssociationAdminDashboard from "./pages/AssociationAdminDashboard";
+import AssociationAdminDrivers from "./pages/AssociationAdminDrivers";
+import AssociationAdminQrCode from "./pages/AssociationAdminQrCode";
 import AdminDashboard from "./pages/AdminDashboard";
 import VendorAnalytics from "./pages/VendorAnalytics";
 import DriverAnalytics from "./pages/DriverAnalytics";
@@ -56,6 +58,8 @@ export default function App() {
               <Route path="/driver/scan" element={<ProtectedRoute allow={["TAXI_DRIVER"]}><DriverScanPay /></ProtectedRoute>} />
               <Route path="/driver/analytics" element={<ProtectedRoute allow={["TAXI_DRIVER"]}><DriverAnalytics /></ProtectedRoute>} />
               <Route path="/association-admin" element={<ProtectedRoute allow={["TAXI_ASSOCIATION_ADMIN"]}><AssociationAdminDashboard /></ProtectedRoute>} />
+              <Route path="/association-admin/drivers" element={<ProtectedRoute allow={["TAXI_ASSOCIATION_ADMIN"]}><AssociationAdminDrivers /></ProtectedRoute>} />
+              <Route path="/association-admin/qr" element={<ProtectedRoute allow={["TAXI_ASSOCIATION_ADMIN"]}><AssociationAdminQrCode /></ProtectedRoute>} />
               <Route path="/admin" element={<ProtectedRoute allow={["ADMIN"]}><AdminDashboard /></ProtectedRoute>} />
               <Route path="/vendor/analytics" element={<ProtectedRoute allow={["VENDOR"]}><VendorAnalytics /></ProtectedRoute>} />
 

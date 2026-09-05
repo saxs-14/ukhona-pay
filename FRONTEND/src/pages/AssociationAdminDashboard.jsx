@@ -1,51 +1,24 @@
 import { useEffect, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
-import { Building2, Car, Check, Clock, Hourglass, MapPin, Phone, ShieldCheck, User, Users, Wallet, X } from "lucide-react";
+import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
+import { Building2, ChevronRight, Clock, Hourglass, MapPin, Phone, QrCode, ShieldCheck, User, Users, Wallet } from "lucide-react";
 import client from "../api/client";
 import AnimatedNumber from "../components/ui/AnimatedNumber";
 import { SkeletonCard } from "../components/ui/Skeleton";
 import { listContainer, listItem, spring } from "../lib/motion";
 
-const STATUS_BADGE = {
-  APPROVED: "bg-bushveld-100 text-bushveld-700",
-  PENDING: "bg-gold-100 text-gold-700",
-  REJECTED: "bg-red-100 text-red-600",
-};
-
 export default function AssociationAdminDashboard() {
   const [profile, setProfile] = useState(null);
   const [wallet, setWallet] = useState(null);
   const [transfers, setTransfers] = useState([]);
-  const [pendingDrivers, setPendingDrivers] = useState([]);
-  const [roster, setRoster] = useState([]);
-  const [decidingId, setDecidingId] = useState(null);
-  const [decisionError, setDecisionError] = useState("");
+  const [pendingCount, setPendingCount] = useState(0);
 
   useEffect(() => {
     client.get("/users/me").then((res) => setProfile(res.data));
     client.get("/wallet/association/me").then((res) => setWallet(res.data)).catch(() => setWallet(null));
     client.get("/transactions/association/me").then((res) => setTransfers(res.data)).catch(() => setTransfers([]));
-    loadDrivers();
+    client.get("/vendors/pending").then((res) => setPendingCount(res.data.length)).catch(() => setPendingCount(0));
   }, []);
-
-  function loadDrivers() {
-    client.get("/vendors/pending").then((res) => setPendingDrivers(res.data)).catch(() => setPendingDrivers([]));
-    client.get("/vendors/association/roster").then((res) => setRoster(res.data)).catch(() => setRoster([]));
-  }
-
-  async function decide(vendorId, decision) {
-    setDecisionError("");
-    setDecidingId(vendorId);
-    try {
-      await client.post(`/vendors/${vendorId}/${decision}`);
-      setPendingDrivers((prev) => prev.filter((d) => d.vendorId !== vendorId));
-      setRoster((prev) => prev.map((d) => (d.vendorId === vendorId ? { ...d, status: decision === "approve" ? "APPROVED" : "REJECTED" } : d)));
-    } catch (err) {
-      setDecisionError(err.message);
-    } finally {
-      setDecidingId(null);
-    }
-  }
 
   if (!profile) {
     return (
@@ -81,81 +54,42 @@ export default function AssociationAdminDashboard() {
         </div>
       )}
 
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mt-3 rounded-2xl border border-sand-200 bg-white p-5 shadow-sm"
-      >
-        <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-1.5 text-sm font-semibold text-sand-700">
-            <Hourglass size={15} className="text-gold-600" /> Driver approvals
-          </div>
-          {pendingDrivers.length > 0 && (
-            <span className="rounded-full bg-gold-100 px-2 py-0.5 text-xs font-semibold text-gold-700">
-              {pendingDrivers.length} pending
-            </span>
-          )}
-        </div>
+      <div className="mt-3 grid grid-cols-2 gap-3">
+        <motion.div whileTap={{ scale: 0.97 }} transition={spring}>
+          <Link
+            to="/association-admin/drivers"
+            className="relative flex h-full flex-col justify-between rounded-2xl border border-sand-200 bg-white p-4 shadow-sm transition-colors hover:border-terracotta-300 hover:bg-terracotta-50"
+          >
+            {pendingCount > 0 && (
+              <span className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-gold-100 px-2 py-0.5 text-xs font-semibold text-gold-700">
+                <Hourglass size={11} /> {pendingCount}
+              </span>
+            )}
+            <Users size={22} className="text-terracotta-600" />
+            <div className="mt-3">
+              <p className="text-sm font-semibold text-sand-800">Drivers</p>
+              <p className="text-xs text-sand-500">Roster &amp; approvals</p>
+            </div>
+          </Link>
+        </motion.div>
 
-        {decisionError && <p className="mb-3 text-sm text-red-600">{decisionError}</p>}
-
-        {pendingDrivers.length === 0 ? (
-          <p className="text-sm text-sand-400">No drivers awaiting review.</p>
-        ) : (
-          <div className="space-y-3">
-            <AnimatePresence initial={false}>
-              {pendingDrivers.map((d) => (
-                <motion.div
-                  key={d.vendorId}
-                  layout
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, height: 0, marginBottom: 0, paddingTop: 0, paddingBottom: 0 }}
-                  transition={spring}
-                  className="rounded-xl border border-sand-200 bg-sand-50/60 p-3"
-                >
-                  <p className="text-sm font-semibold text-sand-800">
-                    {d.name} {d.surname}
-                  </p>
-                  <p className="mt-0.5 flex items-center gap-1 text-xs text-sand-500">
-                    <Phone size={11} /> {d.phoneNumber}
-                  </p>
-                  <p className="mt-0.5 flex items-center gap-1 text-xs text-sand-500">
-                    <Car size={11} /> {d.vehicleRegistration}
-                  </p>
-                  <p className="mt-0.5 text-[11px] text-sand-400">
-                    Registered {new Date(d.registeredAt).toLocaleDateString("en-ZA")} — verify the vehicle is
-                    registered with your association before approving.
-                  </p>
-                  <div className="mt-3 flex gap-2">
-                    <motion.button
-                      whileTap={{ scale: 0.95 }}
-                      disabled={decidingId === d.vendorId}
-                      onClick={() => decide(d.vendorId, "approve")}
-                      className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-bushveld-600 py-2 text-xs font-semibold text-white transition-colors hover:bg-bushveld-700 disabled:opacity-50"
-                    >
-                      <Check size={13} /> Approve
-                    </motion.button>
-                    <motion.button
-                      whileTap={{ scale: 0.95 }}
-                      disabled={decidingId === d.vendorId}
-                      onClick={() => decide(d.vendorId, "reject")}
-                      className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-white py-2 text-xs font-semibold text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
-                    >
-                      <X size={13} /> Reject
-                    </motion.button>
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
-        )}
-      </motion.div>
+        <motion.div whileTap={{ scale: 0.97 }} transition={spring}>
+          <Link
+            to="/association-admin/qr"
+            className="flex h-full flex-col justify-between rounded-2xl border border-sand-200 bg-white p-4 shadow-sm transition-colors hover:border-terracotta-300 hover:bg-terracotta-50"
+          >
+            <QrCode size={22} className="text-terracotta-600" />
+            <div className="mt-3">
+              <p className="text-sm font-semibold text-sand-800">QR Code</p>
+              <p className="text-xs text-sand-500">Association identity</p>
+            </div>
+          </Link>
+        </motion.div>
+      </div>
 
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.05 }}
         className="mt-3 rounded-2xl border border-sand-200 bg-white p-5 shadow-sm"
       >
         <div className="mb-4 flex items-center gap-1.5 text-sm font-semibold text-sand-700">
@@ -174,11 +108,16 @@ export default function AssociationAdminDashboard() {
       </motion.div>
 
       <div className="mt-6">
-        <h2 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-sand-700">
-          <Clock size={14} /> Recent transfers from drivers
-        </h2>
+        <div className="mb-2 flex items-center justify-between">
+          <h2 className="flex items-center gap-1.5 text-sm font-semibold text-sand-700">
+            <Clock size={14} /> Recent transfers from drivers
+          </h2>
+          <Link to="/transactions" className="flex items-center gap-0.5 text-xs font-semibold text-terracotta-700">
+            View all <ChevronRight size={13} />
+          </Link>
+        </div>
         <motion.div variants={listContainer} initial="initial" animate="animate" className="space-y-2">
-          {transfers.map((t) => (
+          {transfers.slice(0, 5).map((t) => (
             <motion.div key={t.reference} variants={listItem} className="flex items-center justify-between rounded-xl border border-sand-200 bg-white px-4 py-3">
               <div>
                 <p className="text-sm font-medium text-sand-800">{t.senderName}</p>
@@ -190,57 +129,6 @@ export default function AssociationAdminDashboard() {
           {transfers.length === 0 && <p className="text-sm text-sand-400">No transfers received yet.</p>}
         </motion.div>
       </div>
-
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="mt-6 rounded-2xl border border-sand-200 bg-white p-5 shadow-sm"
-      >
-        <div className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-sand-700">
-          <Users size={15} className="text-terracotta-600" /> Registered drivers
-        </div>
-        {roster.length === 0 ? (
-          <p className="text-sm text-sand-400">No drivers registered to {profile.associationName || "your association"} yet.</p>
-        ) : (
-          <div className="space-y-2">
-            {roster.map((d) => (
-              <div key={d.vendorId} className="flex items-center justify-between gap-3 rounded-xl border border-sand-100 bg-sand-50/50 px-3 py-2.5">
-                <div>
-                  <p className="text-sm font-medium text-sand-800">{d.name} {d.surname}</p>
-                  <p className="text-xs text-sand-400">{d.phoneNumber} · {d.vehicleRegistration}</p>
-                </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${STATUS_BADGE[d.status] || "bg-sand-100 text-sand-600"}`}>
-                    {d.status}
-                  </span>
-                  {d.status !== "APPROVED" && (
-                    <button
-                      disabled={decidingId === d.vendorId}
-                      onClick={() => decide(d.vendorId, "approve")}
-                      className="text-xs font-semibold text-bushveld-600 hover:underline disabled:opacity-50"
-                    >
-                      Approve
-                    </button>
-                  )}
-                  {d.status !== "REJECTED" && (
-                    <button
-                      disabled={decidingId === d.vendorId}
-                      onClick={() => decide(d.vendorId, "reject")}
-                      className="text-xs font-semibold text-red-600 hover:underline disabled:opacity-50"
-                    >
-                      {d.status === "APPROVED" ? "Revoke" : "Reject"}
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-        <p className="mt-3 text-xs text-sand-400">
-          Only verify and approve drivers you know are genuinely registered to {profile.associationName || "your association"} — rank-level reporting is next on the roadmap.
-        </p>
-      </motion.div>
     </div>
   );
 }
