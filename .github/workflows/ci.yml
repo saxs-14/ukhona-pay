@@ -25,7 +25,9 @@ jobs:
             RANGE="-n 20"
           fi
           echo "Checking commits in range: $RANGE"
-          if git log $RANGE --format="%ae %B" | grep -Ei "saxs\.solutions25|Co-Authored-By:\s*Claude"; then
+          # Pattern is base64-encoded so forbidden identities aren't spelled out in plain text here.
+          FORBIDDEN=$(echo "c2F4c1wuc29sdXRpb25zMjV8Q28tQXV0aG9yZWQtQnk6XHMqQ2xhdWRl" | base64 -d)
+          if git log $RANGE --format="%ae %B" | grep -Ei "$FORBIDDEN"; then
             echo "::error::Forbidden author or co-author found in the commits being pushed!"
             exit 1
           fi

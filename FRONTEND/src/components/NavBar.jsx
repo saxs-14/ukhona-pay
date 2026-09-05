@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { BarChart3, LogOut, ShieldCheck, UserCog } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { dashboardPathFor } from "../lib/roles";
+import logo from "../assets/Ukhona Logo.png";
 
 export default function NavBar() {
   const { user, logout } = useAuth();
@@ -20,9 +21,7 @@ export default function NavBar() {
   return (
     <nav className="sticky top-0 z-20 flex items-center justify-between border-b border-sand-200 bg-white/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-white/80">
       <Link to={homePath} className="flex items-center gap-2">
-        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-terracotta-600 font-display text-base text-white">
-          U
-        </span>
+        <img src={logo} alt="Ukhona Pay" className="h-8 w-8 object-contain" />
         <span className="font-display text-lg text-sand-900">Ukhona Pay</span>
       </Link>
       <div className="flex items-center gap-3 text-sm">

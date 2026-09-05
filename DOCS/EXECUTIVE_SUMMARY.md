@@ -53,8 +53,6 @@
 
 ## DOCUMENTS YOU NOW HAVE
 
-All in `/mnt/user-data/outputs/`:
-
 ### 1. HACKATHON_FULL_CONTEXT.md (Longest)
 **Purpose:** Complete conversation transcript + strategy
 **Contains:**
@@ -99,36 +97,21 @@ All in `/mnt/user-data/outputs/`:
 
 **Use:** Reference while making code changes
 
-### 5. CLAUDE_CODE_QUICK_REFERENCE.md (Shortest)
-**Purpose:** Quick reference for Claude Code terminal work
-**Contains:**
-- Before you start (reminder to read context docs)
-- Platform name decision (summary)
-- 8 prioritized tasks (brief version)
-- Testing checklist
-- Optional enhancements
-- Command reference
-- File tree
-- Estimated timeline
-- Troubleshooting
-
-**Use:** Keep this open while in Claude Code
-
 ---
 
-## NEXT STEPS (For You, In Claude Code Terminal)
+## NEXT STEPS
 
 ### Step 1: Read Context (5 min)
-Open `/mnt/user-data/outputs/HACKATHON_FULL_CONTEXT.md` in your terminal or editor. Skim to understand the full picture.
+Open `HACKATHON_FULL_CONTEXT.md` in your terminal or editor. Skim to understand the full picture.
 
 ### Step 2: Make Platform Name Decision (5 min)
-Read `/mnt/user-data/outputs/PLATFORM_NAME_RECOMMENDATIONS.md`.
+Read `PLATFORM_NAME_RECOMMENDATIONS.md`.
 Decision: Keep UKHONA PAY + tagline? (Recommended)
 Or choose a different name?
 Once decided, proceed.
 
 ### Step 3: Follow the Checklist (3–4 hours)
-Use `/mnt/user-data/outputs/UKHONA_PAY_TAXI_RANK_CHECKLIST.md`.
+Use `UKHONA_PAY_TAXI_RANK_CHECKLIST.md`.
 Do tasks in order:
 1. Update README.md
 2. Add credit endpoint
@@ -139,8 +122,6 @@ Do tasks in order:
 7. Update demo checklist
 8. Create problem statement doc
 
-Reference `/mnt/user-data/outputs/CLAUDE_CODE_QUICK_REFERENCE.md` for quick lookup.
-
 ### Step 4: Test (1 hour)
 Use testing checklist to verify everything works.
 - Services running (Docker, backend, frontend)
@@ -150,7 +131,7 @@ Use testing checklist to verify everything works.
 - Demo data realistic (28 rides/day, R140 average)
 
 ### Step 5: Practice Pitch (1 hour)
-Memorize demo script from `/mnt/user-data/outputs/UKHONA_PAY_TAXI_RANK_PROBLEM.md`.
+Memorize demo script from `UKHONA_PAY_TAXI_RANK_PROBLEM.md`.
 Walk through demo 10 times flawlessly.
 Fallback plan if tech fails.
 
@@ -266,13 +247,7 @@ This is not a rebuild. This is a refinement.
 ## NEXT ACTION
 
 **Right now:**
-1. Open Claude Code terminal
-2. Reference `/mnt/user-data/outputs/CLAUDE_CODE_QUICK_REFERENCE.md`
-3. Start with Task 1 (Update README.md)
-4. Work through checklist systematically
-5. Test after each task
-6. Practice pitch when code is done
-
-**You've got a clear path. You've got the documents. You've got the team. Let's build.**
-
-Good luck, Saxs. You're solving a real problem for real people. The judges will see it.
+1. Start with Task 1 (Update README.md)
+2. Work through checklist systematically
+3. Test after each task
+4. Practice pitch when code is done

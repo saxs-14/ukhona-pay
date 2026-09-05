@@ -457,19 +457,4 @@ Show:
 
 ---
 
-## NEXT STEPS IN CLAUDE CODE
-
-When you open Claude Code in terminal, provide:
-1. This entire document as context (@file reference)
-2. Your GitHub repository (ukhona-pay)
-3. Specific file changes you want to make (README, frontend components, backend endpoint)
-4. Demo data (90 days of realistic taxi transactions)
-
-Claude Code will help you:
-- Quickly update copy/narrative across files
-- Add the credit readiness endpoint
-- Create the credit score UI component
-- Generate realistic demo data
-- Test everything end-to-end
-
 **You're in a good place. Let's build.**

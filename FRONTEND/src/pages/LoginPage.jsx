@@ -6,6 +6,7 @@ import { useAuth } from "../context/AuthContext";
 import Button from "../components/ui/Button";
 import { ease } from "../lib/motion";
 import { dashboardPathFor } from "../lib/roles";
+import logo from "../assets/Ukhona Logo.png";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -48,14 +49,14 @@ export default function LoginPage() {
         className="relative w-full max-w-sm rounded-2xl border border-sand-200 bg-white p-8 shadow-warm-lg"
       >
         <div className="mb-7 text-center">
-          <motion.div
+          <motion.img
+            src={logo}
+            alt="Ukhona Pay"
             initial={{ scale: 0.6, rotate: -8 }}
             animate={{ scale: 1, rotate: 0 }}
             transition={{ type: "spring", stiffness: 260, damping: 16, delay: 0.1 }}
-            className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-terracotta-600 font-display text-2xl text-white shadow-warm"
-          >
-            U
-          </motion.div>
+            className="mx-auto mb-4 h-16 w-16 object-contain"
+          />
           <h1 className="font-display text-2xl text-sand-900">Ukhona Pay</h1>
         </div>
 
