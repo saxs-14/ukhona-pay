@@ -25,4 +25,9 @@ public class WithdrawalController {
     public ResponseEntity<VendorBankWithdrawalResponse> withdrawToBank(@Valid @RequestBody VendorBankWithdrawalRequest request) {
         return ResponseEntity.ok(withdrawalService.withdrawToBank(CurrentUser.id(), request));
     }
+
+    @PostMapping("/cash-send")
+    public ResponseEntity<co.za.ukhonapay.dto.CashSendResponse> cashSend(@Valid @RequestBody co.za.ukhonapay.dto.CashSendRequest request) {
+        return ResponseEntity.ok(withdrawalService.cashSend(CurrentUser.id(), request));
+    }
 }

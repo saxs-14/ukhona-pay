@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { BadgeCheck, Camera, Clock, Landmark, MapPin, QrCode, ShoppingBag, TrendingUp, ArrowUpRight, ArrowDownLeft } from "lucide-react";
+import { BadgeCheck, Banknote, Camera, Clock, Landmark, MapPin, QrCode, TrendingUp, ArrowUpRight, ArrowDownLeft } from "lucide-react";
 import client from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import AnimatedNumber from "../components/ui/AnimatedNumber";
 import { SkeletonCard } from "../components/ui/Skeleton";
 import ScanAndPayModal from "../components/ScanAndPayModal";
 import VendorBankWithdrawModal from "../components/VendorBankWithdrawModal";
+import CashSendModal from "../components/CashSendModal";
 import { listContainer, listItem } from "../lib/motion";
 
 export default function VendorDashboard() {
@@ -19,6 +20,7 @@ export default function VendorDashboard() {
   const [loading, setLoading] = useState(true);
   const [isScanModalOpen, setIsScanModalOpen] = useState(false);
   const [isBankModalOpen, setIsBankModalOpen] = useState(false);
+  const [isCashSendOpen, setIsCashSendOpen] = useState(false);
 
   const loadData = () => {
     Promise.all([
@@ -79,13 +81,13 @@ export default function VendorDashboard() {
           <Camera size={18} />
           <span>Scan & Pay</span>
         </button>
-        <Link
-          to="/vendor/buy"
+        <button
+          onClick={() => setIsCashSendOpen(true)}
           className="flex flex-col items-center justify-center gap-1 rounded-xl border border-sand-200 bg-white py-2.5 px-2 text-center text-xs font-semibold text-sand-800 shadow-sm transition hover:border-terracotta-300 hover:bg-terracotta-50 active:scale-98"
         >
-          <ShoppingBag size={18} className="text-terracotta-600" />
-          <span>Buy Services</span>
-        </Link>
+          <Banknote size={18} className="text-terracotta-600" />
+          <span>CashSend</span>
+        </button>
         <button
           onClick={() => setIsBankModalOpen(true)}
           className="flex flex-col items-center justify-center gap-1 rounded-xl bg-bushveld-600 py-2.5 px-2 text-center text-xs font-semibold text-white shadow-sm transition hover:bg-bushveld-700 active:scale-98"
@@ -163,6 +165,13 @@ export default function VendorDashboard() {
       <VendorBankWithdrawModal
         isOpen={isBankModalOpen}
         onClose={() => setIsBankModalOpen(false)}
+        walletBalance={Number(wallet?.balance || 0)}
+        onSuccess={loadData}
+      />
+
+      <CashSendModal
+        isOpen={isCashSendOpen}
+        onClose={() => setIsCashSendOpen(false)}
         walletBalance={Number(wallet?.balance || 0)}
         onSuccess={loadData}
       />

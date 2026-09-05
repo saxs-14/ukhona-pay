@@ -26,12 +26,14 @@ import { SkeletonCard } from "../components/ui/Skeleton";
 import ScanAndPayModal from "../components/ScanAndPayModal";
 import VendorBankWithdrawModal from "../components/VendorBankWithdrawModal";
 import VendorStatementModal from "../components/VendorStatementModal";
+import CashSendModal from "../components/CashSendModal";
 import { ease, listContainer, listItem, spring } from "../lib/motion";
 
 const quickActions = [
-  { action: "withdraw", label: "Withdraw", icon: Landmark },
-  { to: "/driver/send", label: "Send to association", icon: Building2 },
+  { action: "withdraw", label: "Bank Payout", icon: Landmark },
+  { action: "cashsend", label: "CashSend", icon: Banknote },
   { action: "scan", label: "Scan & pay", icon: ScanLine },
+  { to: "/driver/send", label: "Association", icon: Building2 },
 ];
 
 const cardEnter = {
@@ -49,6 +51,7 @@ export default function DriverDashboard() {
   const [isScanModalOpen, setIsScanModalOpen] = useState(false);
   const [isBankModalOpen, setIsBankModalOpen] = useState(false);
   const [isStatementModalOpen, setIsStatementModalOpen] = useState(false);
+  const [isCashSendOpen, setIsCashSendOpen] = useState(false);
 
   const loadData = () => {
     Promise.all([
@@ -168,12 +171,15 @@ export default function DriverDashboard() {
 
 
       {/* Quick Actions Grid */}
-      <motion.div variants={cardEnter} transition={{ duration: 0.3, ease: ease.enter }} className="mt-4 grid grid-cols-3 gap-2">
+      <motion.div variants={cardEnter} transition={{ duration: 0.3, ease: ease.enter }} className="mt-4 grid grid-cols-4 gap-1.5">
         {quickActions.map((a) => {
           const handleClick = (e) => {
             if (a.action === "scan") {
               e.preventDefault();
               setIsScanModalOpen(true);
+            } else if (a.action === "cashsend") {
+              e.preventDefault();
+              setIsCashSendOpen(true);
             } else if (a.action === "withdraw") {
               e.preventDefault();
               setIsBankModalOpen(true);
@@ -185,19 +191,19 @@ export default function DriverDashboard() {
               {a.to ? (
                 <Link
                   to={a.to}
-                  className="flex flex-col items-center gap-1.5 rounded-xl border border-sand-200 bg-white px-2 py-3 text-center transition-colors hover:border-terracotta-300 hover:bg-terracotta-50"
+                  className="flex flex-col items-center gap-1.5 rounded-xl border border-sand-200 bg-white px-1.5 py-3 text-center transition-colors hover:border-terracotta-300 hover:bg-terracotta-50"
                 >
                   <a.icon size={18} className="text-terracotta-600" />
-                  <span className="text-xs font-medium leading-tight text-sand-700">{a.label}</span>
+                  <span className="text-[11px] font-medium leading-tight text-sand-700">{a.label}</span>
                 </Link>
               ) : (
                 <button
                   type="button"
                   onClick={handleClick}
-                  className="flex w-full flex-col items-center gap-1.5 rounded-xl border border-sand-200 bg-white px-2 py-3 text-center transition-colors hover:border-terracotta-300 hover:bg-terracotta-50"
+                  className="flex w-full flex-col items-center gap-1.5 rounded-xl border border-sand-200 bg-white px-1.5 py-3 text-center transition-colors hover:border-terracotta-300 hover:bg-terracotta-50"
                 >
                   <a.icon size={18} className="text-terracotta-600" />
-                  <span className="text-xs font-medium leading-tight text-sand-700">{a.label}</span>
+                  <span className="text-[11px] font-medium leading-tight text-sand-700">{a.label}</span>
                 </button>
               )}
             </motion.div>
@@ -341,6 +347,14 @@ export default function DriverDashboard() {
         isOpen={isStatementModalOpen}
         onClose={() => setIsStatementModalOpen(false)}
         vendor={vendor}
+      />
+
+      {/* CashSend Modal */}
+      <CashSendModal
+        isOpen={isCashSendOpen}
+        onClose={() => setIsCashSendOpen(false)}
+        walletBalance={Number(wallet?.balance || 0)}
+        onSuccess={loadData}
       />
     </motion.div>
   );
