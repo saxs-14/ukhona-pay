@@ -1,11 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-<<<<<<< HEAD
 import { BadgeCheck, Camera, Clock, Landmark, MapPin, QrCode, TrendingUp, ArrowUpRight, ArrowDownLeft } from "lucide-react";
-=======
-import { BadgeCheck, Clock, MapPin } from "lucide-react";
->>>>>>> 64b97030878b67831e527c719de4297ec8551cac
 import client from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import AnimatedNumber from "../components/ui/AnimatedNumber";
@@ -102,7 +98,6 @@ export default function VendorDashboard() {
         <p className="mt-2 break-all text-xs text-sand-400">{vendor.qrCode}</p>
       </motion.div>
 
-<<<<<<< HEAD
       {/* Business Insights Navigation */}
       <Link to="/vendor/analytics" className="mt-5 flex items-center justify-between rounded-2xl border border-sand-200 bg-white p-4 transition hover:border-terracotta-300 hover:bg-sand-50 shadow-sm">
         <div className="flex items-center gap-3">
@@ -116,14 +111,6 @@ export default function VendorDashboard() {
         </div>
         <span className="text-sm font-bold text-terracotta-600">View →</span>
       </Link>
-=======
-      <div className="mt-5 rounded-xl border border-sand-200 bg-white p-3 text-center">
-        <p className="text-xs text-sand-500">Insights</p>
-        <p className="text-lg font-semibold text-sand-800">
-          {transactions.length > 0 ? "View →" : "—"}
-        </p>
-      </div>
->>>>>>> 64b97030878b67831e527c719de4297ec8551cac
 
       {/* Transaction History */}
       <div className="mt-6">

@@ -6,13 +6,16 @@ import {
   BadgeCheck,
   Banknote,
   Building2,
+  Camera,
   Car,
   Clock,
+  FileText,
   Hourglass,
   Landmark,
   QrCode,
   ScanLine,
   ShieldAlert,
+  TrendingUp,
   Users,
   XCircle,
 } from "lucide-react";
@@ -20,12 +23,15 @@ import client from "../api/client";
 import AnimatedNumber from "../components/ui/AnimatedNumber";
 import FinancialScoreCard from "../components/ui/FinancialScoreCard";
 import { SkeletonCard } from "../components/ui/Skeleton";
+import ScanAndPayModal from "../components/ScanAndPayModal";
+import VendorBankWithdrawModal from "../components/VendorBankWithdrawModal";
+import VendorStatementModal from "../components/VendorStatementModal";
 import { ease, listContainer, listItem, spring } from "../lib/motion";
 
 const quickActions = [
-  { to: "/driver/withdraw", label: "Withdraw", icon: Landmark },
+  { action: "withdraw", label: "Withdraw", icon: Landmark },
   { to: "/driver/send", label: "Send to association", icon: Building2 },
-  { to: "/driver/scan", label: "Scan & pay", icon: ScanLine },
+  { action: "scan", label: "Scan & pay", icon: ScanLine },
 ];
 
 const cardEnter = {
@@ -39,15 +45,41 @@ export default function DriverDashboard() {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [amount, setAmount] = useState("");
+  const [hasVendorProfile, setHasVendorProfile] = useState(false);
+  const [isScanModalOpen, setIsScanModalOpen] = useState(false);
+  const [isBankModalOpen, setIsBankModalOpen] = useState(false);
+  const [isStatementModalOpen, setIsStatementModalOpen] = useState(false);
 
-  useEffect(() => {
-    Promise.all([client.get("/vendors/me"), client.get("/wallet/me"), client.get("/transactions/me")])
-      .then(([v, w, t]) => {
-        setVendor(v.data);
+  const loadData = () => {
+    Promise.all([
+      client.get("/vendors/me").catch(() => null),
+      client.get("/users/me"),
+      client.get("/wallet/me"),
+      client.get("/transactions/me"),
+    ])
+      .then(([v, u, w, t]) => {
+        if (v) {
+          setVendor(v.data);
+          setHasVendorProfile(true);
+        } else {
+          const profile = u.data;
+          setVendor({
+            businessName: `${profile.name} ${profile.surname || ""}`.trim(),
+            locationName: profile.rankName || profile.associationName || "Taxi driver",
+            associationName: profile.associationName,
+            status: "PENDING",
+            verified: false,
+            qrCode: null,
+          });
+        }
         setWallet(w.data);
-        setTransactions(t.data.slice(0, 5));
+        setTransactions(t.data.slice(0, 10));
       })
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    loadData();
   }, []);
 
   const payUrl = useMemo(() => {
@@ -64,9 +96,8 @@ export default function DriverDashboard() {
     );
   }
 
-  const isApproved = vendor.status === "APPROVED";
+  const isApproved = hasVendorProfile && vendor.status === "APPROVED";
   const isPending = vendor.status === "PENDING";
-  const isRejected = vendor.status === "REJECTED";
 
   return (
     <motion.div
@@ -76,7 +107,7 @@ export default function DriverDashboard() {
       className="mx-auto max-w-md px-4 py-6"
     >
       <motion.div variants={cardEnter} transition={{ duration: 0.3, ease: ease.enter }}>
-        <p className="mb-1 text-xs font-medium uppercase tracking-wide text-terracotta-600">Driver</p>
+        <p className="mb-1 text-xs font-medium uppercase tracking-wide text-terracotta-600">Driver Portal</p>
         <h1 className="flex items-center gap-1.5 font-display text-xl text-sand-900">
           {vendor.businessName} {vendor.verified && <BadgeCheck size={17} className="text-terracotta-600" />}
         </h1>
@@ -102,10 +133,16 @@ export default function DriverDashboard() {
           )}
           <div>
             <p className="font-semibold">
-              {isPending ? "Registration under review" : "Registration not approved"}
+              {!hasVendorProfile
+                ? "Taxi profile not linked yet"
+                : isPending
+                  ? "Registration under review"
+                  : "Registration not approved"}
             </p>
             <p className="mt-0.5 text-xs opacity-90">
-              {isPending
+              {!hasVendorProfile
+                ? "Your wallet and transaction history are available. Register or link your taxi profile to enable QR payments."
+                : isPending
                 ? `${vendor.associationName || "Your taxi association"} needs to verify your vehicle registration before you can receive payments.`
                 : `${vendor.associationName || "Your taxi association"} did not approve this registration. Contact them to resolve it.`}
             </p>
@@ -113,38 +150,59 @@ export default function DriverDashboard() {
         </motion.div>
       )}
 
+      {/* Driver Wallet Balance Card */}
       <motion.div
         variants={cardEnter}
         transition={{ duration: 0.3, ease: ease.enter }}
-        className="rounded-2xl bg-gradient-to-br from-terracotta-600 to-terracotta-700 p-4 text-white shadow-warm"
+        className="rounded-2xl bg-gradient-to-br from-terracotta-600 to-terracotta-700 p-5 text-white shadow-warm"
       >
-        <p className="text-xs text-terracotta-100">Income received</p>
-        <p className="text-2xl font-semibold">
+        <p className="text-xs text-terracotta-100">Driver Wallet Balance</p>
+        <p className="mt-1 text-3xl font-bold">
           <AnimatedNumber value={Number(wallet.balance)} prefix="R" />
         </p>
-        <p className="mt-1 text-xs text-terracotta-100">
-          From commuters paying via their own banking app
+        <p className="mt-2 text-xs text-terracotta-100">
+          Wallet balance available for instant payments and bank cashouts
         </p>
       </motion.div>
 
-      <motion.div variants={cardEnter} transition={{ duration: 0.3, ease: ease.enter }} className="mt-3 grid grid-cols-3 gap-2">
-        {quickActions.map((a) => (
-          <motion.div key={a.to} whileHover={isApproved ? { y: -2 } : undefined} whileTap={isApproved ? { scale: 0.96 } : undefined} transition={spring}>
-            <Link
-              to={isApproved ? a.to : "#"}
-              onClick={(e) => !isApproved && e.preventDefault()}
-              aria-disabled={!isApproved}
-              className={`flex flex-col items-center gap-1.5 rounded-xl border px-2 py-3 text-center transition-colors ${
-                isApproved
-                  ? "border-sand-200 bg-white hover:border-terracotta-300 hover:bg-terracotta-50"
-                  : "cursor-not-allowed border-sand-100 bg-sand-50 opacity-50"
-              }`}
-            >
-              <a.icon size={18} className="text-terracotta-600" />
-              <span className="text-xs font-medium leading-tight text-sand-700">{a.label}</span>
-            </Link>
-          </motion.div>
-        ))}
+
+
+      {/* Quick Actions Grid */}
+      <motion.div variants={cardEnter} transition={{ duration: 0.3, ease: ease.enter }} className="mt-4 grid grid-cols-3 gap-2">
+        {quickActions.map((a) => {
+          const handleClick = (e) => {
+            if (a.action === "scan") {
+              e.preventDefault();
+              setIsScanModalOpen(true);
+            } else if (a.action === "withdraw") {
+              e.preventDefault();
+              setIsBankModalOpen(true);
+            }
+          };
+
+          return (
+            <motion.div key={a.label} whileHover={{ y: -2 }} whileTap={{ scale: 0.96 }} transition={spring}>
+              {a.to ? (
+                <Link
+                  to={a.to}
+                  className="flex flex-col items-center gap-1.5 rounded-xl border border-sand-200 bg-white px-2 py-3 text-center transition-colors hover:border-terracotta-300 hover:bg-terracotta-50"
+                >
+                  <a.icon size={18} className="text-terracotta-600" />
+                  <span className="text-xs font-medium leading-tight text-sand-700">{a.label}</span>
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleClick}
+                  className="flex w-full flex-col items-center gap-1.5 rounded-xl border border-sand-200 bg-white px-2 py-3 text-center transition-colors hover:border-terracotta-300 hover:bg-terracotta-50"
+                >
+                  <a.icon size={18} className="text-terracotta-600" />
+                  <span className="text-xs font-medium leading-tight text-sand-700">{a.label}</span>
+                </button>
+              )}
+            </motion.div>
+          );
+        })}
       </motion.div>
 
       {vendor.vehicleRegistration && (
@@ -159,13 +217,22 @@ export default function DriverDashboard() {
         </motion.div>
       )}
 
+      {/* Driver Insights & Statement Navigation Card */}
       <motion.div variants={cardEnter} transition={{ duration: 0.3, ease: ease.enter }}>
-        <FinancialScoreCard />
+        <Link to="/driver/analytics" className="mt-3 flex items-center justify-between rounded-2xl border border-sand-200 bg-white p-4 transition hover:border-terracotta-300 hover:bg-sand-50 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-terracotta-50 text-terracotta-600">
+              <TrendingUp size={20} />
+            </div>
+            <div>
+              <h3 className="font-semibold text-sand-900">Driver Insights & Statement</h3>
+              <p className="text-xs text-sand-500">View fare analytics & export PDF statements</p>
+            </div>
+          </div>
+          <span className="text-sm font-bold text-terracotta-600">View →</span>
+        </Link>
       </motion.div>
 
-<<<<<<< HEAD
-
-=======
       {isApproved && (
         <motion.div
           variants={cardEnter}
@@ -192,7 +259,6 @@ export default function DriverDashboard() {
               className="w-full rounded-xl border border-sand-300 bg-sand-50/50 py-2.5 pl-10 pr-3 text-sand-900 transition-colors focus:border-terracotta-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-terracotta-100"
             />
           </div>
->>>>>>> 64b97030878b67831e527c719de4297ec8551cac
 
           <AnimatePresence mode="wait">
             {payUrl ? (
@@ -253,6 +319,30 @@ export default function DriverDashboard() {
           {transactions.length === 0 && <p className="text-sm text-sand-400">No payments received yet.</p>}
         </motion.div>
       </motion.div>
+
+      {/* Scan & Pay Modal */}
+      <ScanAndPayModal
+        isOpen={isScanModalOpen}
+        onClose={() => setIsScanModalOpen(false)}
+        walletBalance={wallet?.balance || 0}
+        onSuccess={loadData}
+      />
+
+      {/* Bank Payout Modal */}
+      <VendorBankWithdrawModal
+        isOpen={isBankModalOpen}
+        onClose={() => setIsBankModalOpen(false)}
+        walletBalance={wallet?.balance || 0}
+        onSuccess={loadData}
+      />
+
+      {/* Account PDF Statement Modal */}
+      <VendorStatementModal
+        isOpen={isStatementModalOpen}
+        onClose={() => setIsStatementModalOpen(false)}
+        vendor={vendor}
+      />
     </motion.div>
   );
 }
+

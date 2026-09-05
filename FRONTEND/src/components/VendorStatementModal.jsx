@@ -139,13 +139,13 @@ export default function VendorStatementModal({ isOpen, onClose, vendor }) {
                 <div class="logo-text">UKHONA PAY</div>
                 <div class="logo-sub">Fintech Payment & Savings Platform • Mbombela, South Africa</div>
               </div>
-              <div class="title-badge">OFFICIAL VENDOR STATEMENT</div>
+              <div class="title-badge">OFFICIAL ACCOUNT STATEMENT</div>
             </div>
 
             <div class="meta-grid">
               <div class="meta-box">
-                <div class="meta-title">Vendor Account Details</div>
-                <div class="meta-value">${vendor?.businessName || "Registered Vendor"}</div>
+                <div class="meta-title">Account Holder Details</div>
+                <div class="meta-value">${vendor?.businessName || "Registered Account"}</div>
                 <div style="font-size: 12px; color: #4B5563; margin-top: 3px;">Operating Rank: <strong>${vendor?.locationName || "Mbombela Taxi Rank"}</strong></div>
                 <div style="font-size: 11px; color: #6B7280; font-weight: 500; font-family: monospace; margin-top: 3px;">QR Code: ${vendor?.qrCode || "—"}</div>
               </div>

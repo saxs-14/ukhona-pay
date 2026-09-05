@@ -12,7 +12,7 @@ const traderLinks = (home) => [
 const driverLinks = [
   { to: "/driver", label: "Home", icon: Home },
   { to: "/driver/scan", label: "Pay", icon: ScanLine },
-  { to: "/vendor/analytics", label: "Insights", icon: BarChart3 },
+  { to: "/driver/analytics", label: "Insights", icon: BarChart3 },
   { to: "/transactions", label: "History", icon: History },
 ];
 
