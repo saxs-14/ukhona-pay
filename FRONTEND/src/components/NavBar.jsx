@@ -26,9 +26,11 @@ export default function NavBar() {
         <span className="font-display text-lg text-sand-900">Ukhona Pay</span>
       </Link>
       <div className="flex items-center gap-3 text-sm">
-        <Link to="/platform" title="Platform overview" aria-label="Platform overview" className="text-sand-500 hover:text-terracotta-700">
-          <BarChart3 size={20} />
-        </Link>
+        {user.userType === "ADMIN" && (
+          <Link to="/platform" title="Platform overview" aria-label="Platform overview" className="text-sand-500 hover:text-terracotta-700">
+            <BarChart3 size={20} />
+          </Link>
+        )}
         {user.userType === "ADMIN" && (
           <Link to="/admin" title="Admin control panel" aria-label="Admin control panel" className="text-sand-500 hover:text-terracotta-700">
             <ShieldCheck size={20} />
