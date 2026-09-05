@@ -48,8 +48,7 @@ public class BankWithdrawalService {
     public BankWithdrawalResponse withdraw(Long userId, BankWithdrawalRequest req) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-        boolean pinValid = passwordEncoder.matches(req.pin(), user.getPinHash()) || "1234".equals(req.pin());
-        if (!pinValid) {
+        if (!passwordEncoder.matches(req.pin(), user.getPinHash())) {
             throw new InvalidCredentialsException("Incorrect PIN");
         }
 

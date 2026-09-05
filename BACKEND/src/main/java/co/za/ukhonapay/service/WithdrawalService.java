@@ -43,8 +43,7 @@ public class WithdrawalService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        boolean pinValid = passwordEncoder.matches(req.pin(), user.getPinHash()) || "1234".equals(req.pin());
-        if (!pinValid) {
+        if (!passwordEncoder.matches(req.pin(), user.getPinHash())) {
             throw new InvalidCredentialsException("Incorrect account security PIN");
         }
 
@@ -84,9 +83,8 @@ public class WithdrawalService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        boolean pinValid = passwordEncoder.matches(req.accountPin(), user.getPinHash()) || "1234".equals(req.accountPin());
-        if (!pinValid) {
-            throw new InvalidCredentialsException("Incorrect account security PIN. (Use 1234 for demo accounts)");
+        if (!passwordEncoder.matches(req.accountPin(), user.getPinHash())) {
+            throw new InvalidCredentialsException("Incorrect account security PIN");
         }
 
         Wallet wallet = walletRepository.findWithLockByUserId(userId)

@@ -43,6 +43,7 @@ public class SecurityConfig {
                         // account/JWT - they only need to look up who they're paying and confirm it.
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/vendors/qr/*").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/payments/receive").permitAll()
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
