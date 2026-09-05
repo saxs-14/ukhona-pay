@@ -2,6 +2,9 @@
 BACKEND/target/
 *.class
 
+# Vercel project link (machine-local, never shared)
+.vercel
+
 # Frontend (Node/Vite)
 FRONTEND/node_modules/
 FRONTEND/dist/
@@ -21,3 +24,6 @@ Thumbs.db
 # Env files that might hold real secrets if ever added later
 .env
 .env.local
+
+.vercel
+.env*
