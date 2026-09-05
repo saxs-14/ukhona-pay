@@ -43,6 +43,14 @@ public class SecurityConfig {
                         // account/JWT - they only need to look up who they're paying and confirm it.
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/vendors/qr/*").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/payments/receive").permitAll()
+<<<<<<< HEAD
+=======
+                        // Real, enforced role check (not just the convention used elsewhere
+                        // in this codebase of 404-ing when a caller's own profile doesn't
+                        // match) - JwtAuthFilter already grants a ROLE_<userType> authority
+                        // from the JWT, so this is a one-line addition.
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+>>>>>>> origin/main
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();

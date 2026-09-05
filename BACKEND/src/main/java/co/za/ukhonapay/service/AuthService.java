@@ -59,6 +59,16 @@ public class AuthService {
 
     @Transactional
     public AuthResponse signup(SignupRequest req) {
+<<<<<<< HEAD
+=======
+        // Platform admin accounts are never self-registered - guard here (not
+        // just by omitting it from the frontend's role picker) since this is
+        // a public, unauthenticated endpoint and req.userType() is otherwise
+        // just deserialized straight off the request body.
+        if (req.userType() == UserType.ADMIN) {
+            throw new IllegalArgumentException("Admin accounts cannot be created through signup");
+        }
+>>>>>>> origin/main
         if (userRepository.existsByPhoneNumber(req.phoneNumber())) {
             throw new IllegalArgumentException("Phone number already registered");
         }

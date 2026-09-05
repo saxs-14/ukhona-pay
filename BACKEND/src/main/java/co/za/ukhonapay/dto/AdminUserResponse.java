@@ -1,17 +1,18 @@
 package co.za.ukhonapay.dto;
 
-public record UserResponse(
+import java.time.LocalDateTime;
+
+public record AdminUserResponse(
         Long id,
         String phoneNumber,
         String userType,
         String name,
         String surname,
         String email,
-<<<<<<< HEAD
-=======
         Long associationId,
->>>>>>> origin/main
         String associationName,
-        String rankName
+        Long rankId,
+        String rankName,
+        LocalDateTime createdAt
 ) {
 }

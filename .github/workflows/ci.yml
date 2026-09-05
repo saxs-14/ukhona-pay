@@ -12,6 +12,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+<<<<<<< HEAD
+=======
+        with:
+          fetch-depth: 0
+      - name: Verify Clean Contributor Attribution
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git fetch origin "${{ github.base_ref }}" --depth=50 2>/dev/null || true
+            RANGE="origin/${{ github.base_ref }}..HEAD"
+          elif git cat-file -e "${{ github.event.before }}" 2>/dev/null; then
+            RANGE="${{ github.event.before }}..${{ github.sha }}"
+          else
+            RANGE="-n 20"
+          fi
+          echo "Checking commits in range: $RANGE"
+          if git log $RANGE --format="%ae %B" | grep -Ei "saxs\.solutions25|Co-Authored-By:\s*Claude"; then
+            echo "::error::Forbidden author or co-author found in the commits being pushed!"
+            exit 1
+          fi
+          echo "Attribution check passed."
+>>>>>>> origin/main
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:

@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
+<<<<<<< HEAD
 import { AnimatePresence, motion } from "framer-motion";
 import { Building2, Car, Check, Clock, Hourglass, MapPin, Phone, ShieldCheck, User, Wallet, X } from "lucide-react";
+=======
+import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
+import { Building2, ChevronRight, Clock, Hourglass, MapPin, Phone, QrCode, ShieldCheck, User, Users, Wallet } from "lucide-react";
+>>>>>>> origin/main
 import client from "../api/client";
 import AnimatedNumber from "../components/ui/AnimatedNumber";
 import { SkeletonCard } from "../components/ui/Skeleton";
@@ -10,14 +16,19 @@ export default function AssociationAdminDashboard() {
   const [profile, setProfile] = useState(null);
   const [wallet, setWallet] = useState(null);
   const [transfers, setTransfers] = useState([]);
+<<<<<<< HEAD
   const [pendingDrivers, setPendingDrivers] = useState([]);
   const [decidingId, setDecidingId] = useState(null);
   const [decisionError, setDecisionError] = useState("");
+=======
+  const [pendingCount, setPendingCount] = useState(0);
+>>>>>>> origin/main
 
   useEffect(() => {
     client.get("/users/me").then((res) => setProfile(res.data));
     client.get("/wallet/association/me").then((res) => setWallet(res.data)).catch(() => setWallet(null));
     client.get("/transactions/association/me").then((res) => setTransfers(res.data)).catch(() => setTransfers([]));
+<<<<<<< HEAD
     client.get("/vendors/pending").then((res) => setPendingDrivers(res.data)).catch(() => setPendingDrivers([]));
   }, []);
 
@@ -34,6 +45,11 @@ export default function AssociationAdminDashboard() {
     }
   }
 
+=======
+    client.get("/vendors/pending").then((res) => setPendingCount(res.data.length)).catch(() => setPendingCount(0));
+  }, []);
+
+>>>>>>> origin/main
   if (!profile) {
     return (
       <div className="mx-auto max-w-md space-y-3 px-4 py-6">
@@ -68,6 +84,7 @@ export default function AssociationAdminDashboard() {
         </div>
       )}
 
+<<<<<<< HEAD
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -138,11 +155,48 @@ export default function AssociationAdminDashboard() {
           </div>
         )}
       </motion.div>
+=======
+      <div className="mt-3 grid grid-cols-2 gap-3">
+        <motion.div whileTap={{ scale: 0.97 }} transition={spring}>
+          <Link
+            to="/association-admin/drivers"
+            className="relative flex h-full flex-col justify-between rounded-2xl border border-sand-200 bg-white p-4 shadow-sm transition-colors hover:border-terracotta-300 hover:bg-terracotta-50"
+          >
+            {pendingCount > 0 && (
+              <span className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-gold-100 px-2 py-0.5 text-xs font-semibold text-gold-700">
+                <Hourglass size={11} /> {pendingCount}
+              </span>
+            )}
+            <Users size={22} className="text-terracotta-600" />
+            <div className="mt-3">
+              <p className="text-sm font-semibold text-sand-800">Drivers</p>
+              <p className="text-xs text-sand-500">Roster &amp; approvals</p>
+            </div>
+          </Link>
+        </motion.div>
+
+        <motion.div whileTap={{ scale: 0.97 }} transition={spring}>
+          <Link
+            to="/association-admin/qr"
+            className="flex h-full flex-col justify-between rounded-2xl border border-sand-200 bg-white p-4 shadow-sm transition-colors hover:border-terracotta-300 hover:bg-terracotta-50"
+          >
+            <QrCode size={22} className="text-terracotta-600" />
+            <div className="mt-3">
+              <p className="text-sm font-semibold text-sand-800">QR Code</p>
+              <p className="text-xs text-sand-500">Association identity</p>
+            </div>
+          </Link>
+        </motion.div>
+      </div>
+>>>>>>> origin/main
 
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
+<<<<<<< HEAD
         transition={{ delay: 0.05 }}
+=======
+>>>>>>> origin/main
         className="mt-3 rounded-2xl border border-sand-200 bg-white p-5 shadow-sm"
       >
         <div className="mb-4 flex items-center gap-1.5 text-sm font-semibold text-sand-700">
@@ -161,11 +215,24 @@ export default function AssociationAdminDashboard() {
       </motion.div>
 
       <div className="mt-6">
+<<<<<<< HEAD
         <h2 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-sand-700">
           <Clock size={14} /> Recent transfers from drivers
         </h2>
         <motion.div variants={listContainer} initial="initial" animate="animate" className="space-y-2">
           {transfers.map((t) => (
+=======
+        <div className="mb-2 flex items-center justify-between">
+          <h2 className="flex items-center gap-1.5 text-sm font-semibold text-sand-700">
+            <Clock size={14} /> Recent transfers from drivers
+          </h2>
+          <Link to="/transactions" className="flex items-center gap-0.5 text-xs font-semibold text-terracotta-700">
+            View all <ChevronRight size={13} />
+          </Link>
+        </div>
+        <motion.div variants={listContainer} initial="initial" animate="animate" className="space-y-2">
+          {transfers.slice(0, 5).map((t) => (
+>>>>>>> origin/main
             <motion.div key={t.reference} variants={listItem} className="flex items-center justify-between rounded-xl border border-sand-200 bg-white px-4 py-3">
               <div>
                 <p className="text-sm font-medium text-sand-800">{t.senderName}</p>
@@ -177,11 +244,14 @@ export default function AssociationAdminDashboard() {
           {transfers.length === 0 && <p className="text-sm text-sand-400">No transfers received yet.</p>}
         </motion.div>
       </div>
+<<<<<<< HEAD
 
       <div className="mt-6 rounded-xl bg-sand-50 p-4 text-sm text-sand-600">
         Driver and vendor oversight for {profile.associationName || "your association"} — member management and
         rank-level reporting are next on the roadmap.
       </div>
+=======
+>>>>>>> origin/main
     </div>
   );
 }

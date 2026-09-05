@@ -34,7 +34,11 @@ npm run dev
 ```
 Runs on `http://localhost:5173`, proxies `/api` to the backend.
 
+<<<<<<< HEAD
 ## Demo logins (PIN `1234` for everyone)
+=======
+## Demo logins
+>>>>>>> origin/main
 
 | Role | Phone | Name |
 |---|---|---|
@@ -43,6 +47,15 @@ Runs on `http://localhost:5173`, proxies `/api` to the backend.
 | Vendor (Retail) | `0711234502` | Thandi's Spaza Shop |
 | Vendor (Food) | `0711234503` | Mama Joy Kitchen |
 
+<<<<<<< HEAD
+=======
+PINs are intentionally **not** committed here — this repo is public, and a
+PIN written in plaintext (or reused across every seeded account) hands
+anyone standing admin access to the live deployment. Each seeded account in
+`DATABASE/schema.sql` now has its own unique PIN; ask a teammate for the
+current list over a private channel (not GitHub, not this file).
+
+>>>>>>> origin/main
 Lucky Taxi's QR code for manual entry in the scan screen: `UKP-VENDOR-LUCKYTAXI-001`
 
 ## Before you demo — read this

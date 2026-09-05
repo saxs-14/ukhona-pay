@@ -1,5 +1,9 @@
 package co.za.ukhonapay.service;
 
+<<<<<<< HEAD
+=======
+import co.za.ukhonapay.dto.AssociationDriverResponse;
+>>>>>>> origin/main
 import co.za.ukhonapay.dto.PendingDriverResponse;
 import co.za.ukhonapay.dto.VendorResponse;
 import co.za.ukhonapay.exception.ResourceNotFoundException;
@@ -83,6 +87,22 @@ public class VendorService {
         }).toList();
     }
 
+<<<<<<< HEAD
+=======
+    // Every driver linked to this admin's association, at any status - the
+    // full roster (member management), as opposed to pendingDriversForAssociation
+    // above which is only the current approval queue.
+    public List<AssociationDriverResponse> driversForAssociation(Long associationId) {
+        List<Vendor> drivers = vendorRepository.findByAssociationIdOrderByCreatedAt(associationId);
+        return drivers.stream().map(v -> {
+            User user = userRepository.findById(v.getUserId())
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found for driver"));
+            return new AssociationDriverResponse(v.getId(), user.getName(), user.getSurname(),
+                    user.getPhoneNumber(), v.getVehicleRegistration(), v.getStatus().name(), v.getCreatedAt());
+        }).toList();
+    }
+
+>>>>>>> origin/main
     @Transactional
     public void approveDriver(Long adminAssociationId, Long vendorId) {
         setDriverStatus(adminAssociationId, vendorId, VendorStatus.APPROVED);
