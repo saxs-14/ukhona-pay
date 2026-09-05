@@ -9,6 +9,7 @@ public record PaymentResponse(
         Long vendorId,
         String vendorName,
         BigDecimal amount,
+        BigDecimal platformFee,
         BigDecimal cashbackEarned,
         BigDecimal newWalletBalance,
         BigDecimal newCashbackBalance,

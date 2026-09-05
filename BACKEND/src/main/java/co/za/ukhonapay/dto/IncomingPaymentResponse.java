@@ -8,6 +8,7 @@ public record IncomingPaymentResponse(
         Long vendorId,
         String vendorName,
         BigDecimal amount,
+        BigDecimal platformFee,
         BigDecimal newVendorBalance,
         LocalDateTime timestamp
 ) {

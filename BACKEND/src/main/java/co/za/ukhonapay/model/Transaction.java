@@ -40,6 +40,13 @@ public class Transaction {
     @Column(name = "cashback_rate", nullable = false, precision = 4, scale = 3)
     private BigDecimal cashbackRate;
 
+    // Flat platform fee deducted from this transaction (0 for types the fee
+    // doesn't apply to, e.g. fines). amount stays the gross figure the sender
+    // was charged / the external payer sent; the receiver's actual credit is
+    // amount - platformFee.
+    @Column(name = "platform_fee", nullable = false, precision = 12, scale = 2)
+    private BigDecimal platformFee = BigDecimal.ZERO;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private TransactionStatus status;
@@ -76,6 +83,8 @@ public class Transaction {
     public void setCashbackAmount(BigDecimal cashbackAmount) { this.cashbackAmount = cashbackAmount; }
     public BigDecimal getCashbackRate() { return cashbackRate; }
     public void setCashbackRate(BigDecimal cashbackRate) { this.cashbackRate = cashbackRate; }
+    public BigDecimal getPlatformFee() { return platformFee; }
+    public void setPlatformFee(BigDecimal platformFee) { this.platformFee = platformFee; }
     public TransactionStatus getStatus() { return status; }
     public void setStatus(TransactionStatus status) { this.status = status; }
     public String getDescription() { return description; }
@@ -94,6 +103,7 @@ public class Transaction {
         public Builder amount(BigDecimal v) { transaction.amount = v; return this; }
         public Builder cashbackAmount(BigDecimal v) { transaction.cashbackAmount = v; return this; }
         public Builder cashbackRate(BigDecimal v) { transaction.cashbackRate = v; return this; }
+        public Builder platformFee(BigDecimal v) { transaction.platformFee = v; return this; }
         public Builder status(TransactionStatus v) { transaction.status = v; return this; }
         public Builder description(String v) { transaction.description = v; return this; }
         public Transaction build() { return transaction; }

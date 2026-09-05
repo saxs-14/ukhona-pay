@@ -20,7 +20,7 @@ import java.math.BigDecimal;
 public record IncomingPaymentRequest(
         @NotBlank String vendorQrCode,
         @NotNull
-        @DecimalMin(value = "0.01", message = "amount must be greater than 0")
+        @DecimalMin(value = "2.00", message = "amount must be at least R2.00 (covers the R1 platform fee)")
         @DecimalMax(value = "10000", message = "amount exceeds the per-payment limit")
         BigDecimal amount,
         String description

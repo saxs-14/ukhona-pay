@@ -115,7 +115,7 @@ export default function DriverSendMoney() {
               <input
                 required
                 type="number"
-                min="0.01"
+                min="2.00"
                 step="0.01"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
@@ -124,6 +124,7 @@ export default function DriverSendMoney() {
             </div>
             <p className="mt-1 text-xs text-sand-400">
               Pre-filled with your association's current membership dues - change it if you're sending a different amount.
+              A R1 platform fee applies.
             </p>
           </Field>
           <Field label="Note (optional)">

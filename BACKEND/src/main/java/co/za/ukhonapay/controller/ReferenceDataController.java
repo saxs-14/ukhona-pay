@@ -74,21 +74,28 @@ public class ReferenceDataController {
         return ResponseEntity.ok(new TaxiAssociationResponse(association.getId(), association.getName(), association.getDuesAmount()));
     }
 
+    // associationId narrows to ranks under that association - used by the
+    // signup and admin dropdowns so the rank list follows the chosen association.
     @GetMapping("/api/taxi-ranks")
-    public ResponseEntity<List<TaxiRankResponse>> listRanks() {
-        List<TaxiRank> ranks = taxiRankRepository.findAllByOrderByName();
-        return ResponseEntity.ok(ranks.stream().map(r -> new TaxiRankResponse(r.getId(), r.getName(), r.getLocationName())).toList());
+    public ResponseEntity<List<TaxiRankResponse>> listRanks(@RequestParam(required = false) Long associationId) {
+        List<TaxiRank> ranks = (associationId != null)
+                ? taxiRankRepository.findByAssociationIdOrderByName(associationId)
+                : taxiRankRepository.findAllByOrderByName();
+        return ResponseEntity.ok(ranks.stream().map(r -> new TaxiRankResponse(r.getId(), r.getName(), r.getLocationName(), r.getAssociationId())).toList());
     }
 
     // Same idempotent-by-name + race-safe pattern as associations, for a vendor
-    // or admin registering a rank that doesn't exist on the platform yet.
+    // or admin registering a rank that doesn't exist on the platform yet. Note:
+    // if a rank name already exists under a different association, the existing
+    // row (and its association) wins - insertIfAbsent only inserts, it never
+    // reassigns.
     @Transactional
     @PostMapping("/api/taxi-ranks")
     public ResponseEntity<TaxiRankResponse> createRank(@Valid @RequestBody CreateTaxiRankRequest req) {
         String name = req.name().trim();
-        taxiRankRepository.insertIfAbsent(name, req.locationName());
+        taxiRankRepository.insertIfAbsent(name, req.locationName(), req.associationId());
         TaxiRank rank = taxiRankRepository.findByNameIgnoreCase(name)
                 .orElseThrow(() -> new IllegalStateException("Rank insert raced but the row is missing"));
-        return ResponseEntity.ok(new TaxiRankResponse(rank.getId(), rank.getName(), rank.getLocationName()));
+        return ResponseEntity.ok(new TaxiRankResponse(rank.getId(), rank.getName(), rank.getLocationName(), rank.getAssociationId()));
     }
 }

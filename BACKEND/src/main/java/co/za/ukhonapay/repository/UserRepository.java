@@ -13,4 +13,5 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByIdNumber(String idNumber);
     List<User> findAllByOrderByCreatedAtDesc();
     long countByUserType(UserType userType);
+    Optional<User> findFirstByUserTypeOrderByIdAsc(UserType userType);
 }

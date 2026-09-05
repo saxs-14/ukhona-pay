@@ -35,15 +35,6 @@ function Field({ label, required, hint, error, children }) {
   );
 }
 
-// Resolves a typed name to an existing entity's id (case-insensitive match
-// against what's already on the platform) or creates a new one. There's no
-// pre-loaded list of associations/ranks - the first real user to need one
-// creates it, everyone after reuses it.
-async function resolveOrCreate(path, name, extra = {}) {
-  const { data } = await client.post(path, { name: name.trim(), ...extra });
-  return data.id;
-}
-
 export default function SignupPage() {
   const { signup } = useAuth();
   const navigate = useNavigate();
@@ -58,23 +49,24 @@ export default function SignupPage() {
     pin: "",
     email: "",
     vehicleRegistration: "",
-    associationName: "",
-    rankName: "",
+    associationId: "",
+    rankId: "",
   });
+  // Vendors don't submit an association - it only narrows the rank dropdown.
+  const [vendorAssociationFilter, setVendorAssociationFilter] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    refreshLists();
-  }, []);
-
-  function refreshLists() {
     Promise.all([client.get("/taxi-associations"), client.get("/taxi-ranks")]).then(([a, r]) => {
       setAssociations(a.data);
       setRanks(r.data);
     });
-  }
+  }, []);
+
+  const ranksForAssociation = (associationId) =>
+    associationId ? ranks.filter((r) => String(r.associationId) === String(associationId)) : [];
 
   function update(field, value) {
     setForm((f) => ({ ...f, [field]: value }));
@@ -95,14 +87,14 @@ export default function SignupPage() {
       if (!isValidVehicleReg(form.vehicleRegistration)) {
         errors.vehicleRegistration = "Not a valid South African number plate";
       }
-      if (form.associationName.trim().length < 3) errors.associationName = "Enter your taxi association's name";
+      if (!form.associationId) errors.associationId = "Select your taxi association";
     }
-    if (form.userType === "VENDOR" && form.rankName.trim().length < 3) {
-      errors.rankName = "Enter the rank you trade at";
+    if (form.userType === "VENDOR" && !form.rankId) {
+      errors.rankId = "Select the rank you trade at";
     }
     if (form.userType === "TAXI_ASSOCIATION_ADMIN") {
-      if (form.associationName.trim().length < 3) errors.associationName = "Enter the association you work for";
-      if (form.rankName.trim().length < 3) errors.rankName = "Enter the rank you oversee";
+      if (!form.associationId) errors.associationId = "Select the association you work for";
+      if (!form.rankId) errors.rankId = "Select the rank you oversee";
     }
     return errors;
   }
@@ -116,15 +108,6 @@ export default function SignupPage() {
 
     setLoading(true);
     try {
-      let associationId = null;
-      let rankId = null;
-      if (form.userType === "TAXI_DRIVER" || form.userType === "TAXI_ASSOCIATION_ADMIN") {
-        associationId = await resolveOrCreate("/taxi-associations", form.associationName);
-      }
-      if (form.userType === "VENDOR" || form.userType === "TAXI_ASSOCIATION_ADMIN") {
-        rankId = await resolveOrCreate("/taxi-ranks", form.rankName);
-      }
-
       const payload = {
         userType: form.userType,
         name: form.name,
@@ -134,8 +117,8 @@ export default function SignupPage() {
         pin: form.pin,
         email: form.email || null,
         vehicleRegistration: form.userType === "TAXI_DRIVER" ? normalizeVehicleReg(form.vehicleRegistration) : null,
-        associationId,
-        rankId,
+        associationId: form.associationId ? Number(form.associationId) : null,
+        rankId: form.rankId ? Number(form.rankId) : null,
       };
       const user = await signup(payload);
       navigate(dashboardPathFor(user.userType), { replace: true });
@@ -217,67 +200,74 @@ export default function SignupPage() {
                   className={inputCls("vehicleRegistration")}
                 />
               </Field>
-              <Field label="Taxi association" required hint="Start typing - pick your association if it's listed, or enter its name to register it" error={fieldErrors.associationName}>
-                <input
-                  list="association-options"
-                  value={form.associationName}
-                  onChange={(e) => update("associationName", e.target.value)}
-                  className={inputCls("associationName")}
-                />
-                <datalist id="association-options">
+              <Field label="Taxi association" required hint="Which association do you drive for?" error={fieldErrors.associationId}>
+                <select value={form.associationId} onChange={(e) => update("associationId", e.target.value)} className={inputCls("associationId")}>
+                  <option value="">Select an association...</option>
                   {associations.map((a) => (
-                    <option key={a.id} value={a.name} />
+                    <option key={a.id} value={a.id}>{a.name}</option>
                   ))}
-                </datalist>
+                </select>
               </Field>
             </motion.div>
           )}
 
           {form.userType === "VENDOR" && (
-            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="overflow-hidden">
-              <Field label="Taxi rank" required hint="Start typing - pick your rank if it's listed, or enter its name to register it" error={fieldErrors.rankName}>
-                <input
-                  list="rank-options"
-                  value={form.rankName}
-                  onChange={(e) => update("rankName", e.target.value)}
-                  className={inputCls("rankName")}
-                />
-                <datalist id="rank-options">
-                  {ranks.map((r) => (
-                    <option key={r.id} value={r.name} />
+            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="space-y-4 overflow-hidden">
+              <Field label="Taxi association" hint="Pick the association to narrow the rank list below">
+                <select
+                  value={vendorAssociationFilter}
+                  onChange={(e) => {
+                    setVendorAssociationFilter(e.target.value);
+                    update("rankId", "");
+                  }}
+                  className={inputClass}
+                >
+                  <option value="">All associations</option>
+                  {associations.map((a) => (
+                    <option key={a.id} value={a.id}>{a.name}</option>
                   ))}
-                </datalist>
+                </select>
+              </Field>
+              <Field label="Taxi rank" required hint="Where do you trade?" error={fieldErrors.rankId}>
+                <select value={form.rankId} onChange={(e) => update("rankId", e.target.value)} className={inputCls("rankId")}>
+                  <option value="">Select a rank...</option>
+                  {(vendorAssociationFilter ? ranksForAssociation(vendorAssociationFilter) : ranks).map((r) => (
+                    <option key={r.id} value={r.id}>{r.name}</option>
+                  ))}
+                </select>
               </Field>
             </motion.div>
           )}
 
           {form.userType === "TAXI_ASSOCIATION_ADMIN" && (
             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="space-y-4 overflow-hidden">
-              <Field label="Taxi association" required hint="Start typing - pick your association if it's listed, or enter its name to register it" error={fieldErrors.associationName}>
-                <input
-                  list="association-options"
-                  value={form.associationName}
-                  onChange={(e) => update("associationName", e.target.value)}
-                  className={inputCls("associationName")}
-                />
-                <datalist id="association-options">
+              <Field label="Taxi association" required hint="Which association do you administer?" error={fieldErrors.associationId}>
+                <select
+                  value={form.associationId}
+                  onChange={(e) => {
+                    update("associationId", e.target.value);
+                    update("rankId", "");
+                  }}
+                  className={inputCls("associationId")}
+                >
+                  <option value="">Select an association...</option>
                   {associations.map((a) => (
-                    <option key={a.id} value={a.name} />
+                    <option key={a.id} value={a.id}>{a.name}</option>
                   ))}
-                </datalist>
+                </select>
               </Field>
-              <Field label="Taxi rank" required hint="Start typing - pick the rank if it's listed, or enter its name to register it" error={fieldErrors.rankName}>
-                <input
-                  list="rank-options"
-                  value={form.rankName}
-                  onChange={(e) => update("rankName", e.target.value)}
-                  className={inputCls("rankName")}
-                />
-                <datalist id="rank-options">
-                  {ranks.map((r) => (
-                    <option key={r.id} value={r.name} />
+              <Field label="Taxi rank" required hint={form.associationId ? "Which rank do you oversee?" : "Select an association first"} error={fieldErrors.rankId}>
+                <select
+                  value={form.rankId}
+                  onChange={(e) => update("rankId", e.target.value)}
+                  disabled={!form.associationId}
+                  className={inputCls("rankId")}
+                >
+                  <option value="">Select a rank...</option>
+                  {ranksForAssociation(form.associationId).map((r) => (
+                    <option key={r.id} value={r.id}>{r.name}</option>
                   ))}
-                </datalist>
+                </select>
               </Field>
             </motion.div>
           )}

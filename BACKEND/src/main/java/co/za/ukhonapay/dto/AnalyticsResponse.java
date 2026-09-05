@@ -8,6 +8,7 @@ public record AnalyticsResponse(
         long totalTransactions,
         BigDecimal totalVolume,
         BigDecimal totalCashback,
+        BigDecimal totalPlatformFees,
         long activeVendors,
         List<TopVendor> topVendors,
         Map<String, Long> categoryBreakdown

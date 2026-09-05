@@ -8,7 +8,7 @@ import java.math.BigDecimal;
 
 public record PaymentRequest(
         @NotBlank String vendorQrCode,
-        @NotNull @DecimalMin(value = "0.01", message = "amount must be greater than 0") BigDecimal amount,
+        @NotNull @DecimalMin(value = "2.00", message = "amount must be at least R2.00 (covers the R1 platform fee)") BigDecimal amount,
         @NotBlank String pin,
         String description
 ) {

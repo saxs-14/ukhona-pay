@@ -37,6 +37,12 @@ CREATE TABLE taxi_ranks (
     id              BIGSERIAL PRIMARY KEY,
     name            VARCHAR(150) NOT NULL,
     location_name   VARCHAR(150),
+    -- Which association this rank falls under - nullable at the DB level
+    -- (a rank predating this column, or an edge case, shouldn't become
+    -- unreferenceable) but required going forward at the application layer:
+    -- signup and admin both pick an association first, then a rank scoped
+    -- to it (see ReferenceDataController#listRanks, CreateTaxiRankRequest).
+    association_id  BIGINT REFERENCES taxi_associations(id),
     created_at      TIMESTAMP NOT NULL DEFAULT now()
 );
 
@@ -121,6 +127,11 @@ CREATE TABLE transactions (
     amount              NUMERIC(12,2) NOT NULL CHECK (amount > 0),
     cashback_amount     NUMERIC(12,2) NOT NULL DEFAULT 0,
     cashback_rate       NUMERIC(4,3) NOT NULL DEFAULT 0.025,
+    -- Flat platform fee deducted from this transaction (0 for types it
+    -- doesn't apply to, e.g. fines) - amount stays the gross figure charged
+    -- to the sender/paid by the external payer; the receiver's actual credit
+    -- is amount - platform_fee. See WalletService.PLATFORM_FEE.
+    platform_fee        NUMERIC(12,2) NOT NULL DEFAULT 0,
     status              VARCHAR(20) NOT NULL DEFAULT 'COMPLETED' CHECK (status IN ('PENDING', 'COMPLETED', 'FAILED')),
     description         VARCHAR(255),
     created_at          TIMESTAMP NOT NULL DEFAULT now(),
@@ -195,12 +206,12 @@ INSERT INTO taxi_associations (id, name) VALUES
 (3, 'White River Taxi Association (WRTA)'),
 (4, 'Ehlanzeni District Taxi Council');
 
-INSERT INTO taxi_ranks (id, name, location_name) VALUES
-(1, 'Mbombela Taxi Rank', 'Mbombela CBD'),
-(2, 'KaNyamazane Taxi Rank', 'KaNyamazane'),
-(3, 'Sonheuwel Taxi Rank', 'Sonheuwel'),
-(4, 'Kabokweni Taxi Rank', 'Kabokweni'),
-(5, 'White River Taxi Rank', 'White River');
+INSERT INTO taxi_ranks (id, name, location_name, association_id) VALUES
+(1, 'Mbombela Taxi Rank', 'Mbombela CBD', 1),
+(2, 'KaNyamazane Taxi Rank', 'KaNyamazane', 2),
+(3, 'Sonheuwel Taxi Rank', 'Sonheuwel', 1),
+(4, 'Kabokweni Taxi Rank', 'Kabokweni', 1),
+(5, 'White River Taxi Rank', 'White River', 3);
 
 SELECT setval('taxi_associations_id_seq', (SELECT max(id) FROM taxi_associations));
 SELECT setval('taxi_ranks_id_seq', (SELECT max(id) FROM taxi_ranks));
@@ -253,7 +264,10 @@ INSERT INTO wallets (user_id, balance, cashback_balance, currency) VALUES
 (8, 1000.00, 0.00, 'ZAR'),
 (9, 1000.00, 0.00, 'ZAR'),
 (10, 1000.00, 0.00, 'ZAR'),
-(11, 10000.00, 0.00, 'ZAR');
+(11, 10000.00, 0.00, 'ZAR'),
+-- Platform administrator's wallet - collects the R1 platform fee off every
+-- user-initiated transaction (see WalletService.getLockedPlatformFeeWallet).
+(12, 0.00, 0.00, 'ZAR');
 
 -- Association Wallet for MALTA
 INSERT INTO wallets (association_id, balance, cashback_balance, currency) VALUES

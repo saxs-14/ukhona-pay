@@ -52,6 +52,7 @@ export default function PlatformDashboard() {
     { label: "Total transactions", value: data.totalTransactions, decimals: 0, gradient: "from-terracotta-600 to-terracotta-700" },
     { label: "Transaction volume", value: Number(data.totalVolume), decimals: 0, prefix: "R", gradient: "from-bushveld-600 to-bushveld-700" },
     { label: "Cashback paid out", value: Number(data.totalCashback), decimals: 2, prefix: "R", gradient: "from-gold-500 to-gold-600" },
+    { label: "Platform fee revenue", value: Number(data.totalPlatformFees), decimals: 2, prefix: "R", gradient: "from-terracotta-500 to-gold-600" },
     { label: "Active vendors", value: data.activeVendors, decimals: 0, gradient: "from-sand-700 to-sand-800" },
   ];
 

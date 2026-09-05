@@ -43,6 +43,7 @@ public class AnalyticsService {
 
         BigDecimal totalVolume = all.stream().map(Transaction::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal totalCashback = all.stream().map(Transaction::getCashbackAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalPlatformFees = all.stream().map(Transaction::getPlatformFee).reduce(BigDecimal.ZERO, BigDecimal::add);
         long activeVendors = vendorRepository.count();
 
         Map<Long, Long> countByVendor = all.stream()
@@ -63,7 +64,7 @@ public class AnalyticsService {
                 .map(t -> vendorRepository.findById(t.getVendorId()).map(v -> v.getCategory().name()).orElse("OTHER"))
                 .collect(Collectors.groupingBy(c -> c, LinkedHashMap::new, Collectors.counting()));
 
-        return new AnalyticsResponse(all.size(), totalVolume, totalCashback, activeVendors, topVendors, categoryBreakdown);
+        return new AnalyticsResponse(all.size(), totalVolume, totalCashback, totalPlatformFees, activeVendors, topVendors, categoryBreakdown);
     }
 
     public Map<String, Object> vendorAnalytics(Long vendorId) {

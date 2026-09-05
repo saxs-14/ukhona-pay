@@ -246,7 +246,7 @@ export default function ScanAndPayModal({ isOpen, onClose, walletBalance, onSucc
                   <input
                     type="number"
                     step="0.01"
-                    min="1"
+                    min="2.00"
                     placeholder="0.00"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
@@ -256,6 +256,7 @@ export default function ScanAndPayModal({ isOpen, onClose, walletBalance, onSucc
                 </div>
                 <p className="mt-1.5 text-xs text-sand-500">
                   Available wallet balance: <span className="font-semibold text-bushveld-700">R{walletBalance?.toFixed(2)}</span>
+                  {" · "}A R1 platform fee applies.
                 </p>
               </div>
 

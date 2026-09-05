@@ -4,8 +4,11 @@ import co.za.ukhonapay.dto.AssociationWalletResponse;
 import co.za.ukhonapay.dto.WalletResponse;
 import co.za.ukhonapay.exception.ResourceNotFoundException;
 import co.za.ukhonapay.model.TaxiAssociation;
+import co.za.ukhonapay.model.User;
 import co.za.ukhonapay.model.Wallet;
+import co.za.ukhonapay.model.enums.UserType;
 import co.za.ukhonapay.repository.TaxiAssociationRepository;
+import co.za.ukhonapay.repository.UserRepository;
 import co.za.ukhonapay.repository.WalletRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,12 +18,35 @@ import java.math.BigDecimal;
 @Service
 public class WalletService {
 
+    // Flat fee charged to the platform on every user-initiated transaction
+    // (wallet-to-wallet payment, commuter-to-vendor payment, association dues
+    // transfer), credited into the platform administrator's own personal
+    // wallet - the wallets table only allows a user-linked or association-linked
+    // row, so there's no separate "platform wallet" entity; the ADMIN's wallet
+    // fills that role.
+    public static final BigDecimal PLATFORM_FEE = new BigDecimal("1.00");
+
     private final WalletRepository walletRepository;
     private final TaxiAssociationRepository taxiAssociationRepository;
+    private final UserRepository userRepository;
 
-    public WalletService(WalletRepository walletRepository, TaxiAssociationRepository taxiAssociationRepository) {
+    public WalletService(WalletRepository walletRepository, TaxiAssociationRepository taxiAssociationRepository,
+                          UserRepository userRepository) {
         this.walletRepository = walletRepository;
         this.taxiAssociationRepository = taxiAssociationRepository;
+        this.userRepository = userRepository;
+    }
+
+    // There is exactly one ADMIN account (public self-signup as ADMIN is
+    // blocked - see AuthService.signup), so the earliest-created one is always
+    // THE platform administrator. Locked because it's mutated inside the same
+    // transaction as the sender/receiver wallets.
+    @Transactional
+    public Wallet getLockedPlatformFeeWallet() {
+        User admin = userRepository.findFirstByUserTypeOrderByIdAsc(UserType.ADMIN)
+                .orElseThrow(() -> new IllegalStateException("No platform administrator account exists"));
+        return walletRepository.findWithLockByUserId(admin.getId())
+                .orElseThrow(() -> new IllegalStateException("Platform administrator wallet not found"));
     }
 
     public WalletResponse getWallet(Long userId) {

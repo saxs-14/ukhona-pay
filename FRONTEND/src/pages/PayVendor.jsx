@@ -144,7 +144,7 @@ export default function PayVendor() {
                     <input
                       required
                       type="number"
-                      min="0.01"
+                      min="2.00"
                       step="0.01"
                       placeholder="Custom amount"
                       value={amount}
@@ -152,6 +152,7 @@ export default function PayVendor() {
                       className="w-full rounded-xl border border-sand-300 bg-sand-50/50 py-2.5 pl-10 pr-3 text-sand-900 transition-colors focus:border-terracotta-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-terracotta-100"
                     />
                   </div>
+                  <p className="text-xs text-sand-400">A R1 platform fee applies.</p>
                 </>
               )}
               {payError && <p className="text-sm text-red-600">{payError}</p>}

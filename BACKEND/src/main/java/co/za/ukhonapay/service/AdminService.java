@@ -207,8 +207,11 @@ public class AdminService {
                 .orElseThrow(() -> new ResourceNotFoundException("Taxi rank not found"));
         rank.setName(req.name().trim());
         rank.setLocationName(req.locationName());
+        if (req.associationId() != null) {
+            rank.setAssociationId(req.associationId());
+        }
         rank = taxiRankRepository.save(rank);
-        return new TaxiRankResponse(rank.getId(), rank.getName(), rank.getLocationName());
+        return new TaxiRankResponse(rank.getId(), rank.getName(), rank.getLocationName(), rank.getAssociationId());
     }
 
     @Transactional

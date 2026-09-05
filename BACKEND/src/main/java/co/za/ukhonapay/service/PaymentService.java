@@ -84,10 +84,19 @@ public class PaymentService {
             throw new InsufficientFundsException("Insufficient wallet balance for this payment");
         }
 
+        // Platform wallet is always locked last, after every other wallet in
+        // this transaction - a fixed lock order across pay/transferToAssociation
+        // /receiveExternalPayment so concurrent transactions can't deadlock on it.
+        BigDecimal fee = WalletService.PLATFORM_FEE;
+        BigDecimal netAmount = amount.subtract(fee);
+        Wallet platformWallet = walletService.getLockedPlatformFeeWallet();
+
         senderWallet.setBalance(senderWallet.getBalance().subtract(amount));
-        WalletService.creditWithAutoAllocation(vendorWallet, amount);
+        WalletService.creditWithAutoAllocation(vendorWallet, netAmount);
+        platformWallet.setBalance(platformWallet.getBalance().add(fee));
         walletRepository.save(senderWallet);
         walletRepository.save(vendorWallet);
+        walletRepository.save(platformWallet);
 
         Transaction transaction = Transaction.builder()
                 .reference(generateReference())
@@ -95,6 +104,7 @@ public class PaymentService {
                 .receiverId(vendor.getUserId())
                 .vendorId(vendor.getId())
                 .amount(amount)
+                .platformFee(fee)
                 .cashbackAmount(BigDecimal.ZERO)
                 .cashbackRate(BigDecimal.ZERO)
                 .status(TransactionStatus.COMPLETED)
@@ -108,6 +118,7 @@ public class PaymentService {
                 vendor.getId(),
                 vendor.getBusinessName(),
                 amount,
+                fee,
                 BigDecimal.ZERO,
                 senderWallet.getBalance(),
                 senderWallet.getCashbackBalance(),
@@ -141,17 +152,23 @@ public class PaymentService {
         }
 
         Wallet associationWallet = walletService.getOrCreateLockedAssociationWallet(associationId);
+        BigDecimal fee = WalletService.PLATFORM_FEE;
+        BigDecimal netAmount = amount.subtract(fee);
+        Wallet platformWallet = walletService.getLockedPlatformFeeWallet();
 
         senderWallet.setBalance(senderWallet.getBalance().subtract(amount));
-        associationWallet.setBalance(associationWallet.getBalance().add(amount));
+        associationWallet.setBalance(associationWallet.getBalance().add(netAmount));
+        platformWallet.setBalance(platformWallet.getBalance().add(fee));
         walletRepository.save(senderWallet);
         walletRepository.save(associationWallet);
+        walletRepository.save(platformWallet);
 
         Transaction transaction = Transaction.builder()
                 .reference(generateReference())
                 .senderId(driverId)
                 .receiverAssociationId(associationId)
                 .amount(amount)
+                .platformFee(fee)
                 .cashbackAmount(BigDecimal.ZERO)
                 .cashbackRate(BigDecimal.ZERO)
                 .status(TransactionStatus.COMPLETED)
@@ -161,7 +178,7 @@ public class PaymentService {
 
         return new AssociationTransferResponse(
                 transaction.getReference(), associationId, association.getName(),
-                amount, senderWallet.getBalance(), transaction.getCreatedAt());
+                amount, fee, senderWallet.getBalance(), transaction.getCreatedAt());
     }
 
     // An association admin fining a driver in their own association - unlike
@@ -169,7 +186,8 @@ public class PaymentService {
     // the one authorizing it) and capped at the driver's available balance
     // rather than allowed to go negative: wallets.balance has a DB-level
     // CHECK (balance >= 0), and tracking money genuinely owed beyond that is
-    // a real debt-ledger feature this doesn't attempt to be.
+    // a real debt-ledger feature this doesn't attempt to be. No platform fee -
+    // it's a punitive admin action, not a voluntary transaction.
     @Transactional
     public AssociationTransferResponse issueFine(Long adminAssociationId, Long vendorId, BigDecimal amount, String reason) {
         Vendor vendor = vendorRepository.findById(vendorId)
@@ -206,7 +224,7 @@ public class PaymentService {
 
         return new AssociationTransferResponse(
                 transaction.getReference(), adminAssociationId, association.getName(),
-                amount, driverWallet.getBalance(), transaction.getCreatedAt());
+                amount, BigDecimal.ZERO, driverWallet.getBalance(), transaction.getCreatedAt());
     }
 
     // A commuter paying via their own banking app - no sender wallet to debit,
@@ -222,14 +240,21 @@ public class PaymentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Vendor wallet not found"));
 
         BigDecimal amount = req.amount();
-        WalletService.creditWithAutoAllocation(vendorWallet, amount);
+        BigDecimal fee = WalletService.PLATFORM_FEE;
+        BigDecimal netAmount = amount.subtract(fee);
+        Wallet platformWallet = walletService.getLockedPlatformFeeWallet();
+
+        WalletService.creditWithAutoAllocation(vendorWallet, netAmount);
+        platformWallet.setBalance(platformWallet.getBalance().add(fee));
         walletRepository.save(vendorWallet);
+        walletRepository.save(platformWallet);
 
         Transaction transaction = Transaction.builder()
                 .reference(generateReference())
                 .receiverId(vendor.getUserId())
                 .vendorId(vendor.getId())
                 .amount(amount)
+                .platformFee(fee)
                 .cashbackAmount(BigDecimal.ZERO)
                 .cashbackRate(BigDecimal.ZERO)
                 .status(TransactionStatus.COMPLETED)
@@ -239,7 +264,7 @@ public class PaymentService {
 
         return new IncomingPaymentResponse(
                 transaction.getReference(), vendor.getId(), vendor.getBusinessName(),
-                amount, vendorWallet.getBalance(), transaction.getCreatedAt());
+                amount, fee, vendorWallet.getBalance(), transaction.getCreatedAt());
     }
 
     // Blocks payments to a driver whose registration hasn't been approved by

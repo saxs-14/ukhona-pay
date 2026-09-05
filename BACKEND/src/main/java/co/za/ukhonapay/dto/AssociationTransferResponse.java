@@ -8,6 +8,7 @@ public record AssociationTransferResponse(
         Long associationId,
         String associationName,
         BigDecimal amount,
+        BigDecimal platformFee,
         BigDecimal newWalletBalance,
         LocalDateTime timestamp
 ) {

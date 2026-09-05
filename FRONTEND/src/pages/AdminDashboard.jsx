@@ -82,6 +82,7 @@ export default function AdminDashboard() {
         <ReferencePanel
           kind="rank"
           items={ranks}
+          associations={associations}
           onChange={reloadAll}
           onError={setError}
         />
@@ -354,22 +355,31 @@ function VendorsPanel({ vendors, associations, ranks, onChange, onError }) {
   );
 }
 
-function ReferencePanel({ kind, items, onChange, onError }) {
+function ReferencePanel({ kind, items, associations, onChange, onError }) {
   const isAssociation = kind === "association";
   const basePath = isAssociation ? "/taxi-associations" : "/taxi-ranks";
   const adminPath = isAssociation ? "/admin/taxi-associations" : "/admin/taxi-ranks";
 
   const [editingId, setEditingId] = useState(null);
-  const [form, setForm] = useState({ name: "", locationName: "", duesAmount: "" });
-  const [newItem, setNewItem] = useState({ name: "", locationName: "" });
+  const [form, setForm] = useState({ name: "", locationName: "", duesAmount: "", associationId: "" });
+  const [newItem, setNewItem] = useState({ name: "", locationName: "", associationId: "" });
   const [saving, setSaving] = useState(false);
   const [adding, setAdding] = useState(false);
 
   if (!items) return <SkeletonCard />;
 
+  function associationName(associationId) {
+    return associations?.find((a) => a.id === associationId)?.name || "Unknown association";
+  }
+
   function startEdit(item) {
     setEditingId(item.id);
-    setForm({ name: item.name, locationName: item.locationName || "", duesAmount: item.duesAmount ?? "" });
+    setForm({
+      name: item.name,
+      locationName: item.locationName || "",
+      duesAmount: item.duesAmount ?? "",
+      associationId: item.associationId ?? "",
+    });
   }
 
   async function save(id) {
@@ -380,6 +390,7 @@ function ReferencePanel({ kind, items, onChange, onError }) {
         name: form.name,
         locationName: form.locationName || null,
         duesAmount: isAssociation && form.duesAmount !== "" ? Number(form.duesAmount) : null,
+        associationId: !isAssociation && form.associationId !== "" ? Number(form.associationId) : null,
       });
       setEditingId(null);
       onChange();
@@ -405,8 +416,12 @@ function ReferencePanel({ kind, items, onChange, onError }) {
     setAdding(true);
     onError("");
     try {
-      await client.post(basePath, { name: newItem.name, locationName: newItem.locationName || null });
-      setNewItem({ name: "", locationName: "" });
+      await client.post(basePath, {
+        name: newItem.name,
+        locationName: newItem.locationName || null,
+        associationId: !isAssociation ? Number(newItem.associationId) : undefined,
+      });
+      setNewItem({ name: "", locationName: "", associationId: "" });
       onChange();
     } catch (err) {
       onError(err.message);
@@ -428,12 +443,25 @@ function ReferencePanel({ kind, items, onChange, onError }) {
             onChange={(e) => setNewItem((f) => ({ ...f, name: e.target.value }))}
           />
           {!isAssociation && (
-            <input
-              placeholder="Location"
-              className={`${inputClass} flex-1`}
-              value={newItem.locationName}
-              onChange={(e) => setNewItem((f) => ({ ...f, locationName: e.target.value }))}
-            />
+            <>
+              <input
+                placeholder="Location"
+                className={`${inputClass} flex-1`}
+                value={newItem.locationName}
+                onChange={(e) => setNewItem((f) => ({ ...f, locationName: e.target.value }))}
+              />
+              <select
+                required
+                className={`${inputClass} flex-1`}
+                value={newItem.associationId}
+                onChange={(e) => setNewItem((f) => ({ ...f, associationId: e.target.value }))}
+              >
+                <option value="">Which association is this rank under?</option>
+                {associations?.map((a) => (
+                  <option key={a.id} value={a.id}>{a.name}</option>
+                ))}
+              </select>
+            </>
           )}
           <Button type="submit" loading={adding}>Add</Button>
         </form>
@@ -451,9 +479,23 @@ function ReferencePanel({ kind, items, onChange, onError }) {
                   <input className={inputClass} value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
                 </Field>
                 {!isAssociation && (
-                  <Field label="Location">
-                    <input className={inputClass} value={form.locationName} onChange={(e) => setForm((f) => ({ ...f, locationName: e.target.value }))} />
-                  </Field>
+                  <>
+                    <Field label="Location">
+                      <input className={inputClass} value={form.locationName} onChange={(e) => setForm((f) => ({ ...f, locationName: e.target.value }))} />
+                    </Field>
+                    <Field label="Taxi association">
+                      <select
+                        className={inputClass}
+                        value={form.associationId}
+                        onChange={(e) => setForm((f) => ({ ...f, associationId: e.target.value }))}
+                      >
+                        <option value="">Select an association...</option>
+                        {associations?.map((a) => (
+                          <option key={a.id} value={a.id}>{a.name}</option>
+                        ))}
+                      </select>
+                    </Field>
+                  </>
                 )}
                 {isAssociation && (
                   <Field label="Membership dues (R)">
@@ -478,6 +520,7 @@ function ReferencePanel({ kind, items, onChange, onError }) {
                   <p className="text-sm font-semibold text-sand-800">{item.name}</p>
                   {item.locationName && <p className="text-xs text-sand-400">{item.locationName}</p>}
                   {isAssociation && <p className="text-xs text-sand-400">Dues: R{Number(item.duesAmount).toFixed(2)}</p>}
+                  {!isAssociation && <p className="text-xs text-sand-400">{associationName(item.associationId)}</p>}
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   <button onClick={() => startEdit(item)} className="flex items-center gap-1 rounded-lg border border-sand-300 px-2.5 py-1.5 text-xs font-semibold text-sand-700 hover:bg-sand-50">
