@@ -1,10 +1,6 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-<<<<<<< HEAD
-import { BarChart3, History, Home, ScanLine } from "lucide-react";
-=======
 import { BarChart3, History, Home, QrCode, ScanLine, Users } from "lucide-react";
->>>>>>> origin/main
 import { useAuth } from "../context/AuthContext";
 
 const traderLinks = (home) => [
@@ -22,15 +18,12 @@ const driverLinks = [
 
 const adminLinks = [
   { to: "/association-admin", label: "Home", icon: Home },
-<<<<<<< HEAD
-=======
   { to: "/association-admin/drivers", label: "Drivers", icon: Users },
   { to: "/association-admin/qr", label: "QR Code", icon: QrCode },
 ];
 
 const platformAdminLinks = [
   { to: "/admin", label: "Home", icon: Home },
->>>>>>> origin/main
 ];
 
 export default function BottomNav() {
@@ -41,10 +34,7 @@ export default function BottomNav() {
   let links;
   if (user.userType === "VENDOR") links = traderLinks("/vendor");
   else if (user.userType === "TAXI_DRIVER") links = driverLinks;
-<<<<<<< HEAD
-=======
   else if (user.userType === "ADMIN") links = platformAdminLinks;
->>>>>>> origin/main
   else links = adminLinks;
 
   return (
