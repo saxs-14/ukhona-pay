@@ -86,6 +86,8 @@ public class AuthService {
                 associationId = requireAssociation(req.associationId());
                 rankId = requireRank(req.rankId());
             }
+            case ADMIN -> throw new IllegalArgumentException(
+                    "The platform administrator account cannot be created through public signup");
         }
 
         User.Builder userBuilder = User.builder()
