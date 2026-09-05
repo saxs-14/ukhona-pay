@@ -346,7 +346,7 @@ Return data specific to taxi rank:
 
 Run through this **exactly as judges will see it:**
 
-- [ ] Login as Lucky Taxi (phone: 0711234501, PIN: 1234)
+- [ ] Login as Lucky Taxi (phone: 0711234501 — ask a teammate for the current PIN)
 - [ ] Dashboard shows "Your Income Record" (not "Earnings")
 - [ ] Shows: "Record a taxi payment" or "Log a passenger"
 - [ ] Click "Record a payment"
