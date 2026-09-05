@@ -58,6 +58,7 @@ public class ServicePurchaseService {
 
         ServicePurchaseType type = ServicePurchaseType.valueOf(req.type());
         BigDecimal amount = req.amount();
+        requireTypeSpecificFields(type, req);
 
         Wallet wallet = walletRepository.findWithLockByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Wallet not found"));
@@ -125,6 +126,36 @@ public class ServicePurchaseService {
 
     public List<ServicePurchase> historyForUser(Long userId) {
         return servicePurchaseRepository.findByUserIdOrderByCreatedAtDesc(userId);
+    }
+
+    // The request DTO shares one set of optional fields across all three
+    // purchase types (each type only needs a subset), so @NotBlank on the
+    // DTO itself can't express "required only for AIRTIME" etc. Without
+    // this, a purchase could debit the wallet with no real destination at
+    // all (found during a security review: AIRTIME with network/
+    // recipientPhone both null still succeeded and took real money).
+    private void requireTypeSpecificFields(ServicePurchaseType type, ServicePurchaseRequest req) {
+        switch (type) {
+            case AIRTIME -> {
+                requireNonBlank(req.network(), "network");
+                requireNonBlank(req.recipientPhone(), "recipientPhone");
+            }
+            case ELECTRICITY -> {
+                requireNonBlank(req.meterNumber(), "meterNumber");
+                requireNonBlank(req.municipality(), "municipality");
+            }
+            case PAYAT_BILL -> {
+                requireNonBlank(req.billerName(), "billerName");
+                requireNonBlank(req.billerCategory(), "billerCategory");
+                requireNonBlank(req.payAtReference(), "payAtReference");
+            }
+        }
+    }
+
+    private void requireNonBlank(String value, String fieldName) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(fieldName + " is required for this purchase type");
+        }
     }
 
     private String generateReference() {

@@ -51,6 +51,11 @@ CREATE TABLE users (
     phone_verified  BOOLEAN NOT NULL DEFAULT FALSE,
     association_id  BIGINT REFERENCES taxi_associations(id),
     rank_id         BIGINT REFERENCES taxi_ranks(id),
+    -- Login brute-force lockout (see AuthService.login) - a handful of wrong
+    -- PINs locks the account for a cooldown period rather than allowing
+    -- unlimited guesses against a 10,000-combination 4-digit PIN space.
+    failed_login_attempts INT NOT NULL DEFAULT 0,
+    locked_until    TIMESTAMP,
     created_at      TIMESTAMP NOT NULL DEFAULT now(),
     updated_at      TIMESTAMP NOT NULL DEFAULT now()
 );

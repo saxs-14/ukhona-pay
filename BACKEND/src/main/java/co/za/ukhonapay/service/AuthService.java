@@ -3,6 +3,7 @@ package co.za.ukhonapay.service;
 import co.za.ukhonapay.dto.AuthResponse;
 import co.za.ukhonapay.dto.LoginRequest;
 import co.za.ukhonapay.dto.SignupRequest;
+import co.za.ukhonapay.exception.AccountLockedException;
 import co.za.ukhonapay.exception.InvalidCredentialsException;
 import co.za.ukhonapay.exception.ResourceNotFoundException;
 import co.za.ukhonapay.model.TaxiAssociation;
@@ -28,6 +29,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.security.SecureRandom;
+import java.time.Duration;
+import java.time.LocalDateTime;
 
 @Service
 public class AuthService {
@@ -39,6 +42,7 @@ public class AuthService {
     private final TaxiRankRepository taxiRankRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final LoginAttemptService loginAttemptService;
     private final SecureRandom random = new SecureRandom();
 
     public AuthService(UserRepository userRepository,
@@ -47,7 +51,8 @@ public class AuthService {
                         TaxiAssociationRepository taxiAssociationRepository,
                         TaxiRankRepository taxiRankRepository,
                         PasswordEncoder passwordEncoder,
-                        JwtService jwtService) {
+                        JwtService jwtService,
+                        LoginAttemptService loginAttemptService) {
         this.userRepository = userRepository;
         this.walletRepository = walletRepository;
         this.vendorRepository = vendorRepository;
@@ -55,6 +60,7 @@ public class AuthService {
         this.taxiRankRepository = taxiRankRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.loginAttemptService = loginAttemptService;
     }
 
     @Transactional
@@ -152,9 +158,20 @@ public class AuthService {
         User user = userRepository.findByPhoneNumber(req.phoneNumber())
                 .orElseThrow(() -> new InvalidCredentialsException("Invalid phone number or PIN"));
 
+        if (user.getLockedUntil() != null && user.getLockedUntil().isAfter(LocalDateTime.now())) {
+            long minutesLeft = Duration.between(LocalDateTime.now(), user.getLockedUntil()).toMinutes() + 1;
+            throw new AccountLockedException(
+                    "Too many failed PIN attempts. Try again in " + minutesLeft + " minute(s).");
+        }
+
         if (!passwordEncoder.matches(req.pin(), user.getPinHash())) {
+            // Own transaction (REQUIRES_NEW) - this method throws right after,
+            // which would otherwise roll back the attempt count along with it.
+            loginAttemptService.recordFailedAttempt(user.getId());
             throw new InvalidCredentialsException("Invalid phone number or PIN");
         }
+
+        loginAttemptService.clearFailedAttempts(user.getId());
 
         String token = jwtService.generateToken(user.getId(), user.getUserType().name(), user.getPhoneNumber());
         return new AuthResponse(token, user.getId(), user.getName(), user.getUserType().name(), user.getPhoneNumber());
