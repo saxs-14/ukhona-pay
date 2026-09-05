@@ -1,6 +1,6 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { BarChart3, History, Home, QrCode, ScanLine, ShoppingBag, Users } from "lucide-react";
+import { BarChart3, History, Home, QrCode, ShoppingBag, UserCog, Users } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 const traderLinks = (home) => [
@@ -8,6 +8,7 @@ const traderLinks = (home) => [
   { to: "/vendor/buy", label: "Buy", icon: ShoppingBag },
   { to: "/vendor/analytics", label: "Insights", icon: BarChart3 },
   { to: "/transactions", label: "History", icon: History },
+  { to: "/profile", label: "Profile", icon: UserCog },
 ];
 
 const driverLinks = [
@@ -15,16 +16,20 @@ const driverLinks = [
   { to: "/driver/buy", label: "Buy", icon: ShoppingBag },
   { to: "/driver/analytics", label: "Insights", icon: BarChart3 },
   { to: "/transactions", label: "History", icon: History },
+  { to: "/profile", label: "Profile", icon: UserCog },
 ];
 
 const adminLinks = [
   { to: "/association-admin", label: "Home", icon: Home },
   { to: "/association-admin/drivers", label: "Drivers", icon: Users },
   { to: "/association-admin/qr", label: "QR Code", icon: QrCode },
+  { to: "/profile", label: "Profile", icon: UserCog },
 ];
 
 const platformAdminLinks = [
   { to: "/admin", label: "Home", icon: Home },
+  { to: "/platform", label: "Platform", icon: BarChart3 },
+  { to: "/profile", label: "Profile", icon: UserCog },
 ];
 
 export default function BottomNav() {
