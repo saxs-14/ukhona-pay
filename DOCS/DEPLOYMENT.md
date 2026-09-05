@@ -29,10 +29,18 @@ Same model as Vercel already uses: GitHub is the source of truth, a push to
 - **GitHub secrets already set** on `saxs-14/ukhona-pay`: `GCP_SA_KEY`,
   `GCP_PROJECT_ID`, `JWT_SECRET` (freshly generated, not the demo default),
   `FRONTEND_BASE_URL` (`https://ukhona-pay.vercel.app`).
+- **Database: Neon**, project region us-east-2. `schema.sql` already loaded
+  (8 tables, verified via `\dt`). `DATABASE_URL` (JDBC form, pointed at
+  Neon's pooled endpoint since Cloud Run can run several instances at once,
+  each opening its own connection pool - the pooler avoids exhausting
+  Neon's connection limit), `DB_USERNAME`, `DB_PASSWORD` are set as GitHub
+  secrets. The raw connection string only ever touched a local temp file
+  used to test the connection and load the schema, then got deleted -
+  never printed anywhere it'd stick around.
 
-## What's left - two things only you can do
+## What's left - one thing only you can do
 
-### 1. Link billing to the new project (one click, ~30 seconds)
+### Link billing to the new project (one click, ~30 seconds)
 
 Every API this needs (Cloud Run, Artifact Registry, Cloud Build) is blocked
 until a billing account is attached to `ukhona-pay-backend` - this is a GCP
@@ -47,33 +55,7 @@ Cloud Run's free tier (2 million requests/month, 360,000 GB-seconds memory,
 180,000 vCPU-seconds/month) comfortably covers hackathon-level traffic - this
 should not generate a real charge.
 
-### 2. Choose and set up the database
-
-Cloud SQL is **not** part of GCP's free tier - even the smallest instance
-costs a small amount continuously. Two options:
-
-- **Recommended: Neon** (neon.tech) - genuinely free Postgres tier, no card
-  required, a few minutes to set up. Create a project, copy the connection
-  string it gives you.
-- **Alternative: Cloud SQL** - stays entirely within Google Cloud, but is a
-  real ongoing cost (smallest tier is roughly $7-15/month depending on
-  region). Only pick this if avoiding a second provider matters more than
-  the cost.
-
-Once you have a connection string, set these three GitHub secrets (I can do
-this part for you once you have the values - just paste them in, or I can
-walk you through `gh secret set` yourself):
-
-```
-DATABASE_URL   jdbc:postgresql://<host>:5432/<database>?sslmode=require
-DB_USERNAME    <username>
-DB_PASSWORD    <password>
-```
-
-Then load `DATABASE/schema.sql` against that database once (same schema file
-already used locally - no seed data, same as the local convention).
-
-## After both of those are done
+## After that's done
 
 1. Push anything touching `BACKEND/**` to `main` (or run the workflow
    manually from the Actions tab) - this builds and deploys automatically.
