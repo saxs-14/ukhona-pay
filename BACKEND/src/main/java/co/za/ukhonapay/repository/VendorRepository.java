@@ -14,6 +14,4 @@ public interface VendorRepository extends JpaRepository<Vendor, Long> {
     List<Vendor> findByCategory(VendorCategory category);
     List<Vendor> findByBusinessNameContainingIgnoreCase(String name);
     List<Vendor> findByAssociationIdAndStatusOrderByCreatedAt(Long associationId, VendorStatus status);
-    List<Vendor> findByAssociationIdOrderByCreatedAt(Long associationId);
-    List<Vendor> findAllByOrderByCreatedAtDesc();
 }

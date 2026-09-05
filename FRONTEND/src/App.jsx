@@ -64,7 +64,7 @@ export default function App() {
               <Route path="/vendor/analytics" element={<ProtectedRoute allow={["VENDOR"]}><VendorAnalytics /></ProtectedRoute>} />
 
               <Route path="/transactions" element={<ProtectedRoute allow={["VENDOR", "TAXI_DRIVER"]}><TransactionHistory /></ProtectedRoute>} />
-              <Route path="/platform" element={<ProtectedRoute><PlatformDashboard /></ProtectedRoute>} />
+              <Route path="/platform" element={<ProtectedRoute allow={["ADMIN"]}><PlatformDashboard /></ProtectedRoute>} />
 
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

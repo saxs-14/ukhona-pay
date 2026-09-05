@@ -7,7 +7,6 @@ public record UserResponse(
         String name,
         String surname,
         String email,
-        Long associationId,
         String associationName,
         String rankName
 ) {

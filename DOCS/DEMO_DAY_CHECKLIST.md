@@ -28,10 +28,17 @@ Run `scripts/reset-demo-data.ps1` **one more time** immediately before the real 
 
 The core demo beat isn't "scan a QR code" — it's "90 days of informal income becomes a bank-legible credit history." Walk it as:
 
+<<<<<<< HEAD
+1. Log in as **Lucky** (`0711234501` / PIN `1234`) — a taxi driver with 80+ days of recorded income.
+2. Point at the **Income received** card — commuters paid via their own banking app, no UKHONA PAY account on their side.
+3. Point at the **Financial Identity** card: score **93/100**, "Credit eligible", 80/90 days recorded, ~89% consistency, ~R19,400 verified income, and a computed lending range (~R7,500–R13,000). Say the words: *this is a readiness indicator, not a guaranteed loan* — the score comes straight out of transaction history, nothing self-reported.
+4. Contrast with **Thandi** (a food vendor, shorter 60-day history) to show the score adapting to a different trader profile, and optionally **Nomsa** (`0711234505` / PIN `1234`, near-zero history) to show what "not yet eligible" looks like and why (the card states the reason in plain language).
+=======
 1. Log in as **Lucky** (`0711234501` — ask a teammate for the current PIN, see note below) — a taxi driver with 80+ days of recorded income.
 2. Point at the **Income received** card — commuters paid via their own banking app, no UKHONA PAY account on their side.
 3. Point at the **Financial Identity** card: score **93/100**, "Credit eligible", 80/90 days recorded, ~89% consistency, ~R19,400 verified income, and a computed lending range (~R7,500–R13,000). Say the words: *this is a readiness indicator, not a guaranteed loan* — the score comes straight out of transaction history, nothing self-reported.
 4. Contrast with **Thandi** (a food vendor, shorter 60-day history) to show the score adapting to a different trader profile, and optionally **Nomsa** (`0711234505`, near-zero history) to show what "not yet eligible" looks like and why (the card states the reason in plain language).
+>>>>>>> origin/main
 5. Close on the reframe: UKHONA PAY isn't a wallet competing with banks — it's the record-keeping layer banks don't have for informal traders today.
 
 ## Known risks we already hit — and fixed
@@ -58,6 +65,10 @@ These are documented so if you set the project up on a **different machine**, yo
 
 ## What's intentionally not production-hardened (fine for a same-day local demo)
 
+<<<<<<< HEAD
+- All demo accounts share PIN `1234` — deliberate, for speed during the pitch.
+=======
 - Demo account PINs are unique per account and distributed to the team over a private channel, not committed to this public repo — see `README.md`.
+>>>>>>> origin/main
 - The JWT signing secret and database password are plaintext defaults in `application.yml`/`docker-compose.yml`, clearly labeled as demo-only. Do not reuse these values if this ever becomes a real deployment.
 - CORS is opened to `localhost`, `127.0.0.1`, and common private LAN ranges (`192.168.*`, `10.*`) so judges can browse from their own devices on the venue network — this is appropriately scoped for a local-network-only demo and would need tightening for any public deployment.
