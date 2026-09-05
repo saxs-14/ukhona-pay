@@ -93,7 +93,7 @@ export default function SignupPage() {
 
     if (form.userType === "TAXI_DRIVER") {
       if (!isValidVehicleReg(form.vehicleRegistration)) {
-        errors.vehicleRegistration = "Not a valid SA number plate, e.g. DX45FGMP or CA123456";
+        errors.vehicleRegistration = "Not a valid South African number plate";
       }
       if (form.associationName.trim().length < 3) errors.associationName = "Enter your taxi association's name";
     }
@@ -189,11 +189,11 @@ export default function SignupPage() {
             />
           </Field>
 
-          <Field label="Cellphone number" required hint="e.g. 0798765432" error={fieldErrors.phoneNumber}>
+          <Field label="Cellphone number" required hint="10-digit South African mobile number starting with 0" error={fieldErrors.phoneNumber}>
             <input value={form.phoneNumber} onChange={(e) => update("phoneNumber", e.target.value)} className={inputCls("phoneNumber")} />
           </Field>
 
-          <Field label="PIN" required hint="4 digits, avoid obvious patterns like 1234" error={fieldErrors.pin}>
+          <Field label="PIN" required hint="4 digits - avoid obvious patterns" error={fieldErrors.pin}>
             <input
               type="password"
               inputMode="numeric"
@@ -210,7 +210,7 @@ export default function SignupPage() {
 
           {form.userType === "TAXI_DRIVER" && (
             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="space-y-4 overflow-hidden">
-              <Field label="Vehicle registration" required hint="South African number plate, e.g. DX45FGMP or CA123456" error={fieldErrors.vehicleRegistration}>
+              <Field label="Vehicle registration" required hint="South African number plate" error={fieldErrors.vehicleRegistration}>
                 <input
                   value={form.vehicleRegistration}
                   onChange={(e) => update("vehicleRegistration", e.target.value.toUpperCase())}

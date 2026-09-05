@@ -155,8 +155,12 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest req) {
+        // Distinguishing "wrong PIN" from "wrong credentials" is a deliberate
+        // product choice here, not an oversight - it does mean a caller can
+        // tell whether a phone number is registered (user enumeration), which
+        // is the tradeoff a same-message error would have avoided.
         User user = userRepository.findByPhoneNumber(req.phoneNumber())
-                .orElseThrow(() -> new InvalidCredentialsException("Invalid phone number or PIN"));
+                .orElseThrow(() -> new InvalidCredentialsException("Wrong credentials"));
 
         if (user.getLockedUntil() != null && user.getLockedUntil().isAfter(LocalDateTime.now())) {
             long minutesLeft = Duration.between(LocalDateTime.now(), user.getLockedUntil()).toMinutes() + 1;
@@ -168,7 +172,7 @@ public class AuthService {
             // Own transaction (REQUIRES_NEW) - this method throws right after,
             // which would otherwise roll back the attempt count along with it.
             loginAttemptService.recordFailedAttempt(user.getId());
-            throw new InvalidCredentialsException("Invalid phone number or PIN");
+            throw new InvalidCredentialsException("Wrong PIN");
         }
 
         loginAttemptService.clearFailedAttempts(user.getId());

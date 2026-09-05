@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Building2, Car, Check, Clock, Hourglass, MapPin, Phone, ShieldCheck, User, Wallet, X } from "lucide-react";
+import { Banknote, Building2, Car, Check, Clock, Hourglass, MapPin, Phone, Save, ShieldCheck, User, Wallet, X } from "lucide-react";
 import client from "../api/client";
 import AnimatedNumber from "../components/ui/AnimatedNumber";
 import { SkeletonCard } from "../components/ui/Skeleton";
@@ -13,13 +13,39 @@ export default function AssociationAdminDashboard() {
   const [pendingDrivers, setPendingDrivers] = useState([]);
   const [decidingId, setDecidingId] = useState(null);
   const [decisionError, setDecisionError] = useState("");
+  const [duesAmount, setDuesAmount] = useState("");
+  const [duesSaving, setDuesSaving] = useState(false);
+  const [duesSaved, setDuesSaved] = useState(false);
+  const [duesError, setDuesError] = useState("");
 
   useEffect(() => {
     client.get("/users/me").then((res) => setProfile(res.data));
     client.get("/wallet/association/me").then((res) => setWallet(res.data)).catch(() => setWallet(null));
     client.get("/transactions/association/me").then((res) => setTransfers(res.data)).catch(() => setTransfers([]));
     client.get("/vendors/pending").then((res) => setPendingDrivers(res.data)).catch(() => setPendingDrivers([]));
+    client.get("/users/me").then((res) => {
+      if (!res.data.associationId) return;
+      client.get("/taxi-associations").then((assoc) => {
+        const mine = assoc.data.find((a) => a.id === res.data.associationId);
+        if (mine) setDuesAmount(String(mine.duesAmount));
+      });
+    });
   }, []);
+
+  async function saveDues(e) {
+    e.preventDefault();
+    setDuesError("");
+    setDuesSaving(true);
+    try {
+      await client.put("/vendors/association/dues", { duesAmount: Number(duesAmount) });
+      setDuesSaved(true);
+      setTimeout(() => setDuesSaved(false), 2000);
+    } catch (err) {
+      setDuesError(err.message);
+    } finally {
+      setDuesSaving(false);
+    }
+  }
 
   async function decide(vendorId, decision) {
     setDecisionError("");
@@ -137,6 +163,45 @@ export default function AssociationAdminDashboard() {
             </AnimatePresence>
           </div>
         )}
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.03 }}
+        className="mt-3 rounded-2xl border border-sand-200 bg-white p-5 shadow-sm"
+      >
+        <div className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-sand-700">
+          <Banknote size={15} className="text-terracotta-600" /> Membership dues
+        </div>
+        <p className="mb-3 text-xs text-sand-500">
+          A once-off amount your association charges drivers - set it now, then revisit only occasionally
+          (e.g. yearly) as costs change. Drivers see this pre-filled when paying your association.
+        </p>
+        <form onSubmit={saveDues} className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sand-400">R</span>
+            <input
+              required
+              type="number"
+              min="0"
+              step="0.01"
+              value={duesAmount}
+              onChange={(e) => setDuesAmount(e.target.value)}
+              className="w-full rounded-xl border border-sand-300 bg-sand-50/50 py-2.5 pl-7 pr-3 text-sand-900 transition-colors focus:border-terracotta-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-terracotta-100"
+            />
+          </div>
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            type="submit"
+            disabled={duesSaving}
+            className="flex items-center gap-1.5 rounded-xl bg-terracotta-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-terracotta-700 disabled:opacity-50"
+          >
+            {duesSaved ? <Check size={15} /> : <Save size={15} />}
+            {duesSaved ? "Saved" : "Save"}
+          </motion.button>
+        </form>
+        {duesError && <p className="mt-2 text-sm text-red-600">{duesError}</p>}
       </motion.div>
 
       <motion.div

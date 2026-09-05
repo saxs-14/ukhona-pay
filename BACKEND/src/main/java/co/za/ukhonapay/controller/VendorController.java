@@ -4,6 +4,7 @@ import co.za.ukhonapay.dto.AssociationDriverResponse;
 import co.za.ukhonapay.dto.AssociationTransferResponse;
 import co.za.ukhonapay.dto.IssueFineRequest;
 import co.za.ukhonapay.dto.PendingDriverResponse;
+import co.za.ukhonapay.dto.UpdateDuesRequest;
 import co.za.ukhonapay.dto.VendorResponse;
 import co.za.ukhonapay.dto.VendorSelfUpdateRequest;
 import co.za.ukhonapay.exception.ResourceNotFoundException;
@@ -104,6 +105,13 @@ public class VendorController {
         Long associationId = requireAdminAssociation();
         vendorService.rejectDriver(associationId, vendorId);
         return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/association/dues")
+    public ResponseEntity<Map<String, Object>> updateAssociationDues(@Valid @RequestBody UpdateDuesRequest req) {
+        Long associationId = requireAdminAssociation();
+        var duesAmount = vendorService.updateAssociationDues(associationId, req.duesAmount());
+        return ResponseEntity.ok(Map.of("duesAmount", duesAmount));
     }
 
     private Long requireAdminAssociation() {

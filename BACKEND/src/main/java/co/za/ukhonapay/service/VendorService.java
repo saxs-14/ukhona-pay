@@ -76,6 +76,19 @@ public class VendorService {
     }
 
     // Drivers awaiting this admin's association's review - see VendorStatus.
+    // Self-service for that association's own admin - the once-off dues
+    // amount drivers see pre-filled when paying their association (see
+    // DriverSendMoney.jsx). Deliberately not tied to any transaction; an
+    // admin revisits this rarely, e.g. yearly as costs change.
+    @Transactional
+    public BigDecimal updateAssociationDues(Long associationId, BigDecimal duesAmount) {
+        TaxiAssociation association = taxiAssociationRepository.findById(associationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Taxi association not found"));
+        association.setDuesAmount(duesAmount);
+        taxiAssociationRepository.save(association);
+        return association.getDuesAmount();
+    }
+
     public List<PendingDriverResponse> pendingDriversForAssociation(Long associationId) {
         List<Vendor> pending = vendorRepository.findByAssociationIdAndStatusOrderByCreatedAt(associationId, VendorStatus.PENDING);
         return pending.stream().map(v -> {

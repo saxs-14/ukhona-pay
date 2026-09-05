@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { QRCodeSVG } from "qrcode.react";
 import { BadgeCheck, Banknote, Camera, Clock, Landmark, MapPin, QrCode, TrendingUp, ArrowUpRight, ArrowDownLeft } from "lucide-react";
 import client from "../api/client";
 import { useAuth } from "../context/AuthContext";
@@ -9,15 +10,15 @@ import { SkeletonCard } from "../components/ui/Skeleton";
 import ScanAndPayModal from "../components/ScanAndPayModal";
 import VendorBankWithdrawModal from "../components/VendorBankWithdrawModal";
 import CashSendModal from "../components/CashSendModal";
-import { listContainer, listItem } from "../lib/motion";
+import { listContainer, listItem, spring } from "../lib/motion";
 
 export default function VendorDashboard() {
   const { user } = useAuth();
   const [vendor, setVendor] = useState(null);
-  const [qrImage, setQrImage] = useState(null);
   const [wallet, setWallet] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [amount, setAmount] = useState("");
   const [isScanModalOpen, setIsScanModalOpen] = useState(false);
   const [isBankModalOpen, setIsBankModalOpen] = useState(false);
   const [isCashSendOpen, setIsCashSendOpen] = useState(false);
@@ -25,18 +26,21 @@ export default function VendorDashboard() {
   const loadData = () => {
     Promise.all([
       client.get("/vendors/me"),
-      client.get("/vendors/me/qr-image"),
       client.get("/wallet/me"),
       client.get("/transactions/me"),
     ])
-      .then(([v, qr, w, t]) => {
+      .then(([v, w, t]) => {
         setVendor(v.data);
-        setQrImage(qr.data.image);
         setWallet(w.data);
         setTransactions(t.data.slice(0, 10));
       })
       .finally(() => setLoading(false));
   };
+
+  const payUrl = useMemo(() => {
+    if (!vendor || !amount || Number(amount) <= 0) return null;
+    return `${window.location.origin}/pay/${vendor.qrCode}?amount=${encodeURIComponent(amount)}`;
+  }, [vendor, amount]);
 
   useEffect(() => {
     loadData();
@@ -97,16 +101,62 @@ export default function VendorDashboard() {
         </button>
       </div>
 
-      {/* QR Code Presentation */}
+      {/* Get paid by QR code - enter an amount, generate a QR locked to it */}
       <motion.div
         initial={{ opacity: 0, scale: 0.96 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.1 }}
-        className="mt-5 rounded-2xl border border-sand-200 bg-white p-5 text-center shadow-sm"
+        className="mt-5 rounded-2xl border border-sand-200 bg-white p-5 shadow-sm"
       >
-        <p className="mb-3 text-sm font-medium text-sand-600">Your Receive Payment QR Code</p>
-        {qrImage && <img src={qrImage} alt="Vendor QR code" className="mx-auto h-48 w-48 rounded-lg" />}
-        <p className="mt-2 break-all text-xs text-sand-400">{vendor.qrCode}</p>
+        <p className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-sand-700">
+          <QrCode size={15} className="text-terracotta-600" /> Get paid by QR code
+        </p>
+        <p className="mb-3 text-xs text-sand-500">
+          Enter the amount you're charging, then let the customer scan the code with their phone's
+          camera to pay you from their own banking app.
+        </p>
+        <div className="relative">
+          <Banknote size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sand-400" />
+          <input
+            type="number"
+            min="0.01"
+            step="0.01"
+            inputMode="decimal"
+            placeholder="Amount (R)"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            className="w-full rounded-xl border border-sand-300 bg-sand-50/50 py-2.5 pl-10 pr-3 text-sand-900 transition-colors focus:border-terracotta-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-terracotta-100"
+          />
+        </div>
+
+        <AnimatePresence mode="wait">
+          {payUrl ? (
+            <motion.div
+              key="qr"
+              initial={{ opacity: 0, scale: 0.92 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.92 }}
+              transition={spring}
+              className="mt-4 flex flex-col items-center gap-2 rounded-xl bg-sand-50 py-5"
+            >
+              <div className="rounded-xl bg-white p-3 shadow-sm">
+                <QRCodeSVG value={payUrl} size={176} level="M" />
+              </div>
+              <p className="text-lg font-semibold text-terracotta-700">R{Number(amount).toFixed(2)}</p>
+              <p className="text-xs text-sand-400">Ready to scan</p>
+            </motion.div>
+          ) : (
+            <motion.p
+              key="hint"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="mt-4 py-6 text-center text-xs text-sand-400"
+            >
+              Enter an amount above to generate a payment QR code.
+            </motion.p>
+          )}
+        </AnimatePresence>
       </motion.div>
 
       {/* Business Insights Navigation */}

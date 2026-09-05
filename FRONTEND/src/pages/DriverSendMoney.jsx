@@ -32,10 +32,12 @@ export default function DriverSendMoney() {
   const [success, setSuccess] = useState(null);
 
   useEffect(() => {
-    Promise.all([client.get("/vendors/me"), client.get("/wallet/me")])
-      .then(([v, w]) => {
+    Promise.all([client.get("/vendors/me"), client.get("/wallet/me"), client.get("/taxi-associations")])
+      .then(([v, w, associations]) => {
         setVendor(v.data);
         setWallet(w.data);
+        const mine = associations.data.find((a) => a.id === v.data.associationId);
+        if (mine) setAmount(String(mine.duesAmount));
       })
       .finally(() => setLoading(false));
   }, []);
@@ -120,6 +122,9 @@ export default function DriverSendMoney() {
                 className={`${inputClass} pl-10`}
               />
             </div>
+            <p className="mt-1 text-xs text-sand-400">
+              Pre-filled with your association's current membership dues - change it if you're sending a different amount.
+            </p>
           </Field>
           <Field label="Note (optional)">
             <input value={description} onChange={(e) => setDescription(e.target.value)} className={inputClass} />

@@ -1,4 +1,6 @@
 package co.za.ukhonapay.dto;
 
-public record TaxiAssociationResponse(Long id, String name) {
+import java.math.BigDecimal;
+
+public record TaxiAssociationResponse(Long id, String name, BigDecimal duesAmount) {
 }

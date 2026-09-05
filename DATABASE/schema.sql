@@ -19,6 +19,12 @@ DROP TABLE IF EXISTS taxi_associations CASCADE;
 CREATE TABLE taxi_associations (
     id              BIGSERIAL PRIMARY KEY,
     name            VARCHAR(150) NOT NULL,
+    -- Membership/registration due - a once-off amount the association sets
+    -- for itself and revisits only occasionally (e.g. yearly, as costs
+    -- change), not a per-ride fee. Editable by that association's own admin
+    -- or by the platform admin - see VendorController#updateAssociationDues
+    -- and AdminService#updateAssociation.
+    dues_amount     NUMERIC(10,2) NOT NULL DEFAULT 250.00 CHECK (dues_amount >= 0),
     created_at      TIMESTAMP NOT NULL DEFAULT now()
 );
 

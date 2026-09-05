@@ -182,8 +182,11 @@ public class AdminService {
         TaxiAssociation association = taxiAssociationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Taxi association not found"));
         association.setName(req.name().trim());
+        if (req.duesAmount() != null) {
+            association.setDuesAmount(req.duesAmount());
+        }
         association = taxiAssociationRepository.save(association);
-        return new TaxiAssociationResponse(association.getId(), association.getName());
+        return new TaxiAssociationResponse(association.getId(), association.getName(), association.getDuesAmount());
     }
 
     @Transactional

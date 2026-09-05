@@ -44,7 +44,7 @@ public class ReferenceDataController {
         List<TaxiAssociation> associations = (search != null && !search.isBlank())
                 ? taxiAssociationRepository.findByNameContainingIgnoreCaseOrderByName(search)
                 : taxiAssociationRepository.findAllByOrderByName();
-        return ResponseEntity.ok(associations.stream().map(a -> new TaxiAssociationResponse(a.getId(), a.getName())).toList());
+        return ResponseEntity.ok(associations.stream().map(a -> new TaxiAssociationResponse(a.getId(), a.getName(), a.getDuesAmount())).toList());
     }
 
     // Idempotent by name (case-insensitive): returns the existing association if
@@ -71,7 +71,7 @@ public class ReferenceDataController {
                     .currency("ZAR")
                     .build());
         }
-        return ResponseEntity.ok(new TaxiAssociationResponse(association.getId(), association.getName()));
+        return ResponseEntity.ok(new TaxiAssociationResponse(association.getId(), association.getName(), association.getDuesAmount()));
     }
 
     @GetMapping("/api/taxi-ranks")
