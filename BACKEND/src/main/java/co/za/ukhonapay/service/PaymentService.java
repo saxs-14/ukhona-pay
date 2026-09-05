@@ -86,7 +86,7 @@ public class PaymentService {
         }
 
         senderWallet.setBalance(senderWallet.getBalance().subtract(amount));
-        vendorWallet.setBalance(vendorWallet.getBalance().add(amount));
+        WalletService.creditWithAutoAllocation(vendorWallet, amount);
         walletRepository.save(senderWallet);
         walletRepository.save(vendorWallet);
 
@@ -166,6 +166,51 @@ public class PaymentService {
                 amount, senderWallet.getBalance(), transaction.getCreatedAt());
     }
 
+    // An association admin fining a driver in their own association - unlike
+    // transferToAssociation, this is admin-initiated (no PIN, the driver isn't
+    // the one authorizing it) and capped at the driver's available balance
+    // rather than allowed to go negative: wallets.balance has a DB-level
+    // CHECK (balance >= 0), and tracking money genuinely owed beyond that is
+    // a real debt-ledger feature this doesn't attempt to be.
+    @Transactional
+    public AssociationTransferResponse issueFine(Long adminAssociationId, Long vendorId, BigDecimal amount, String reason) {
+        Vendor vendor = vendorRepository.findById(vendorId)
+                .orElseThrow(() -> new ResourceNotFoundException("Driver not found"));
+        if (vendor.getAssociationId() == null || !vendor.getAssociationId().equals(adminAssociationId)) {
+            throw new ResourceNotFoundException("Driver not found");
+        }
+        TaxiAssociation association = taxiAssociationRepository.findById(adminAssociationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Taxi association not found"));
+
+        Wallet driverWallet = walletRepository.findWithLockByUserId(vendor.getUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("Driver wallet not found"));
+        if (driverWallet.getBalance().compareTo(amount) < 0) {
+            throw new InsufficientFundsException("Driver's available balance is lower than the fine amount");
+        }
+        Wallet associationWallet = walletService.getOrCreateLockedAssociationWallet(adminAssociationId);
+
+        driverWallet.setBalance(driverWallet.getBalance().subtract(amount));
+        associationWallet.setBalance(associationWallet.getBalance().add(amount));
+        walletRepository.save(driverWallet);
+        walletRepository.save(associationWallet);
+
+        Transaction transaction = Transaction.builder()
+                .reference(generateReference())
+                .senderId(vendor.getUserId())
+                .receiverAssociationId(adminAssociationId)
+                .amount(amount)
+                .cashbackAmount(BigDecimal.ZERO)
+                .cashbackRate(BigDecimal.ZERO)
+                .status(TransactionStatus.COMPLETED)
+                .description("Fine: " + reason)
+                .build();
+        transaction = transactionRepository.save(transaction);
+
+        return new AssociationTransferResponse(
+                transaction.getReference(), adminAssociationId, association.getName(),
+                amount, driverWallet.getBalance(), transaction.getCreatedAt());
+    }
+
     // A commuter paying via their own banking app - no sender wallet to debit,
     // no PIN to check, since the payer never holds a UKHONA PAY account. This
     // stands in for what a real bank's payment-confirmation webhook would call.
@@ -179,7 +224,7 @@ public class PaymentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Vendor wallet not found"));
 
         BigDecimal amount = req.amount();
-        vendorWallet.setBalance(vendorWallet.getBalance().add(amount));
+        WalletService.creditWithAutoAllocation(vendorWallet, amount);
         walletRepository.save(vendorWallet);
 
         Transaction transaction = Transaction.builder()

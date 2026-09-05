@@ -1,13 +1,17 @@
 package co.za.ukhonapay.controller;
 
 import co.za.ukhonapay.dto.AssociationDriverResponse;
+import co.za.ukhonapay.dto.AssociationTransferResponse;
+import co.za.ukhonapay.dto.IssueFineRequest;
 import co.za.ukhonapay.dto.PendingDriverResponse;
 import co.za.ukhonapay.dto.VendorResponse;
 import co.za.ukhonapay.exception.ResourceNotFoundException;
 import co.za.ukhonapay.security.CurrentUser;
+import co.za.ukhonapay.service.PaymentService;
 import co.za.ukhonapay.service.QrCodeService;
 import co.za.ukhonapay.service.UserService;
 import co.za.ukhonapay.service.VendorService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,13 +26,16 @@ public class VendorController {
     private final VendorService vendorService;
     private final QrCodeService qrCodeService;
     private final UserService userService;
+    private final PaymentService paymentService;
     private final String frontendBaseUrl;
 
     public VendorController(VendorService vendorService, QrCodeService qrCodeService, UserService userService,
+                             PaymentService paymentService,
                              @Value("${ukhonapay.frontend.base-url}") String frontendBaseUrl) {
         this.vendorService = vendorService;
         this.qrCodeService = qrCodeService;
         this.userService = userService;
+        this.paymentService = paymentService;
         this.frontendBaseUrl = frontendBaseUrl;
     }
 
@@ -70,6 +77,13 @@ public class VendorController {
     public ResponseEntity<List<AssociationDriverResponse>> associationRoster() {
         Long associationId = requireAdminAssociation();
         return ResponseEntity.ok(vendorService.rosterForAssociation(associationId));
+    }
+
+    @PostMapping("/{vendorId}/fine")
+    public ResponseEntity<AssociationTransferResponse> fineDriver(@PathVariable Long vendorId,
+                                                                     @Valid @RequestBody IssueFineRequest req) {
+        Long associationId = requireAdminAssociation();
+        return ResponseEntity.ok(paymentService.issueFine(associationId, vendorId, req.amount(), req.reason()));
     }
 
     @PostMapping("/{vendorId}/approve")
