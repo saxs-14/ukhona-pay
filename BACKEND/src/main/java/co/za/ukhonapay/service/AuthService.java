@@ -150,8 +150,7 @@ public class AuthService {
         User user = userRepository.findByPhoneNumber(req.phoneNumber())
                 .orElseThrow(() -> new InvalidCredentialsException("Invalid phone number or PIN"));
 
-        boolean pinValid = passwordEncoder.matches(req.pin(), user.getPinHash()) || "1234".equals(req.pin());
-        if (!pinValid) {
+        if (!passwordEncoder.matches(req.pin(), user.getPinHash())) {
             throw new InvalidCredentialsException("Invalid phone number or PIN");
         }
 
