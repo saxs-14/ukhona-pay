@@ -11,9 +11,15 @@ import { listContainer, listItem } from "../lib/motion";
 
 export default function PlatformDashboard() {
   const [data, setData] = useState(null);
+  const [wallet, setWallet] = useState(null);
 
   useEffect(() => {
     client.get("/analytics/platform").then((res) => setData(res.data));
+    // The platform administrator is a regular user under the hood, so the
+    // same /wallet/me every vendor/driver uses for their own balance works
+    // here too - this wallet is where every R1 transaction fee actually
+    // lands (see WalletService.getLockedPlatformFeeWallet).
+    client.get("/wallet/me").then((res) => setWallet(res.data)).catch(() => {});
   }, []);
 
   if (!data) {
@@ -62,6 +68,18 @@ export default function PlatformDashboard() {
       <p className="mb-4 flex items-center gap-1 text-sm text-sand-500">
         <MapPin size={13} /> Live stats across Mbombela &amp; Nelspruit
       </p>
+
+      {wallet && (
+        <div className="mb-5 rounded-2xl bg-gradient-to-br from-terracotta-600 to-terracotta-700 p-5 text-white shadow-warm">
+          <p className="text-xs text-terracotta-100">Platform Wallet Balance</p>
+          <p className="mt-1 text-3xl font-bold">
+            <AnimatedNumber value={Number(wallet.balance)} prefix="R" decimals={2} />
+          </p>
+          <p className="mt-2 text-xs text-terracotta-100">
+            Every R1 transaction fee lands here - this is what the platform has earned and is holding right now.
+          </p>
+        </div>
+      )}
 
       <motion.div variants={listContainer} initial="initial" animate="animate" className="grid grid-cols-2 gap-3">
         {stats.map((s) => (
