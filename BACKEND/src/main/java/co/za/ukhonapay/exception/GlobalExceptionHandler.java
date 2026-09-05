@@ -70,15 +70,19 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(body(HttpStatus.BAD_REQUEST, ex.getMessage()));
     }
 
-    // A unique/foreign-key/check constraint fired at the DB layer - usually a
+    // A unique/foreign-key/check constraint fired at the DB layer - a
     // duplicate (phone number, ID number, an existing association/rank name a
-    // race slipped past). Without this, it would fall through to the generic
-    // handler below and leak the raw SQL statement and constraint name to the
-    // client.
+    // race slipped past), a delete blocked because other records still
+    // reference the row (e.g. a taxi association with registered drivers), or
+    // a reference to something that doesn't exist (e.g. an associationId that
+    // isn't a real association). The wording covers all three without leaking
+    // the raw SQL statement and constraint name the generic handler below
+    // would otherwise expose.
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<Map<String, Object>> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(body(HttpStatus.CONFLICT, "That value conflicts with an existing record - it may already be registered."));
+                .body(body(HttpStatus.CONFLICT,
+                        "That request conflicts with existing data - the value may already be in use, reference something that doesn't exist, or other records may still depend on it."));
     }
 
     // A path/query param that doesn't match its declared type (e.g. a

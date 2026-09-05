@@ -10,7 +10,7 @@ import ScanAndPayModal from "../components/ScanAndPayModal";
 import VendorBankWithdrawModal from "../components/VendorBankWithdrawModal";
 import CashSendModal from "../components/CashSendModal";
 import { listContainer, listItem, spring } from "../lib/motion";
-import { mergeTransactionHistory } from "../lib/transactionHistory";
+import { isSelfTransaction, mergeTransactionHistory, transactionPrimaryLabel } from "../lib/transactionHistory";
 
 export default function VendorDashboard() {
   const [vendor, setVendor] = useState(null);
@@ -196,9 +196,9 @@ export default function VendorDashboard() {
                   </div>
                   <div>
                     <p className="text-sm font-medium text-sand-800">
-                      {isReceived ? t.senderName : t.receiverName}
+                      {transactionPrimaryLabel(t)}
                     </p>
-                    {t.description && <p className="text-xs text-sand-500">{t.description}</p>}
+                    {t.description && !isSelfTransaction(t) && <p className="text-xs text-sand-500">{t.description}</p>}
                     <p className="text-xs text-sand-400">{new Date(t.createdAt).toLocaleString("en-ZA")}</p>
                   </div>
                 </div>

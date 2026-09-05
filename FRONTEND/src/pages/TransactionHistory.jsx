@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import client from "../api/client";
 import { SkeletonCard } from "../components/ui/Skeleton";
 import { listContainer, listItem, spring } from "../lib/motion";
-import { mergeTransactionHistory } from "../lib/transactionHistory";
+import { isSelfTransaction, mergeTransactionHistory, transactionPrimaryLabel } from "../lib/transactionHistory";
 
 export default function TransactionHistory() {
   const [transactions, setTransactions] = useState([]);
@@ -61,7 +61,7 @@ export default function TransactionHistory() {
           <motion.div key={t.reference} variants={listItem} className="rounded-xl border border-sand-200 bg-white px-4 py-3">
             <div className="flex items-center justify-between">
               <p className="text-sm font-medium text-sand-800">
-                {t.direction === "SENT" ? `To ${t.receiverName}` : `From ${t.senderName}`}
+                {transactionPrimaryLabel(t)}
               </p>
               <p className={`text-sm font-semibold ${t.direction === "SENT" ? "text-sand-800" : "text-bushveld-600"}`}>
                 {t.direction === "SENT" ? "-" : "+"}R{Number(t.amount).toFixed(2)}
@@ -71,7 +71,7 @@ export default function TransactionHistory() {
               <span>{t.reference} · {t.status}</span>
               <span>{new Date(t.createdAt).toLocaleString("en-ZA")}</span>
             </div>
-            {t.description && <p className="mt-1 text-xs text-sand-500">{t.description}</p>}
+            {t.description && !isSelfTransaction(t) && <p className="mt-1 text-xs text-sand-500">{t.description}</p>}
           </motion.div>
         ))}
         {!loading && filtered.length === 0 && <p className="text-sm text-sand-400">No transactions in this view.</p>}

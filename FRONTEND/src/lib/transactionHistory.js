@@ -24,3 +24,18 @@ export function mergeTransactionHistory(transactions, purchases) {
     (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
   );
 }
+
+// Bank withdrawals and CashSend record sender === receiver (money left the
+// wallet without going to another UKHONA PAY user), since the transactions
+// table requires a receiver but there isn't a real one - without this, those
+// entries render as "To <your own name>", which reads as if you paid
+// yourself. The description ("Bank Cashout to FNB (****6789)", "CashSend
+// Voucher to 082***0000 (...)") is already the real, useful label there.
+export function isSelfTransaction(t) {
+  return t.senderId != null && t.senderId === t.receiverId;
+}
+
+export function transactionPrimaryLabel(t) {
+  if (isSelfTransaction(t)) return t.description || "Wallet activity";
+  return t.direction === "SENT" ? t.receiverName : t.senderName;
+}
