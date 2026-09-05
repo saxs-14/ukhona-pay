@@ -12,11 +12,13 @@ import {
   FileText,
   Hourglass,
   Landmark,
+  PiggyBank,
   QrCode,
   ScanLine,
   ShieldAlert,
   TrendingUp,
   Users,
+  Wrench,
   XCircle,
 } from "lucide-react";
 import client from "../api/client";
@@ -165,7 +167,29 @@ export default function DriverDashboard() {
         </p>
       </motion.div>
 
-
+      {/* Savings & Maintenance auto-allocation - 5% of every fare payment goes
+          to each pot automatically (see WalletService.creditWithAutoAllocation) */}
+      <motion.div variants={cardEnter} transition={{ duration: 0.3, ease: ease.enter }} className="mt-2 grid grid-cols-2 gap-2">
+        <div className="rounded-xl border border-sand-200 bg-white p-3">
+          <p className="flex items-center gap-1 text-xs text-sand-500">
+            <PiggyBank size={12} className="text-bushveld-600" /> Savings
+          </p>
+          <p className="mt-0.5 text-base font-semibold text-sand-800">
+            <AnimatedNumber value={Number(wallet.savingsBalance || 0)} prefix="R" />
+          </p>
+        </div>
+        <div className="rounded-xl border border-sand-200 bg-white p-3">
+          <p className="flex items-center gap-1 text-xs text-sand-500">
+            <Wrench size={12} className="text-gold-600" /> Maintenance
+          </p>
+          <p className="mt-0.5 text-base font-semibold text-sand-800">
+            <AnimatedNumber value={Number(wallet.maintenanceBalance || 0)} prefix="R" />
+          </p>
+        </div>
+      </motion.div>
+      <p className="mt-1.5 text-center text-[11px] text-sand-400">
+        5% of every fare payment is set aside automatically into each pot
+      </p>
 
       {/* Quick Actions Grid */}
       <motion.div variants={cardEnter} transition={{ duration: 0.3, ease: ease.enter }} className="mt-4 grid grid-cols-3 gap-2">

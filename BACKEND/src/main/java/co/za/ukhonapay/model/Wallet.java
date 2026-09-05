@@ -25,6 +25,12 @@ public class Wallet {
     @Column(name = "cashback_balance", nullable = false, precision = 12, scale = 2)
     private BigDecimal cashbackBalance;
 
+    @Column(name = "savings_balance", nullable = false, precision = 12, scale = 2)
+    private BigDecimal savingsBalance;
+
+    @Column(name = "maintenance_balance", nullable = false, precision = 12, scale = 2)
+    private BigDecimal maintenanceBalance;
+
     @Column(nullable = false, length = 3)
     private String currency;
 
@@ -35,6 +41,8 @@ public class Wallet {
     @PrePersist
     void touch() {
         updatedAt = LocalDateTime.now();
+        if (savingsBalance == null) savingsBalance = BigDecimal.ZERO;
+        if (maintenanceBalance == null) maintenanceBalance = BigDecimal.ZERO;
     }
 
     public Long getId() { return id; }
@@ -47,6 +55,10 @@ public class Wallet {
     public void setBalance(BigDecimal balance) { this.balance = balance; }
     public BigDecimal getCashbackBalance() { return cashbackBalance; }
     public void setCashbackBalance(BigDecimal cashbackBalance) { this.cashbackBalance = cashbackBalance; }
+    public BigDecimal getSavingsBalance() { return savingsBalance; }
+    public void setSavingsBalance(BigDecimal savingsBalance) { this.savingsBalance = savingsBalance; }
+    public BigDecimal getMaintenanceBalance() { return maintenanceBalance; }
+    public void setMaintenanceBalance(BigDecimal maintenanceBalance) { this.maintenanceBalance = maintenanceBalance; }
     public String getCurrency() { return currency; }
     public void setCurrency(String currency) { this.currency = currency; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
@@ -59,6 +71,8 @@ public class Wallet {
         public Builder associationId(Long v) { wallet.associationId = v; return this; }
         public Builder balance(BigDecimal v) { wallet.balance = v; return this; }
         public Builder cashbackBalance(BigDecimal v) { wallet.cashbackBalance = v; return this; }
+        public Builder savingsBalance(BigDecimal v) { wallet.savingsBalance = v; return this; }
+        public Builder maintenanceBalance(BigDecimal v) { wallet.maintenanceBalance = v; return this; }
         public Builder currency(String v) { wallet.currency = v; return this; }
         public Wallet build() { return wallet; }
     }

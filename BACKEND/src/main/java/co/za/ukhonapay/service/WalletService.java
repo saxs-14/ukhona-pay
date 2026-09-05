@@ -55,6 +55,25 @@ public class WalletService {
     }
 
     public static WalletResponse toResponse(Wallet wallet) {
-        return new WalletResponse(wallet.getUserId(), wallet.getBalance(), wallet.getCashbackBalance(), wallet.getCurrency());
+        return new WalletResponse(wallet.getUserId(), wallet.getBalance(), wallet.getCashbackBalance(),
+                wallet.getSavingsBalance(), wallet.getMaintenanceBalance(), wallet.getCurrency());
+    }
+
+    // Splits an incoming fare payment into the available balance (90%) and
+    // two earmarked pots (5% savings, 5% maintenance) - the two percentage
+    // pots are rounded first and the available share takes the remainder, so
+    // the three always sum exactly to the original amount regardless of
+    // rounding. Mutates the wallet in place; caller still saves it.
+    public static final BigDecimal SAVINGS_RATE = new BigDecimal("0.05");
+    public static final BigDecimal MAINTENANCE_RATE = new BigDecimal("0.05");
+
+    public static void creditWithAutoAllocation(Wallet wallet, BigDecimal amount) {
+        BigDecimal savingsShare = amount.multiply(SAVINGS_RATE).setScale(2, java.math.RoundingMode.HALF_UP);
+        BigDecimal maintenanceShare = amount.multiply(MAINTENANCE_RATE).setScale(2, java.math.RoundingMode.HALF_UP);
+        BigDecimal availableShare = amount.subtract(savingsShare).subtract(maintenanceShare);
+
+        wallet.setBalance(wallet.getBalance().add(availableShare));
+        wallet.setSavingsBalance(wallet.getSavingsBalance().add(savingsShare));
+        wallet.setMaintenanceBalance(wallet.getMaintenanceBalance().add(maintenanceShare));
     }
 }

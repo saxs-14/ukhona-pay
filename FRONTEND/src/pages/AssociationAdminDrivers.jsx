@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, Car, Check, Hourglass, Phone, Search, ShieldAlert, Users, X } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Car, Check, Gavel, Hourglass, Phone, Search, ShieldAlert, Users, X } from "lucide-react";
 import client from "../api/client";
 import { SkeletonCard } from "../components/ui/Skeleton";
 import { spring } from "../lib/motion";
@@ -20,6 +20,12 @@ export default function AssociationAdminDrivers() {
   const [decidingId, setDecidingId] = useState(null);
   const [decisionError, setDecisionError] = useState("");
   const [search, setSearch] = useState("");
+  const [fineTarget, setFineTarget] = useState(null);
+  const [fineAmount, setFineAmount] = useState("");
+  const [fineReason, setFineReason] = useState("");
+  const [issuingFine, setIssuingFine] = useState(false);
+  const [fineError, setFineError] = useState("");
+  const [fineSuccessId, setFineSuccessId] = useState(null);
 
   useEffect(() => {
     client.get("/users/me").then((res) => setAssociationName(res.data.associationName));
@@ -51,6 +57,28 @@ export default function AssociationAdminDrivers() {
       setDecisionError(err.message);
     } finally {
       setDecidingId(null);
+    }
+  }
+
+  function openFineForm(vendorId) {
+    setFineTarget(fineTarget === vendorId ? null : vendorId);
+    setFineAmount("");
+    setFineReason("");
+    setFineError("");
+  }
+
+  async function submitFine(vendorId) {
+    setFineError("");
+    setIssuingFine(true);
+    try {
+      await client.post(`/vendors/${vendorId}/fine`, { amount: Number(fineAmount), reason: fineReason });
+      setFineTarget(null);
+      setFineSuccessId(vendorId);
+      setTimeout(() => setFineSuccessId(null), 2000);
+    } catch (err) {
+      setFineError(err.message);
+    } finally {
+      setIssuingFine(false);
     }
   }
 
@@ -163,34 +191,99 @@ export default function AssociationAdminDrivers() {
         ) : (
           <div className="space-y-2">
             {filteredRoster.map((d) => (
-              <div key={d.vendorId} className="flex items-center justify-between gap-3 rounded-xl border border-sand-100 bg-sand-50/50 px-3 py-2.5">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-sand-800">{d.name} {d.surname}</p>
-                  <p className="truncate text-xs text-sand-400">{d.phoneNumber} · {d.vehicleRegistration}</p>
+              <div key={d.vendorId} className="rounded-xl border border-sand-100 bg-sand-50/50 px-3 py-2.5">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-sand-800">{d.name} {d.surname}</p>
+                    <p className="truncate text-xs text-sand-400">{d.phoneNumber} · {d.vehicleRegistration}</p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${STATUS_BADGE[d.status] || "bg-sand-100 text-sand-600"}`}>
+                      {d.status}
+                    </span>
+                    {d.status !== "APPROVED" && (
+                      <button
+                        disabled={decidingId === d.vendorId}
+                        onClick={() => decide(d.vendorId, "approve")}
+                        className="text-xs font-semibold text-bushveld-600 hover:underline disabled:opacity-50"
+                      >
+                        Approve
+                      </button>
+                    )}
+                    {d.status !== "REJECTED" && (
+                      <button
+                        disabled={decidingId === d.vendorId}
+                        onClick={() => decide(d.vendorId, "reject")}
+                        className="text-xs font-semibold text-red-600 hover:underline disabled:opacity-50"
+                      >
+                        {d.status === "APPROVED" ? "Revoke" : "Reject"}
+                      </button>
+                    )}
+                    {d.status === "APPROVED" && (
+                      <button
+                        onClick={() => openFineForm(d.vendorId)}
+                        className="flex items-center gap-1 text-xs font-semibold text-gold-700 hover:underline"
+                      >
+                        <Gavel size={12} /> Fine
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${STATUS_BADGE[d.status] || "bg-sand-100 text-sand-600"}`}>
-                    {d.status}
-                  </span>
-                  {d.status !== "APPROVED" && (
-                    <button
-                      disabled={decidingId === d.vendorId}
-                      onClick={() => decide(d.vendorId, "approve")}
-                      className="text-xs font-semibold text-bushveld-600 hover:underline disabled:opacity-50"
+
+                {fineSuccessId === d.vendorId && (
+                  <p className="mt-2 flex items-center gap-1 text-xs font-medium text-bushveld-600">
+                    <Check size={12} /> Fine issued
+                  </p>
+                )}
+
+                <AnimatePresence>
+                  {fineTarget === d.vendorId && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={spring}
+                      className="mt-2 space-y-2 overflow-hidden rounded-lg border border-gold-200 bg-gold-50 p-2.5"
                     >
-                      Approve
-                    </button>
+                      {fineError && (
+                        <p className="flex items-center gap-1 text-xs text-red-600">
+                          <AlertTriangle size={12} /> {fineError}
+                        </p>
+                      )}
+                      <input
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        placeholder="Amount (R)"
+                        value={fineAmount}
+                        onChange={(e) => setFineAmount(e.target.value)}
+                        className="w-full rounded-lg border border-sand-300 bg-white px-2.5 py-1.5 text-sm text-sand-900 focus:border-terracotta-500 focus:outline-none"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Reason (e.g. late for rank duty)"
+                        value={fineReason}
+                        onChange={(e) => setFineReason(e.target.value)}
+                        className="w-full rounded-lg border border-sand-300 bg-white px-2.5 py-1.5 text-sm text-sand-900 focus:border-terracotta-500 focus:outline-none"
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          disabled={issuingFine || !fineAmount || !fineReason.trim()}
+                          onClick={() => submitFine(d.vendorId)}
+                          className="flex-1 rounded-lg bg-gold-600 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-gold-700 disabled:opacity-50"
+                        >
+                          {issuingFine ? "Issuing…" : "Issue fine"}
+                        </button>
+                        <button
+                          onClick={() => setFineTarget(null)}
+                          className="rounded-lg border border-sand-300 px-3 py-1.5 text-xs font-semibold text-sand-600 hover:bg-white"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </motion.div>
                   )}
-                  {d.status !== "REJECTED" && (
-                    <button
-                      disabled={decidingId === d.vendorId}
-                      onClick={() => decide(d.vendorId, "reject")}
-                      className="text-xs font-semibold text-red-600 hover:underline disabled:opacity-50"
-                    >
-                      {d.status === "APPROVED" ? "Revoke" : "Reject"}
-                    </button>
-                  )}
-                </div>
+                </AnimatePresence>
               </div>
             ))}
           </div>

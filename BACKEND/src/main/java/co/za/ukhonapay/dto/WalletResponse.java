@@ -6,6 +6,8 @@ public record WalletResponse(
         Long userId,
         BigDecimal balance,
         BigDecimal cashbackBalance,
+        BigDecimal savingsBalance,
+        BigDecimal maintenanceBalance,
         String currency
 ) {
 }

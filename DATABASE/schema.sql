@@ -63,6 +63,11 @@ CREATE TABLE wallets (
     association_id  BIGINT UNIQUE REFERENCES taxi_associations(id),
     balance         NUMERIC(12,2) NOT NULL DEFAULT 0 CHECK (balance >= 0),
     cashback_balance NUMERIC(12,2) NOT NULL DEFAULT 0 CHECK (cashback_balance >= 0),
+    -- Auto-allocated on every incoming fare payment (see PaymentService) -
+    -- earmarked pots the driver can see but that aren't part of the
+    -- available `balance` used for bank withdrawals/transfers/payments.
+    savings_balance     NUMERIC(12,2) NOT NULL DEFAULT 0 CHECK (savings_balance >= 0),
+    maintenance_balance NUMERIC(12,2) NOT NULL DEFAULT 0 CHECK (maintenance_balance >= 0),
     currency        VARCHAR(3) NOT NULL DEFAULT 'ZAR',
     updated_at      TIMESTAMP NOT NULL DEFAULT now(),
     CHECK ((user_id IS NOT NULL AND association_id IS NULL) OR (user_id IS NULL AND association_id IS NOT NULL))
