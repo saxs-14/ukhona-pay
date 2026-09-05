@@ -25,12 +25,6 @@ public class VendorService {
 
     private final VendorRepository vendorRepository;
     private final WalletRepository walletRepository;
-<<<<<<< HEAD
-
-    public VendorService(VendorRepository vendorRepository, WalletRepository walletRepository) {
-        this.vendorRepository = vendorRepository;
-        this.walletRepository = walletRepository;
-=======
     private final TaxiAssociationRepository taxiAssociationRepository;
     private final UserRepository userRepository;
 
@@ -40,7 +34,6 @@ public class VendorService {
         this.walletRepository = walletRepository;
         this.taxiAssociationRepository = taxiAssociationRepository;
         this.userRepository = userRepository;
->>>>>>> 64b97030878b67831e527c719de4297ec8551cac
     }
 
     public List<VendorResponse> search(String category, String name) {
@@ -73,24 +66,12 @@ public class VendorService {
         return toResponse(vendor, true);
     }
 
-<<<<<<< HEAD
     public VendorResponse getById(Long id) {
         Vendor vendor = vendorRepository.findById(id)
                 .orElseThrow(() -> new VendorNotFoundException("No vendor found for ID " + id));
-        return toResponse(vendor);
+        return toResponse(vendor, false);
     }
 
-    private VendorResponse toResponse(Vendor v) {
-        BigDecimal walletBalance = walletRepository.findByUserId(v.getUserId())
-                .map(Wallet::getBalance)
-                .orElse(BigDecimal.ZERO);
-
-        return new VendorResponse(
-                v.getId(), v.getUserId(), v.getBusinessName(), v.getCategory().name(),
-                v.getLocationName(), v.getLatitude(), v.getLongitude(), v.getQrCode(),
-                v.isVerified(), v.getRatingAvg(), v.getRatingCount(), v.getPhotoUrl(),
-                v.getVehicleRegistration(), walletBalance);
-=======
     // Drivers awaiting this admin's association's review - see VendorStatus.
     public List<PendingDriverResponse> pendingDriversForAssociation(Long associationId) {
         List<Vendor> pending = vendorRepository.findByAssociationIdAndStatusOrderByCreatedAt(associationId, VendorStatus.PENDING);
@@ -136,6 +117,5 @@ public class VendorService {
                 v.getLocationName(), v.getStatus().name(), v.getLatitude(), v.getLongitude(), v.getQrCode(),
                 v.isVerified(), v.getPhotoUrl(),
                 v.getVehicleRegistration(), walletBalance, v.getAssociationId(), associationName);
->>>>>>> 64b97030878b67831e527c719de4297ec8551cac
     }
 }

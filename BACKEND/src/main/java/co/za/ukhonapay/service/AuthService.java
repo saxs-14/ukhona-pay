@@ -113,12 +113,6 @@ public class AuthService {
                 .build();
         walletRepository.save(wallet);
 
-<<<<<<< HEAD
-        boolean isDriver = req.userType() == UserType.TAXI_DRIVER;
-        boolean isAdmin = req.userType() == UserType.TAXI_ASSOCIATION_ADMIN;
-        
-        VendorCategory category = isDriver ? VendorCategory.TAXI : (isAdmin ? VendorCategory.SERVICES : VendorCategory.OTHER);
-=======
         if (req.userType() == UserType.TAXI_DRIVER || req.userType() == UserType.VENDOR) {
             boolean isDriver = req.userType() == UserType.TAXI_DRIVER;
             Vendor.Builder vendorBuilder = Vendor.builder()
@@ -131,37 +125,22 @@ public class AuthService {
                     // approves the registration (see PaymentService.requireApproved).
                     // A vendor has no equivalent review step.
                     .status(isDriver ? VendorStatus.PENDING : VendorStatus.APPROVED);
->>>>>>> 64b97030878b67831e527c719de4297ec8551cac
 
-        Vendor.Builder vendorBuilder = Vendor.builder()
-                .userId(user.getId())
-                .businessName(req.name() + " " + req.surname() + (isAdmin ? " (Association Admin)" : ""))
-                .category(category)
-                .qrCode(generateQrCode(user.getId()))
-                .verified(false)
-                .ratingAvg(BigDecimal.ZERO)
-                .ratingCount(0);
+            if (isDriver) {
+                TaxiAssociation association = taxiAssociationRepository.findById(associationId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Taxi association not found"));
+                vendorBuilder.locationName(association.getName())
+                        .vehicleRegistration(vehicleRegistration)
+                        .associationId(associationId);
+            } else {
+                TaxiRank rank = taxiRankRepository.findById(rankId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Taxi rank not found"));
+                vendorBuilder.locationName(rank.getName())
+                        .rankId(rankId);
+            }
 
-        if (isDriver) {
-            TaxiAssociation association = taxiAssociationRepository.findById(associationId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Taxi association not found"));
-            vendorBuilder.locationName(association.getName())
-                    .vehicleRegistration(vehicleRegistration)
-                    .associationId(associationId);
-        } else if (isAdmin) {
-            TaxiAssociation association = taxiAssociationRepository.findById(associationId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Taxi association not found"));
-            vendorBuilder.locationName(association.getName())
-                    .associationId(associationId)
-                    .rankId(rankId);
-        } else {
-            TaxiRank rank = taxiRankRepository.findById(rankId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Taxi rank not found"));
-            vendorBuilder.locationName(rank.getName())
-                    .rankId(rankId);
+            vendorRepository.save(vendorBuilder.build());
         }
-
-        vendorRepository.save(vendorBuilder.build());
 
         String token = jwtService.generateToken(user.getId(), user.getUserType().name(), user.getPhoneNumber());
         return new AuthResponse(token, user.getId(), user.getName(), user.getUserType().name(), user.getPhoneNumber());
