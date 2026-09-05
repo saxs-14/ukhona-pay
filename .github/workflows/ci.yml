@@ -12,6 +12,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify Clean Contributor Attribution
+        run: |
+          if git log -n 100 --format="%ae %B" | grep -Ei "saxs\.solutions25|Co-Authored-By:\s*Claude"; then
+            echo "::error::Forbidden author or co-author found in commit history!"
+            exit 1
+          fi
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
