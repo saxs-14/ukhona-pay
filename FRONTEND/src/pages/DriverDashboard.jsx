@@ -163,9 +163,6 @@ export default function DriverDashboard() {
         <FinancialScoreCard />
       </motion.div>
 
-<<<<<<< HEAD
-
-=======
       {isApproved && (
         <motion.div
           variants={cardEnter}
@@ -192,7 +189,6 @@ export default function DriverDashboard() {
               className="w-full rounded-xl border border-sand-300 bg-sand-50/50 py-2.5 pl-10 pr-3 text-sand-900 transition-colors focus:border-terracotta-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-terracotta-100"
             />
           </div>
->>>>>>> 64b97030878b67831e527c719de4297ec8551cac
 
           <AnimatePresence mode="wait">
             {payUrl ? (

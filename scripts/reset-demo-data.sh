@@ -37,7 +37,7 @@ fi
 summary=""
 for j in $(seq 1 5); do
   summary=$(docker exec ukhonapay-postgres psql -U ukhonapay -d ukhonapay -t -c \
-    "SELECT (SELECT count(*) FROM taxi_associations) || ' taxi associations, ' || (SELECT count(*) FROM taxi_ranks) || ' taxi ranks, ' || (SELECT count(*) FROM atm_locations) || ' ATM locations, ' || (SELECT count(*) FROM users) || ' registered users';" 2>/dev/null) || summary=""
+    "SELECT (SELECT count(*) FROM taxi_associations) || ' taxi associations, ' || (SELECT count(*) FROM taxi_ranks) || ' taxi ranks, ' || (SELECT count(*) FROM users) || ' registered users';" 2>/dev/null) || summary=""
   if [ -n "$summary" ]; then break; fi
   sleep 2
 done

@@ -15,12 +15,8 @@ public record VendorResponse(
         boolean verified,
         String photoUrl,
         String vehicleRegistration,
-<<<<<<< HEAD
-        BigDecimal walletBalance
-=======
         BigDecimal walletBalance,
         Long associationId,
         String associationName
->>>>>>> 64b97030878b67831e527c719de4297ec8551cac
 ) {
 }
