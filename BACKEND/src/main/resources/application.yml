@@ -26,10 +26,6 @@ ukhonapay:
   jwt:
     secret: ${JWT_SECRET:demo-only-secret-key-for-hackathon-do-not-use-in-production-1234567890}
     expiry-minutes: 720
-  cashback:
-    default-rate: 0.025
-  withdrawal:
-    pin-valid-hours: 24
 
 logging:
   level:

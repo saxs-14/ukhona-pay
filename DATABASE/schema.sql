@@ -3,15 +3,11 @@
 -- EDHE Studentpreneurs Indaba 2026 - Market Connectivity Challenge
 -- ============================================================================
 
-DROP TABLE IF EXISTS ratings CASCADE;
 DROP TABLE IF EXISTS bank_withdrawals CASCADE;
 DROP TABLE IF EXISTS bank_accounts CASCADE;
-DROP TABLE IF EXISTS withdrawals CASCADE;
-DROP TABLE IF EXISTS cashback CASCADE;
 DROP TABLE IF EXISTS transactions CASCADE;
 DROP TABLE IF EXISTS vendors CASCADE;
 DROP TABLE IF EXISTS wallets CASCADE;
-DROP TABLE IF EXISTS atm_locations CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 DROP TABLE IF EXISTS taxi_ranks CASCADE;
 DROP TABLE IF EXISTS taxi_associations CASCADE;
@@ -94,9 +90,13 @@ CREATE TABLE vendors (
     longitude       NUMERIC(9,6),
     qr_code         VARCHAR(64) NOT NULL UNIQUE,
     verified        BOOLEAN NOT NULL DEFAULT FALSE,
-    rating_avg      NUMERIC(2,1) NOT NULL DEFAULT 0,
-    rating_count    INTEGER NOT NULL DEFAULT 0,
     photo_url       VARCHAR(255),
+    -- Only meaningful for TAXI_DRIVER: a driver starts PENDING and can't
+    -- accept payments until the taxi association administrator approves the
+    -- registration (checking the vehicle is genuinely registered with that
+    -- association). Plain VENDOR signups default straight to APPROVED - see
+    -- AuthService.
+    status          VARCHAR(20) NOT NULL DEFAULT 'APPROVED' CHECK (status IN ('PENDING', 'APPROVED', 'REJECTED')),
     -- Driver-only.
     vehicle_registration VARCHAR(20),
     association_id  BIGINT REFERENCES taxi_associations(id),
@@ -106,19 +106,6 @@ CREATE TABLE vendors (
 );
 
 CREATE INDEX idx_vendors_category ON vendors(category);
-
--- ============================================================================
--- ATM LOCATIONS  (ABSA network - mocked)
--- ============================================================================
-CREATE TABLE atm_locations (
-    id              BIGSERIAL PRIMARY KEY,
-    name            VARCHAR(150) NOT NULL,
-    address         VARCHAR(255) NOT NULL,
-    city            VARCHAR(80) NOT NULL,
-    latitude        NUMERIC(9,6) NOT NULL,
-    longitude       NUMERIC(9,6) NOT NULL,
-    bank            VARCHAR(50) NOT NULL DEFAULT 'ABSA'
-);
 
 -- ============================================================================
 -- TRANSACTIONS  (immutable ledger - vendor payments and driver-to-association
@@ -146,37 +133,6 @@ CREATE TABLE transactions (
 CREATE INDEX idx_transactions_sender ON transactions(sender_id);
 CREATE INDEX idx_transactions_receiver ON transactions(receiver_id);
 CREATE INDEX idx_transactions_created_at ON transactions(created_at);
-
--- ============================================================================
--- CASHBACK  (per-transaction cashback ledger)
--- ============================================================================
-CREATE TABLE cashback (
-    id              BIGSERIAL PRIMARY KEY,
-    user_id         BIGINT NOT NULL REFERENCES users(id),
-    transaction_id  BIGINT NOT NULL REFERENCES transactions(id),
-    amount          NUMERIC(12,2) NOT NULL CHECK (amount >= 0),
-    status          VARCHAR(20) NOT NULL DEFAULT 'EARNED' CHECK (status IN ('EARNED', 'WITHDRAWN')),
-    created_at      TIMESTAMP NOT NULL DEFAULT now()
-);
-
-CREATE INDEX idx_cashback_user ON cashback(user_id);
-
--- ============================================================================
--- WITHDRAWALS  (ATM cash-out only - no bank transfers)
--- ============================================================================
-CREATE TABLE withdrawals (
-    id              BIGSERIAL PRIMARY KEY,
-    user_id         BIGINT NOT NULL REFERENCES users(id),
-    atm_location_id BIGINT NOT NULL REFERENCES atm_locations(id),
-    amount          NUMERIC(12,2) NOT NULL CHECK (amount > 0),
-    withdrawal_pin  VARCHAR(4) NOT NULL,
-    status          VARCHAR(20) NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'COMPLETED', 'EXPIRED', 'CANCELLED')),
-    requested_at    TIMESTAMP NOT NULL DEFAULT now(),
-    expires_at      TIMESTAMP NOT NULL,
-    completed_at    TIMESTAMP
-);
-
-CREATE INDEX idx_withdrawals_user ON withdrawals(user_id);
 
 -- ============================================================================
 -- BANK ACCOUNTS  (one saved bank account per driver/vendor, for bank withdrawals)
@@ -209,24 +165,10 @@ CREATE TABLE bank_withdrawals (
 CREATE INDEX idx_bank_withdrawals_user ON bank_withdrawals(user_id);
 
 -- ============================================================================
--- RATINGS  (customer -> vendor)
--- ============================================================================
-CREATE TABLE ratings (
-    id              BIGSERIAL PRIMARY KEY,
-    vendor_id       BIGINT NOT NULL REFERENCES vendors(id),
-    reviewer_id     BIGINT NOT NULL REFERENCES users(id),
-    transaction_id  BIGINT REFERENCES transactions(id),
-    stars           SMALLINT NOT NULL CHECK (stars BETWEEN 1 AND 5),
-    review          VARCHAR(500),
-    created_at      TIMESTAMP NOT NULL DEFAULT now(),
-    UNIQUE(vendor_id, transaction_id)
-);
-
--- ============================================================================
 -- NO SEED DATA
--- Every row in every table - including taxi_associations, taxi_ranks, and
--- atm_locations - is created through real usage, not pre-loaded here. An
--- Association Administrator creates their association on signup; a vendor or
--- admin creates a taxi rank the same way if it doesn't exist yet. See
+-- Every row in every table - including taxi_associations and taxi_ranks - is
+-- created through real usage, not pre-loaded here. An Association
+-- Administrator creates their association on signup; a vendor or admin
+-- creates a taxi rank the same way if it doesn't exist yet. See
 -- ReferenceDataController's POST /api/taxi-associations and /api/taxi-ranks.
 -- ============================================================================

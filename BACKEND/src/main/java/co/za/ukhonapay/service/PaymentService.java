@@ -10,28 +10,23 @@ import co.za.ukhonapay.exception.InsufficientFundsException;
 import co.za.ukhonapay.exception.InvalidCredentialsException;
 import co.za.ukhonapay.exception.ResourceNotFoundException;
 import co.za.ukhonapay.exception.VendorNotFoundException;
-import co.za.ukhonapay.model.Cashback;
 import co.za.ukhonapay.model.TaxiAssociation;
 import co.za.ukhonapay.model.Transaction;
 import co.za.ukhonapay.model.User;
 import co.za.ukhonapay.model.Vendor;
 import co.za.ukhonapay.model.Wallet;
-import co.za.ukhonapay.model.enums.CashbackStatus;
 import co.za.ukhonapay.model.enums.TransactionStatus;
-import co.za.ukhonapay.model.enums.UserType;
-import co.za.ukhonapay.repository.CashbackRepository;
+import co.za.ukhonapay.model.enums.VendorStatus;
 import co.za.ukhonapay.repository.TaxiAssociationRepository;
 import co.za.ukhonapay.repository.TransactionRepository;
 import co.za.ukhonapay.repository.UserRepository;
 import co.za.ukhonapay.repository.VendorRepository;
 import co.za.ukhonapay.repository.WalletRepository;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.security.SecureRandom;
 
 @Service
@@ -41,31 +36,25 @@ public class PaymentService {
     private final VendorRepository vendorRepository;
     private final WalletRepository walletRepository;
     private final TransactionRepository transactionRepository;
-    private final CashbackRepository cashbackRepository;
     private final TaxiAssociationRepository taxiAssociationRepository;
     private final WalletService walletService;
     private final PasswordEncoder passwordEncoder;
-    private final BigDecimal defaultCashbackRate;
     private final SecureRandom random = new SecureRandom();
 
     public PaymentService(UserRepository userRepository,
                            VendorRepository vendorRepository,
                            WalletRepository walletRepository,
                            TransactionRepository transactionRepository,
-                           CashbackRepository cashbackRepository,
                            TaxiAssociationRepository taxiAssociationRepository,
                            WalletService walletService,
-                           PasswordEncoder passwordEncoder,
-                           @Value("${ukhonapay.cashback.default-rate}") BigDecimal defaultCashbackRate) {
+                           PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.vendorRepository = vendorRepository;
         this.walletRepository = walletRepository;
         this.transactionRepository = transactionRepository;
-        this.cashbackRepository = cashbackRepository;
         this.taxiAssociationRepository = taxiAssociationRepository;
         this.walletService = walletService;
         this.passwordEncoder = passwordEncoder;
-        this.defaultCashbackRate = defaultCashbackRate;
     }
 
     @Transactional
@@ -79,6 +68,7 @@ public class PaymentService {
 
         Vendor vendor = vendorRepository.findByQrCode(req.vendorQrCode())
                 .orElseThrow(() -> new VendorNotFoundException("No vendor found for this QR code"));
+        requireApproved(vendor);
 
         if (vendor.getUserId().equals(senderId)) {
             throw new IllegalArgumentException("You cannot pay yourself");
@@ -94,14 +84,7 @@ public class PaymentService {
             throw new InsufficientFundsException("Insufficient wallet balance for this payment");
         }
 
-        boolean isBusinessOrDriver = sender.getUserType() == UserType.VENDOR 
-                || sender.getUserType() == UserType.TAXI_DRIVER 
-                || sender.getUserType() == UserType.TAXI_ASSOCIATION_ADMIN;
-        BigDecimal cashbackRate = isBusinessOrDriver ? BigDecimal.ZERO : defaultCashbackRate;
-        BigDecimal cashbackAmount = amount.multiply(cashbackRate).setScale(2, RoundingMode.HALF_UP);
-
         senderWallet.setBalance(senderWallet.getBalance().subtract(amount));
-        senderWallet.setCashbackBalance(senderWallet.getCashbackBalance().add(cashbackAmount));
         vendorWallet.setBalance(vendorWallet.getBalance().add(amount));
         walletRepository.save(senderWallet);
         walletRepository.save(vendorWallet);
@@ -112,22 +95,12 @@ public class PaymentService {
                 .receiverId(vendor.getUserId())
                 .vendorId(vendor.getId())
                 .amount(amount)
-                .cashbackAmount(cashbackAmount)
-                .cashbackRate(cashbackRate)
+                .cashbackAmount(BigDecimal.ZERO)
+                .cashbackRate(BigDecimal.ZERO)
                 .status(TransactionStatus.COMPLETED)
                 .description(req.description())
                 .build();
         transaction = transactionRepository.save(transaction);
-
-        if (cashbackAmount.compareTo(BigDecimal.ZERO) > 0) {
-            Cashback cashback = Cashback.builder()
-                    .userId(senderId)
-                    .transactionId(transaction.getId())
-                    .amount(cashbackAmount)
-                    .status(CashbackStatus.EARNED)
-                    .build();
-            cashbackRepository.save(cashback);
-        }
 
         return new PaymentResponse(
                 transaction.getReference(),
@@ -135,7 +108,7 @@ public class PaymentService {
                 vendor.getId(),
                 vendor.getBusinessName(),
                 amount,
-                cashbackAmount,
+                BigDecimal.ZERO,
                 senderWallet.getBalance(),
                 senderWallet.getCashbackBalance(),
                 transaction.getCreatedAt());
@@ -198,6 +171,7 @@ public class PaymentService {
     public IncomingPaymentResponse receiveExternalPayment(IncomingPaymentRequest req) {
         Vendor vendor = vendorRepository.findByQrCode(req.vendorQrCode())
                 .orElseThrow(() -> new VendorNotFoundException("No vendor found for this QR code"));
+        requireApproved(vendor);
 
         Wallet vendorWallet = walletRepository.findWithLockByUserId(vendor.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("Vendor wallet not found"));
@@ -221,6 +195,18 @@ public class PaymentService {
         return new IncomingPaymentResponse(
                 transaction.getReference(), vendor.getId(), vendor.getBusinessName(),
                 amount, vendorWallet.getBalance(), transaction.getCreatedAt());
+    }
+
+    // Blocks payments to a driver whose registration hasn't been approved by
+    // their taxi association yet (or was rejected) - vendors are always
+    // APPROVED at signup, so this only ever actually gates drivers.
+    private void requireApproved(Vendor vendor) {
+        if (vendor.getStatus() != VendorStatus.APPROVED) {
+            throw new IllegalArgumentException(
+                    vendor.getStatus() == VendorStatus.PENDING
+                            ? "This driver's registration is still pending approval from their taxi association"
+                            : "This driver's registration was not approved by their taxi association");
+        }
     }
 
     private String generateReference() {

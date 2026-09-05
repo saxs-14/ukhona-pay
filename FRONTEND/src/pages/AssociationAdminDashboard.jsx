@@ -1,21 +1,38 @@
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import { Building2, Clock, MapPin, Phone, ShieldCheck, User, Wallet } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Building2, Car, Check, Clock, Hourglass, MapPin, Phone, ShieldCheck, User, Wallet, X } from "lucide-react";
 import client from "../api/client";
 import AnimatedNumber from "../components/ui/AnimatedNumber";
 import { SkeletonCard } from "../components/ui/Skeleton";
-import { listContainer, listItem } from "../lib/motion";
+import { listContainer, listItem, spring } from "../lib/motion";
 
 export default function AssociationAdminDashboard() {
   const [profile, setProfile] = useState(null);
   const [wallet, setWallet] = useState(null);
   const [transfers, setTransfers] = useState([]);
+  const [pendingDrivers, setPendingDrivers] = useState([]);
+  const [decidingId, setDecidingId] = useState(null);
+  const [decisionError, setDecisionError] = useState("");
 
   useEffect(() => {
     client.get("/users/me").then((res) => setProfile(res.data));
     client.get("/wallet/association/me").then((res) => setWallet(res.data)).catch(() => setWallet(null));
     client.get("/transactions/association/me").then((res) => setTransfers(res.data)).catch(() => setTransfers([]));
+    client.get("/vendors/pending").then((res) => setPendingDrivers(res.data)).catch(() => setPendingDrivers([]));
   }, []);
+
+  async function decide(vendorId, decision) {
+    setDecisionError("");
+    setDecidingId(vendorId);
+    try {
+      await client.post(`/vendors/${vendorId}/${decision}`);
+      setPendingDrivers((prev) => prev.filter((d) => d.vendorId !== vendorId));
+    } catch (err) {
+      setDecisionError(err.message);
+    } finally {
+      setDecidingId(null);
+    }
+  }
 
   if (!profile) {
     return (
@@ -54,7 +71,79 @@ export default function AssociationAdminDashboard() {
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        className="rounded-2xl border border-sand-200 bg-white p-5 shadow-sm"
+        className="mt-3 rounded-2xl border border-sand-200 bg-white p-5 shadow-sm"
+      >
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex items-center gap-1.5 text-sm font-semibold text-sand-700">
+            <Hourglass size={15} className="text-gold-600" /> Driver approvals
+          </div>
+          {pendingDrivers.length > 0 && (
+            <span className="rounded-full bg-gold-100 px-2 py-0.5 text-xs font-semibold text-gold-700">
+              {pendingDrivers.length} pending
+            </span>
+          )}
+        </div>
+
+        {decisionError && <p className="mb-3 text-sm text-red-600">{decisionError}</p>}
+
+        {pendingDrivers.length === 0 ? (
+          <p className="text-sm text-sand-400">No drivers awaiting review.</p>
+        ) : (
+          <div className="space-y-3">
+            <AnimatePresence initial={false}>
+              {pendingDrivers.map((d) => (
+                <motion.div
+                  key={d.vendorId}
+                  layout
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, height: 0, marginBottom: 0, paddingTop: 0, paddingBottom: 0 }}
+                  transition={spring}
+                  className="rounded-xl border border-sand-200 bg-sand-50/60 p-3"
+                >
+                  <p className="text-sm font-semibold text-sand-800">
+                    {d.name} {d.surname}
+                  </p>
+                  <p className="mt-0.5 flex items-center gap-1 text-xs text-sand-500">
+                    <Phone size={11} /> {d.phoneNumber}
+                  </p>
+                  <p className="mt-0.5 flex items-center gap-1 text-xs text-sand-500">
+                    <Car size={11} /> {d.vehicleRegistration}
+                  </p>
+                  <p className="mt-0.5 text-[11px] text-sand-400">
+                    Registered {new Date(d.registeredAt).toLocaleDateString("en-ZA")} — verify the vehicle is
+                    registered with your association before approving.
+                  </p>
+                  <div className="mt-3 flex gap-2">
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
+                      disabled={decidingId === d.vendorId}
+                      onClick={() => decide(d.vendorId, "approve")}
+                      className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-bushveld-600 py-2 text-xs font-semibold text-white transition-colors hover:bg-bushveld-700 disabled:opacity-50"
+                    >
+                      <Check size={13} /> Approve
+                    </motion.button>
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
+                      disabled={decidingId === d.vendorId}
+                      onClick={() => decide(d.vendorId, "reject")}
+                      className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-white py-2 text-xs font-semibold text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
+                    >
+                      <X size={13} /> Reject
+                    </motion.button>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+        )}
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.05 }}
+        className="mt-3 rounded-2xl border border-sand-200 bg-white p-5 shadow-sm"
       >
         <div className="mb-4 flex items-center gap-1.5 text-sm font-semibold text-sand-700">
           <ShieldCheck size={15} className="text-terracotta-600" /> Administrator profile

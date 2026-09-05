@@ -12,6 +12,7 @@ import co.za.ukhonapay.model.Vendor;
 import co.za.ukhonapay.model.Wallet;
 import co.za.ukhonapay.model.enums.UserType;
 import co.za.ukhonapay.model.enums.VendorCategory;
+import co.za.ukhonapay.model.enums.VendorStatus;
 import co.za.ukhonapay.repository.TaxiAssociationRepository;
 import co.za.ukhonapay.repository.TaxiRankRepository;
 import co.za.ukhonapay.repository.UserRepository;
@@ -120,8 +121,10 @@ public class AuthService {
                     .category(isDriver ? VendorCategory.TAXI : VendorCategory.OTHER)
                     .qrCode(generateQrCode(user.getId()))
                     .verified(false)
-                    .ratingAvg(BigDecimal.ZERO)
-                    .ratingCount(0);
+                    // A driver can't accept payments until their taxi association
+                    // approves the registration (see PaymentService.requireApproved).
+                    // A vendor has no equivalent review step.
+                    .status(isDriver ? VendorStatus.PENDING : VendorStatus.APPROVED);
 
             if (isDriver) {
                 TaxiAssociation association = taxiAssociationRepository.findById(associationId)

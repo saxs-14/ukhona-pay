@@ -51,7 +51,7 @@ try {
     for ($j = 0; $j -lt 5; $j++) {
         try {
             $raw2 = docker exec ukhonapay-postgres psql -U ukhonapay -d ukhonapay -t -c `
-                "SELECT (SELECT count(*) FROM taxi_associations) || ' taxi associations, ' || (SELECT count(*) FROM taxi_ranks) || ' taxi ranks, ' || (SELECT count(*) FROM atm_locations) || ' ATM locations, ' || (SELECT count(*) FROM users) || ' registered users';" 2>$null
+                "SELECT (SELECT count(*) FROM taxi_associations) || ' taxi associations, ' || (SELECT count(*) FROM taxi_ranks) || ' taxi ranks, ' || (SELECT count(*) FROM users) || ' registered users';" 2>$null
         } catch {
             $raw2 = $null
         }
