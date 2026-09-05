@@ -80,21 +80,7 @@ export default function DriverDashboard() {
         <p className="mt-2 break-all text-xs text-sand-400">{vendor.qrCode}</p>
       </motion.div>
 
-      <div className="mt-5 grid grid-cols-2 gap-3">
-        <div className="rounded-xl border border-sand-200 bg-white p-3 text-center">
-          <p className="text-xs text-sand-500">Rating</p>
-          <p className="flex items-center justify-center gap-1 text-lg font-semibold text-gold-600">
-            <Star size={15} fill="#E2971E" strokeWidth={0} /> {Number(vendor.ratingAvg).toFixed(1)}
-          </p>
-          <p className="text-xs text-sand-400">{vendor.ratingCount} reviews</p>
-        </div>
-        <div className="rounded-xl border border-sand-200 bg-white p-3 text-center">
-          <p className="text-xs text-sand-500">Insights</p>
-          <p className="text-lg font-semibold text-sand-800">
-            {transactions.length > 0 ? "View →" : "—"}
-          </p>
-        </div>
-      </div>
+
 
       <div className="mt-6">
         <h2 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-sand-700">

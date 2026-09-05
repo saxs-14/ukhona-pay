@@ -12,8 +12,15 @@ import co.za.ukhonapay.model.enums.WithdrawalStatus;
 import co.za.ukhonapay.repository.AtmLocationRepository;
 import co.za.ukhonapay.repository.CashbackRepository;
 import co.za.ukhonapay.repository.WalletRepository;
-import co.za.ukhonapay.repository.WithdrawalRepository;
-import co.za.ukhonapay.model.enums.CashbackStatus;
+import co.za.ukhonapay.dto.VendorBankWithdrawalRequest;
+import co.za.ukhonapay.dto.VendorBankWithdrawalResponse;
+import co.za.ukhonapay.exception.InvalidCredentialsException;
+import co.za.ukhonapay.model.Transaction;
+import co.za.ukhonapay.model.User;
+import co.za.ukhonapay.model.enums.TransactionStatus;
+import co.za.ukhonapay.repository.TransactionRepository;
+import co.za.ukhonapay.repository.UserRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +29,7 @@ import java.math.BigDecimal;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class WithdrawalService {
@@ -30,6 +38,9 @@ public class WithdrawalService {
     private final WalletRepository walletRepository;
     private final AtmLocationRepository atmLocationRepository;
     private final CashbackRepository cashbackRepository;
+    private final UserRepository userRepository;
+    private final TransactionRepository transactionRepository;
+    private final PasswordEncoder passwordEncoder;
     private final long pinValidHours;
     private final SecureRandom random = new SecureRandom();
 
@@ -37,11 +48,17 @@ public class WithdrawalService {
                               WalletRepository walletRepository,
                               AtmLocationRepository atmLocationRepository,
                               CashbackRepository cashbackRepository,
+                              UserRepository userRepository,
+                              TransactionRepository transactionRepository,
+                              PasswordEncoder passwordEncoder,
                               @Value("${ukhonapay.withdrawal.pin-valid-hours}") long pinValidHours) {
         this.withdrawalRepository = withdrawalRepository;
         this.walletRepository = walletRepository;
         this.atmLocationRepository = atmLocationRepository;
         this.cashbackRepository = cashbackRepository;
+        this.userRepository = userRepository;
+        this.transactionRepository = transactionRepository;
+        this.passwordEncoder = passwordEncoder;
         this.pinValidHours = pinValidHours;
     }
 
@@ -125,6 +142,46 @@ public class WithdrawalService {
 
     private String generatePin() {
         return String.format("%04d", random.nextInt(10000));
+    }
+
+    @Transactional
+    public VendorBankWithdrawalResponse withdrawToBank(Long userId, VendorBankWithdrawalRequest req) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (!passwordEncoder.matches(req.pin(), user.getPinHash())) {
+            throw new InvalidCredentialsException("Incorrect PIN");
+        }
+
+        Wallet wallet = walletRepository.findWithLockByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found"));
+
+        if (wallet.getBalance().compareTo(req.amount()) < 0) {
+            throw new InsufficientFundsException("Insufficient wallet balance for this bank withdrawal");
+        }
+
+        wallet.setBalance(wallet.getBalance().subtract(req.amount()));
+        walletRepository.save(wallet);
+
+        String ref = "PAYOUT-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        String maskedAccount = req.accountNumber().length() > 4 
+                ? "****" + req.accountNumber().substring(req.accountNumber().length() - 4)
+                : req.accountNumber();
+
+        Transaction transaction = Transaction.builder()
+                .reference(ref)
+                .senderId(userId)
+                .receiverId(userId)
+                .amount(req.amount())
+                .cashbackAmount(BigDecimal.ZERO)
+                .cashbackRate(BigDecimal.ZERO)
+                .status(TransactionStatus.COMPLETED)
+                .description("Bank Cashout to " + req.bankName() + " (" + maskedAccount + ")")
+                .build();
+        transactionRepository.save(transaction);
+
+        return new VendorBankWithdrawalResponse(
+                ref, req.amount(), req.bankName(), maskedAccount, req.accountHolderName(), "COMPLETED", LocalDateTime.now());
     }
 
     private WithdrawalResponse toResponse(Withdrawal w, String atmName) {

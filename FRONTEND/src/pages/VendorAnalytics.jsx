@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Bar, Line } from "react-chartjs-2";
-import { BarChart3, Lightbulb } from "lucide-react";
+import { BarChart3, FileText, Lightbulb } from "lucide-react";
 import client from "../api/client";
 import { CHART_COLORS } from "../charts/registerCharts";
 import Card from "../components/ui/Card";
+import FinancialScoreCard from "../components/ui/FinancialScoreCard";
 import { SkeletonCard } from "../components/ui/Skeleton";
+import VendorStatementModal from "../components/VendorStatementModal";
 import { listContainer, listItem } from "../lib/motion";
 
 function formatHour(hour) {
@@ -17,9 +19,17 @@ function formatHour(hour) {
 
 export default function VendorAnalytics() {
   const [data, setData] = useState(null);
+  const [vendor, setVendor] = useState(null);
+  const [isStatementModalOpen, setIsStatementModalOpen] = useState(false);
 
   useEffect(() => {
-    client.get("/analytics/vendor/me").then((res) => setData(res.data));
+    Promise.all([
+      client.get("/analytics/vendor/me"),
+      client.get("/vendors/me"),
+    ]).then(([analyticsRes, vendorRes]) => {
+      setData(analyticsRes.data);
+      setVendor(vendorRes.data);
+    });
   }, []);
 
   if (!data) {
@@ -66,12 +76,25 @@ export default function VendorAnalytics() {
 
   return (
     <div className="mx-auto max-w-md px-4 py-6">
-      <h1 className="mb-1 flex items-center gap-2 font-display text-xl text-sand-900">
-        <BarChart3 size={20} className="text-terracotta-600" /> Your business insights
-      </h1>
-      <p className="mb-4 text-sm text-sand-500">
-        Generated automatically from your Ukhona Pay transaction history — no extra data entry needed.
-      </p>
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <h1 className="flex items-center gap-2 font-display text-xl text-sand-900">
+            <BarChart3 size={20} className="text-terracotta-600" /> Business Insights
+          </h1>
+          <p className="text-xs text-sand-500">Transaction statistics & financial statement exporter</p>
+        </div>
+        <button
+          onClick={() => setIsStatementModalOpen(true)}
+          className="flex items-center gap-1.5 rounded-xl bg-terracotta-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-terracotta-700 active:scale-95"
+        >
+          <FileText size={15} /> PDF Statement
+        </button>
+      </div>
+
+      {/* Financial Identity / Credit Score Card */}
+      <div className="mb-5">
+        <FinancialScoreCard />
+      </div>
 
       <motion.div variants={listContainer} initial="initial" animate="animate" className="grid grid-cols-2 gap-3">
         {[
@@ -120,6 +143,13 @@ export default function VendorAnalytics() {
           ))}
         </div>
       </div>
+
+      {/* PDF Statement Modal */}
+      <VendorStatementModal
+        isOpen={isStatementModalOpen}
+        onClose={() => setIsStatementModalOpen(false)}
+        vendor={vendor}
+      />
     </div>
   );
 }

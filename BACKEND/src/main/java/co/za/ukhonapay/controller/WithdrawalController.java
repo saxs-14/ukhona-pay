@@ -11,6 +11,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import co.za.ukhonapay.dto.VendorBankWithdrawalRequest;
+import co.za.ukhonapay.dto.VendorBankWithdrawalResponse;
+
 @RestController
 @RequestMapping("/api/withdrawals")
 public class WithdrawalController {
@@ -29,6 +32,11 @@ public class WithdrawalController {
     @PostMapping
     public ResponseEntity<WithdrawalResponse> request(@Valid @RequestBody WithdrawalRequest request) {
         return ResponseEntity.ok(withdrawalService.requestWithdrawal(CurrentUser.id(), request));
+    }
+
+    @PostMapping("/vendor/bank")
+    public ResponseEntity<VendorBankWithdrawalResponse> withdrawToBank(@Valid @RequestBody VendorBankWithdrawalRequest request) {
+        return ResponseEntity.ok(withdrawalService.withdrawToBank(CurrentUser.id(), request));
     }
 
     @PostMapping("/{id}/complete")

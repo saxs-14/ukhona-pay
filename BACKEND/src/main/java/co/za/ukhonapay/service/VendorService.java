@@ -47,6 +47,12 @@ public class VendorService {
         return toResponse(vendor);
     }
 
+    public VendorResponse getById(Long id) {
+        Vendor vendor = vendorRepository.findById(id)
+                .orElseThrow(() -> new VendorNotFoundException("No vendor found for ID " + id));
+        return toResponse(vendor);
+    }
+
     private VendorResponse toResponse(Vendor v) {
         BigDecimal walletBalance = walletRepository.findByUserId(v.getUserId())
                 .map(Wallet::getBalance)

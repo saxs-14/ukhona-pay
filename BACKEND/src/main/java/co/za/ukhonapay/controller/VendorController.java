@@ -43,4 +43,16 @@ public class VendorController {
         VendorResponse vendor = vendorService.getByUserId(CurrentUser.id());
         return ResponseEntity.ok(Map.of("qrCode", vendor.qrCode(), "image", qrCodeService.generatePngBase64(vendor.qrCode())));
     }
+
+    @GetMapping("/qr/{qrCode}/image")
+    public ResponseEntity<Map<String, String>> getQrImageByCode(@PathVariable String qrCode) {
+        VendorResponse vendor = vendorService.getByQrCode(qrCode);
+        return ResponseEntity.ok(Map.of("qrCode", vendor.qrCode(), "image", qrCodeService.generatePngBase64(vendor.qrCode())));
+    }
+
+    @GetMapping("/{vendorId}/qr-image")
+    public ResponseEntity<Map<String, String>> getQrImageById(@PathVariable Long vendorId) {
+        VendorResponse vendor = vendorService.getById(vendorId);
+        return ResponseEntity.ok(Map.of("qrCode", vendor.qrCode(), "image", qrCodeService.generatePngBase64(vendor.qrCode())));
+    }
 }
