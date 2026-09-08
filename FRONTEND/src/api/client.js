@@ -22,6 +22,17 @@ client.interceptors.request.use((config) => {
 client.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Spring Security returns 403 (not 401) for a missing/invalid/expired
+    // token on any protected endpoint - 401 here is only ever the login
+    // endpoint rejecting a wrong PIN. A stale token left over in
+    // localStorage (e.g. after the backend restarts with a new JWT
+    // secret) was crashing every dashboard with "Cannot read properties
+    // of null" instead of sending the user back to log in.
+    if (error.response?.status === 403 && window.location.pathname !== "/login") {
+      localStorage.removeItem("ukp_token");
+      localStorage.removeItem("ukp_user");
+      window.location.href = "/login";
+    }
     const message = error.response?.data?.message || error.message || "Something went wrong";
     return Promise.reject(new Error(message));
   }
