@@ -77,20 +77,20 @@ export default function AssociationAdminDashboard() {
 
   return (
     <div className="mx-auto max-w-md px-4 py-6">
-      <p className="mb-1 text-xs font-medium uppercase tracking-wide text-terracotta-600">Association Administrator</p>
+      <p className="mb-1 text-xs font-medium uppercase tracking-wide text-gold-600">Association Administrator</p>
       <h1 className="mb-4 font-display text-xl text-sand-900">
         {profile.name} {profile.surname}
       </h1>
 
       {wallet && (
-        <div className="mb-3 rounded-2xl bg-gradient-to-br from-terracotta-600 to-terracotta-700 p-4 text-white shadow-warm">
-          <p className="flex items-center gap-1.5 text-xs text-terracotta-100">
+        <div className="mb-3 rounded-2xl bg-gradient-to-br from-gold-500 to-gold-600 p-4 text-white shadow-warm">
+          <p className="flex items-center gap-1.5 text-xs text-[#FCEACB]">
             <Wallet size={12} /> Association wallet balance
           </p>
           <p className="text-2xl font-semibold">
             <AnimatedNumber value={Number(wallet.balance)} prefix="R" />
           </p>
-          <p className="mt-1 text-xs text-terracotta-100">From drivers paying their taxi owner/association directly</p>
+          <p className="mt-1 text-xs text-[#FCEACB]">From drivers paying their taxi owner/association directly</p>
         </div>
       )}
 

@@ -60,21 +60,21 @@ export default function VendorDashboard() {
 
   return (
     <div className="mx-auto max-w-md px-4 py-6">
-      <p className="mb-1 text-xs font-medium uppercase tracking-wide text-terracotta-600">Vendor Portal</p>
+      <p className="mb-1 text-xs font-medium uppercase tracking-wide text-bushveld-600">Vendor Portal</p>
       <h1 className="flex items-center gap-1.5 font-display text-xl text-sand-900">
-        {vendor.businessName} {vendor.verified && <BadgeCheck size={17} className="text-terracotta-600" />}
+        {vendor.businessName} {vendor.verified && <BadgeCheck size={17} className="text-bushveld-600" />}
       </h1>
       <p className="mb-4 flex items-center gap-1 text-sm text-sand-500">
         <MapPin size={12} /> {vendor.locationName}
       </p>
 
       {/* Wallet Balance Card */}
-      <div className="rounded-2xl bg-gradient-to-br from-terracotta-600 to-terracotta-700 p-5 text-white shadow-warm">
-        <p className="text-xs text-terracotta-100">Vendor Wallet Balance</p>
+      <div className="rounded-2xl bg-gradient-to-br from-bushveld-600 to-bushveld-700 p-5 text-white shadow-warm">
+        <p className="text-xs text-bushveld-100">Vendor Wallet Balance</p>
         <p className="mt-1 text-3xl font-bold">
           <AnimatedNumber value={Number(wallet.balance)} prefix="R" />
         </p>
-        <p className="mt-2 text-xs text-terracotta-100">
+        <p className="mt-2 text-xs text-bushveld-100">
           Wallet balance available for instant payments and bank cashouts
         </p>
       </div>
