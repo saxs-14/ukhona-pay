@@ -18,8 +18,8 @@
 
 ### Event
 - **Name:** EDHE Studentpreneurs Indaba FinTech Hackathon 2026
-- **Location:** Cape Town
-- **Dates:** September 9–11, 2026 (48 hours)
+- **Location:** Birchwood Hotel, Gauteng
+- **Dates:** September 10–11, 2026 (48 hours)
 - **Empowered by:** Absa Group Limited
 - **Your Team:** 3ncryp+3d (Saxs, Olerato, Rendani, Siyabonga)
 - **Mentor:** Tshifhiwa Mphephu

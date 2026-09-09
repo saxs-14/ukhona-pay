@@ -239,7 +239,7 @@ This is not a rebuild. This is a refinement.
 **Mentor:** Tshifhiwa Mphephu
 **Challenge:** Challenge 3 (Digitization & Financial Identity)
 **Event:** EDHE Studentpreneurs Indaba FinTech Hackathon 2026
-**Dates:** September 9–11, 2026
+**Dates:** September 10–11, 2026
 **Scope:** Taxi ranks at Mbombela (MVP) → scalable to 100+ ranks nationally
 
 ---
