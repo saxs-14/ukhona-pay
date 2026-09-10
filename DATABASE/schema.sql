@@ -53,7 +53,12 @@ CREATE UNIQUE INDEX ux_taxi_ranks_name_lower ON taxi_ranks (LOWER(name));
 -- ============================================================================
 CREATE TABLE users (
     id              BIGSERIAL PRIMARY KEY,
-    phone_number    VARCHAR(10) NOT NULL UNIQUE CHECK (phone_number ~ '^0[0-9]{9}$'),
+    -- Not UNIQUE: a handful of seeded demo accounts below deliberately share
+    -- one phone number so the PIN alone picks which role to sign in as (see
+    -- AuthService.login()). Real signups still get an effectively-unique
+    -- number in practice since AuthService.signup() rejects a phone already
+    -- registered to any account.
+    phone_number    VARCHAR(10) NOT NULL CHECK (phone_number ~ '^0[0-9]{9}$'),
     pin_hash        VARCHAR(255) NOT NULL,
     user_type       VARCHAR(25) NOT NULL CHECK (user_type IN ('VENDOR', 'TAXI_DRIVER', 'TAXI_ASSOCIATION_ADMIN', 'ADMIN')),
     name            VARCHAR(120) NOT NULL,
@@ -228,13 +233,13 @@ INSERT INTO users (id, phone_number, pin_hash, user_type, name, surname, id_numb
 -- accounts in a public repo: a leaked/cracked hash would unlock every
 -- account that reused it, including the platform ADMIN). The actual PINs
 -- are NOT committed here - they're distributed to the team out-of-band.
-(1, '0711234501', '$2a$10$EiyMmxDnxcT08z3bIn2m0OwdSJBFY.fe4i4gBxoE.XoZgPPOBH7ju', 'TAXI_DRIVER', 'Lucky', 'Taxi', '9001015001081', 'lucky.taxi@demo.co.za', TRUE, 1, 1),
+(1, '0714135824', '$2a$10$IFOBXOgdw2A/hRmG4abjq.7mFhZP31ykt/rrrhwQUAkRfh0DAUDFO', 'TAXI_DRIVER', 'Lucky', 'Taxi', '9001015001081', 'lucky.taxi@demo.co.za', TRUE, 1, 1),
 (2, '0798765432', '$2a$10$EUOJ9ko.eYmWsUFC9ohqDekmLkfaIYPC33T8xPQgnW0gEXemJ2nr2', 'TAXI_DRIVER', 'Karabo', 'Mokoena', '9506065006086', 'karabo.m@taxi.co.za', TRUE, 1, 1),
-(3, '0711234502', '$2a$10$UbwYPXrUWjK41FiFjud7zO2t687ZV/nFNhqcaJmI6Hatl5GbPesPW', 'VENDOR', 'Thandi', 'Spaza', '9102025002082', 'thandi.spaza@demo.co.za', TRUE, NULL, 2),
+(3, '0714135824', '$2a$10$ZovmOxsnn6NeocyPR9.sy.IJN.SKCyYJE5vZHwgXqBJxI5TVHwi5.', 'VENDOR', 'Thandi', 'Spaza', '9102025002082', 'thandi.spaza@demo.co.za', TRUE, NULL, 2),
 (4, '0711234503', '$2a$10$17MGp9BXnpV4lxycQEFEMe9wYunrBO3YKp3uvr2rxfB.MFxyt3BQa', 'VENDOR', 'Mama', 'Joy', '9203035003083', 'mamajoy@demo.co.za', TRUE, NULL, 3),
 (5, '0711234504', '$2a$10$SGFK3Irqa7nfe8et7kZsguH4vamlwUcgVuycyMUnSgWZ7smrjsEGS', 'VENDOR', 'Sipho', 'Electrical', '9304045004084', 'sipho.electrical@demo.co.za', TRUE, NULL, 4),
 (6, '0711234505', '$2a$10$Bf1m/5S5p1Ot2kCzWGWYT.QqvfWUr2ZSk1BCS0g6ZM.gOdrjdNL82', 'VENDOR', 'Nomsa', 'Fashion', '9405055005085', 'nomsa.fashion@demo.co.za', TRUE, NULL, 5),
-(7, '0798765437', '$2a$10$X4JU47tQ.R2TD8qos9Jg1OLMEwiKiSHCbIUwMYHTghDOPZomBe6.S', 'TAXI_ASSOCIATION_ADMIN', 'Precious', 'Khumalo', '8511115011081', 'precious.k@taxiassoc.co.za', TRUE, 1, 1),
+(7, '0714135824', '$2a$10$o7K6.d/y5iFb.SHSVrc6OOnZY/PqeOEklFSJqlIjc0YtO1VTeE2hm', 'TAXI_ASSOCIATION_ADMIN', 'Precious', 'Khumalo', '8511115011081', 'precious.k@taxiassoc.co.za', TRUE, 1, 1),
 
 -- Dedicated Collaborator Accounts (unique PIN per account - see note above)
 (8, '0712345678', '$2a$10$Ak7IXs0hd0qdu9gVyP12VOBbWEGZGuefHD0dQWpU0ibFynZF1nZoO', 'TAXI_DRIVER', 'Hlayiseko', 'Bennet', '9601015001082', 'nhlayisekobennet07@gmail.com', TRUE, 1, 1),
@@ -245,7 +250,7 @@ INSERT INTO users (id, phone_number, pin_hash, user_type, name, surname, id_numb
 -- Platform administrator - full-control account, not reachable through public
 -- signup (AuthService rejects userType=ADMIN there). No association/rank: an
 -- admin oversees the whole platform, not one association.
-(12, '0700000001', '$2a$10$qhnPaI6mM/bSDVf5lHi6FekKh4dG8dF8/UlIqocbrt/XmS7CGd76a', 'ADMIN', 'Platform', 'Admin', '0000000000001', 'admin@ukhonapay.co.za', TRUE, NULL, NULL);
+(12, '0714135824', '$2a$10$aochwYyCa8FcfdE5qnBXB.ey.jJUq8QPvZG9klTyAXjSMltj.Yk4m', 'ADMIN', 'Platform', 'Admin', '0000000000001', 'admin@ukhonapay.co.za', TRUE, NULL, NULL);
 
 SELECT setval('users_id_seq', (SELECT max(id) FROM users));
 

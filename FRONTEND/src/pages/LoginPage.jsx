@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Navigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowRight, Lock, Phone } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
@@ -9,12 +9,21 @@ import { dashboardPathFor } from "../lib/roles";
 import logo from "../assets/Ukhona Logo.png";
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { user, login } = useAuth();
   const navigate = useNavigate();
   const [phoneNumber, setPhoneNumber] = useState("");
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // A still-authenticated session (stale token, browser back button, a
+  // bookmark) landing here would otherwise show the login form underneath
+  // the still-rendered NavBar/BottomNav - send them straight to their
+  // dashboard instead of showing both at once. Checked after every hook
+  // above so hook order stays identical across renders (Rules of Hooks).
+  if (user) {
+    return <Navigate to={dashboardPathFor(user.userType)} replace />;
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();

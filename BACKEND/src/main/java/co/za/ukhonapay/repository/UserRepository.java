@@ -9,6 +9,10 @@ import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByPhoneNumber(String phoneNumber);
+    // A phone number is unique per account except for a handful of seeded demo
+    // accounts (see DATABASE/schema.sql) that deliberately share one number so
+    // the PIN alone selects which role to sign in as - login() tries each.
+    List<User> findAllByPhoneNumber(String phoneNumber);
     boolean existsByPhoneNumber(String phoneNumber);
     boolean existsByIdNumber(String idNumber);
     List<User> findAllByOrderByCreatedAtDesc();

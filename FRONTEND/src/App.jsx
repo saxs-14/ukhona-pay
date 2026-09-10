@@ -5,6 +5,7 @@ import NavBar from "./components/NavBar";
 import BottomNav from "./components/BottomNav";
 import ProtectedRoute from "./components/ProtectedRoute";
 import SplashScreen from "./components/SplashScreen";
+import IdleLogoutGuard from "./components/IdleLogoutGuard";
 import { useAuth } from "./context/AuthContext";
 import { pageVariants } from "./lib/motion";
 import { dashboardPathFor } from "./lib/roles";
@@ -46,6 +47,7 @@ export default function App() {
   return (
     <div className="flex min-h-dvh flex-col bg-sand-50">
       <AnimatePresence>{showSplash && <SplashScreen onSkip={() => setShowSplash(false)} />}</AnimatePresence>
+      <IdleLogoutGuard />
       <NavBar />
       <main className="flex-1 pb-4">
         <AnimatePresence mode="wait" initial={false}>

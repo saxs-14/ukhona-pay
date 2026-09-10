@@ -2,13 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { QRCodeSVG } from "qrcode.react";
-import { BadgeCheck, Banknote, Camera, Clock, Landmark, MapPin, QrCode, TrendingUp, ArrowUpRight, ArrowDownLeft } from "lucide-react";
+import { ArrowLeftRight, BadgeCheck, Banknote, Camera, Clock, Landmark, MapPin, PiggyBank, QrCode, TrendingUp, ArrowUpRight, ArrowDownLeft, Wrench } from "lucide-react";
 import client from "../api/client";
 import AnimatedNumber from "../components/ui/AnimatedNumber";
 import { SkeletonCard } from "../components/ui/Skeleton";
 import ScanAndPayModal from "../components/ScanAndPayModal";
 import VendorBankWithdrawModal from "../components/VendorBankWithdrawModal";
 import CashSendModal from "../components/CashSendModal";
+import MoveMoneyModal from "../components/MoveMoneyModal";
 import { listContainer, listItem, spring } from "../lib/motion";
 import { isSelfTransaction, mergeTransactionHistory, transactionPrimaryLabel } from "../lib/transactionHistory";
 
@@ -21,6 +22,7 @@ export default function VendorDashboard() {
   const [isScanModalOpen, setIsScanModalOpen] = useState(false);
   const [isBankModalOpen, setIsBankModalOpen] = useState(false);
   const [isCashSendOpen, setIsCashSendOpen] = useState(false);
+  const [isMoveMoneyOpen, setIsMoveMoneyOpen] = useState(false);
 
   const loadData = () => {
     Promise.all([
@@ -78,6 +80,37 @@ export default function VendorDashboard() {
           Wallet balance available for instant payments and bank cashouts
         </p>
       </div>
+
+      {/* Savings & Maintenance auto-allocation - 5% of every sale goes to
+          each pot automatically (see WalletService.creditWithAutoAllocation) */}
+      <div className="mt-2 grid grid-cols-2 gap-2">
+        <div className="rounded-xl border border-sand-200 bg-white p-3">
+          <p className="flex items-center gap-1 text-xs text-sand-500">
+            <PiggyBank size={12} className="text-bushveld-600" /> Savings
+          </p>
+          <p className="mt-0.5 text-base font-semibold text-sand-800">
+            <AnimatedNumber value={Number(wallet.savingsBalance || 0)} prefix="R" />
+          </p>
+        </div>
+        <div className="rounded-xl border border-sand-200 bg-white p-3">
+          <p className="flex items-center gap-1 text-xs text-sand-500">
+            <Wrench size={12} className="text-gold-600" /> Maintenance
+          </p>
+          <p className="mt-0.5 text-base font-semibold text-sand-800">
+            <AnimatedNumber value={Number(wallet.maintenanceBalance || 0)} prefix="R" />
+          </p>
+        </div>
+      </div>
+      <p className="mt-1.5 flex items-center justify-center gap-2 text-center text-[11px] text-sand-400">
+        5% of every sale is set aside automatically into each pot
+        <button
+          type="button"
+          onClick={() => setIsMoveMoneyOpen(true)}
+          className="inline-flex items-center gap-1 font-semibold text-bushveld-600 hover:text-bushveld-700"
+        >
+          <ArrowLeftRight size={11} /> Move money
+        </button>
+      </p>
 
       {/* Action Buttons Row (under the wallet card) */}
       <div className="mt-3 grid grid-cols-3 gap-2">
@@ -231,6 +264,13 @@ export default function VendorDashboard() {
         isOpen={isCashSendOpen}
         onClose={() => setIsCashSendOpen(false)}
         walletBalance={Number(wallet?.balance || 0)}
+        onSuccess={loadData}
+      />
+
+      <MoveMoneyModal
+        isOpen={isMoveMoneyOpen}
+        onClose={() => setIsMoveMoneyOpen(false)}
+        wallet={wallet}
         onSuccess={loadData}
       />
     </div>

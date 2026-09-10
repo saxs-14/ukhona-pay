@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Navigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
@@ -36,7 +36,7 @@ function Field({ label, required, hint, error, children }) {
 }
 
 export default function SignupPage() {
-  const { signup } = useAuth();
+  const { user, signup } = useAuth();
   const navigate = useNavigate();
   const [associations, setAssociations] = useState([]);
   const [ranks, setRanks] = useState([]);
@@ -64,6 +64,14 @@ export default function SignupPage() {
       setRanks(r.data);
     });
   }, []);
+
+  // Same reasoning as LoginPage: a still-authenticated session landing here
+  // shouldn't show the signup form underneath the app's own nav chrome.
+  // Checked after every hook above so hook order stays identical across
+  // renders (Rules of Hooks).
+  if (user) {
+    return <Navigate to={dashboardPathFor(user.userType)} replace />;
+  }
 
   const ranksForAssociation = (associationId) =>
     associationId ? ranks.filter((r) => String(r.associationId) === String(associationId)) : [];

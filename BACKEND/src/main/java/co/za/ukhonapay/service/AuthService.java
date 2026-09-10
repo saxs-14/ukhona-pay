@@ -31,6 +31,7 @@ import java.math.BigDecimal;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class AuthService {
@@ -159,20 +160,40 @@ public class AuthService {
         // product choice here, not an oversight - it does mean a caller can
         // tell whether a phone number is registered (user enumeration), which
         // is the tradeoff a same-message error would have avoided.
-        User user = userRepository.findByPhoneNumber(req.phoneNumber())
-                .orElseThrow(() -> new InvalidCredentialsException("Wrong credentials"));
+        //
+        // A phone number normally maps to exactly one account, but a handful
+        // of seeded demo accounts deliberately share one number (see
+        // DATABASE/schema.sql) so the PIN alone picks the role to sign in as -
+        // try every candidate for this phone and take whichever one's PIN
+        // matches. Note this does weaken brute-force resistance for a shared
+        // number: a guessed PIN only has to match one of several accounts
+        // instead of one, which is an accepted tradeoff for these demo
+        // accounts, not something to extend to real user-chosen numbers.
+        List<User> candidates = userRepository.findAllByPhoneNumber(req.phoneNumber());
+        if (candidates.isEmpty()) {
+            throw new InvalidCredentialsException("Wrong credentials");
+        }
+
+        User user = candidates.stream()
+                .filter(candidate -> passwordEncoder.matches(req.pin(), candidate.getPinHash()))
+                .findFirst()
+                .orElse(null);
+
+        if (user == null) {
+            // Ambiguous which account to blame a failed attempt on when a phone
+            // number has multiple accounts, so failed-attempt lockout only
+            // engages once a specific account has actually been identified
+            // (below) - fine for demo accounts, not a real-world posture.
+            if (candidates.size() == 1) {
+                loginAttemptService.recordFailedAttempt(candidates.get(0).getId());
+            }
+            throw new InvalidCredentialsException("Wrong PIN");
+        }
 
         if (user.getLockedUntil() != null && user.getLockedUntil().isAfter(LocalDateTime.now())) {
             long minutesLeft = Duration.between(LocalDateTime.now(), user.getLockedUntil()).toMinutes() + 1;
             throw new AccountLockedException(
                     "Too many failed PIN attempts. Try again in " + minutesLeft + " minute(s).");
-        }
-
-        if (!passwordEncoder.matches(req.pin(), user.getPinHash())) {
-            // Own transaction (REQUIRES_NEW) - this method throws right after,
-            // which would otherwise roll back the attempt count along with it.
-            loginAttemptService.recordFailedAttempt(user.getId());
-            throw new InvalidCredentialsException("Wrong PIN");
         }
 
         loginAttemptService.clearFailedAttempts(user.getId());

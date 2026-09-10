@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { QRCodeSVG } from "qrcode.react";
 import {
+  ArrowLeftRight,
   BadgeCheck,
   Banknote,
   Building2,
@@ -29,6 +30,7 @@ import ScanAndPayModal from "../components/ScanAndPayModal";
 import VendorBankWithdrawModal from "../components/VendorBankWithdrawModal";
 import VendorStatementModal from "../components/VendorStatementModal";
 import CashSendModal from "../components/CashSendModal";
+import MoveMoneyModal from "../components/MoveMoneyModal";
 import { ease, listContainer, listItem, spring } from "../lib/motion";
 
 const quickActions = [
@@ -54,6 +56,7 @@ export default function DriverDashboard() {
   const [isBankModalOpen, setIsBankModalOpen] = useState(false);
   const [isStatementModalOpen, setIsStatementModalOpen] = useState(false);
   const [isCashSendOpen, setIsCashSendOpen] = useState(false);
+  const [isMoveMoneyOpen, setIsMoveMoneyOpen] = useState(false);
 
   const loadData = () => {
     Promise.all([
@@ -194,8 +197,15 @@ export default function DriverDashboard() {
           </p>
         </div>
       </motion.div>
-      <p className="mt-1.5 text-center text-[11px] text-sand-400">
+      <p className="mt-1.5 flex items-center justify-center gap-2 text-center text-[11px] text-sand-400">
         5% of every fare payment is set aside automatically into each pot
+        <button
+          type="button"
+          onClick={() => setIsMoveMoneyOpen(true)}
+          className="inline-flex items-center gap-1 font-semibold text-terracotta-600 hover:text-terracotta-700"
+        >
+          <ArrowLeftRight size={11} /> Move money
+        </button>
       </p>
 
       {/* Quick Actions Grid */}
@@ -383,6 +393,14 @@ export default function DriverDashboard() {
         isOpen={isCashSendOpen}
         onClose={() => setIsCashSendOpen(false)}
         walletBalance={Number(wallet?.balance || 0)}
+        onSuccess={loadData}
+      />
+
+      {/* Move Money Between Pockets Modal */}
+      <MoveMoneyModal
+        isOpen={isMoveMoneyOpen}
+        onClose={() => setIsMoveMoneyOpen(false)}
+        wallet={wallet}
         onSuccess={loadData}
       />
     </motion.div>

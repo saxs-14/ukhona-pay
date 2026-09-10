@@ -2,11 +2,13 @@ package co.za.ukhonapay.service;
 
 import co.za.ukhonapay.dto.AssociationWalletResponse;
 import co.za.ukhonapay.dto.WalletResponse;
+import co.za.ukhonapay.exception.InsufficientFundsException;
 import co.za.ukhonapay.exception.ResourceNotFoundException;
 import co.za.ukhonapay.model.TaxiAssociation;
 import co.za.ukhonapay.model.User;
 import co.za.ukhonapay.model.Wallet;
 import co.za.ukhonapay.model.enums.UserType;
+import co.za.ukhonapay.model.enums.WalletPocket;
 import co.za.ukhonapay.repository.TaxiAssociationRepository;
 import co.za.ukhonapay.repository.UserRepository;
 import co.za.ukhonapay.repository.WalletRepository;
@@ -101,5 +103,51 @@ public class WalletService {
         wallet.setBalance(wallet.getBalance().add(availableShare));
         wallet.setSavingsBalance(wallet.getSavingsBalance().add(savingsShare));
         wallet.setMaintenanceBalance(wallet.getMaintenanceBalance().add(maintenanceShare));
+    }
+
+    /**
+     * Moves money between a single user's own pockets (spendable balance,
+     * savings, maintenance) - e.g. pulling savings back into the spendable
+     * balance. Never touches another user's wallet; {@code from}/{@code to}
+     * index into the same locked row.
+     */
+    @Transactional
+    public WalletResponse transferBetweenOwnPockets(Long userId, WalletPocket from, WalletPocket to, BigDecimal amount) {
+        if (from == to) {
+            throw new IllegalArgumentException("Choose two different pockets to move money between");
+        }
+        if (amount == null || amount.signum() <= 0) {
+            throw new IllegalArgumentException("Amount must be greater than zero");
+        }
+
+        Wallet wallet = walletRepository.findWithLockByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found for user " + userId));
+
+        BigDecimal available = pocketBalance(wallet, from);
+        if (available.compareTo(amount) < 0) {
+            throw new InsufficientFundsException("Not enough in that pocket to move R" + amount);
+        }
+
+        setPocketBalance(wallet, from, available.subtract(amount));
+        setPocketBalance(wallet, to, pocketBalance(wallet, to).add(amount));
+
+        walletRepository.save(wallet);
+        return toResponse(wallet);
+    }
+
+    private static BigDecimal pocketBalance(Wallet wallet, WalletPocket pocket) {
+        return switch (pocket) {
+            case BALANCE -> wallet.getBalance();
+            case SAVINGS -> wallet.getSavingsBalance();
+            case MAINTENANCE -> wallet.getMaintenanceBalance();
+        };
+    }
+
+    private static void setPocketBalance(Wallet wallet, WalletPocket pocket, BigDecimal value) {
+        switch (pocket) {
+            case BALANCE -> wallet.setBalance(value);
+            case SAVINGS -> wallet.setSavingsBalance(value);
+            case MAINTENANCE -> wallet.setMaintenanceBalance(value);
+        }
     }
 }
