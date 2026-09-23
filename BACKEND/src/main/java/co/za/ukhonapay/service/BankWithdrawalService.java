@@ -102,9 +102,8 @@ public class BankWithdrawalService {
             return;
         }
 
-        withdrawal.setStatus(BankWithdrawalStatus.FAILED);
         withdrawals.save(withdrawal);
-        settlementService.applyNotification(failureEventFor(withdrawal, response.errorMessage()));
+        settlementService.releaseRejectedProviderPayout(reference, response.errorMessage());
     }
 
     @Transactional
