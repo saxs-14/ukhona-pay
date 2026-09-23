@@ -10,7 +10,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class BankAccountService {
-
     private final BankAccountRepository bankAccountRepository;
 
     public BankAccountService(BankAccountRepository bankAccountRepository) {
@@ -32,6 +31,7 @@ public class BankAccountService {
         });
         account.setAccountHolderName(req.accountHolderName());
         account.setBankName(req.bankName());
+        account.setBankGroupId(req.bankGroupId());
         account.setAccountNumber(req.accountNumber());
         account.setBranchCode(req.branchCode());
         account = bankAccountRepository.save(account);
@@ -39,13 +39,12 @@ public class BankAccountService {
     }
 
     private BankAccountResponse toResponse(BankAccount a) {
-        return new BankAccountResponse(a.getAccountHolderName(), a.getBankName(), mask(a.getAccountNumber()), a.getBranchCode());
+        return new BankAccountResponse(
+                a.getAccountHolderName(), a.getBankName(), mask(a.getAccountNumber()), a.getBranchCode());
     }
 
     private String mask(String accountNumber) {
-        if (accountNumber.length() <= 4) {
-            return accountNumber;
-        }
+        if (accountNumber.length() <= 4) return accountNumber;
         return "••••" + accountNumber.substring(accountNumber.length() - 4);
     }
 }
