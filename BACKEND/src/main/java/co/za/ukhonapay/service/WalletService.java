@@ -92,6 +92,26 @@ public class WalletService {
         wallet.setMaintenanceBalance(wallet.getMaintenanceBalance().add(maintenanceShare));
     }
 
+    public static void reverseAutoAllocation(Wallet wallet, BigDecimal amount) {
+        if (amount == null || amount.signum() <= 0) {
+            throw new IllegalArgumentException("Amount must be greater than zero");
+        }
+        BigDecimal savings = amount.multiply(SAVINGS_RATE).setScale(2, java.math.RoundingMode.HALF_UP);
+        BigDecimal maintenance = amount.multiply(MAINTENANCE_RATE).setScale(2, java.math.RoundingMode.HALF_UP);
+        BigDecimal balance = amount.subtract(savings).subtract(maintenance);
+
+        if (wallet.getBalance().compareTo(balance) < 0
+                || wallet.getSavingsBalance().compareTo(savings) < 0
+                || wallet.getMaintenanceBalance().compareTo(maintenance) < 0) {
+            throw new InsufficientFundsException(
+                    "Vendor wallet does not have enough allocated funds to reverse this provider refund");
+        }
+
+        wallet.setBalance(wallet.getBalance().subtract(balance));
+        wallet.setSavingsBalance(wallet.getSavingsBalance().subtract(savings));
+        wallet.setMaintenanceBalance(wallet.getMaintenanceBalance().subtract(maintenance));
+    }
+
     @Transactional
     public WalletResponse transferBetweenOwnPockets(
             Long userId, WalletPocket from, WalletPocket to, BigDecimal amount) {
