@@ -22,7 +22,7 @@ public class ProviderPaymentService {
    @Value("$"+"{ukhonapay.frontend.base-url:http://localhost:5173}") String frontendBaseUrl){
   this.intentRepository=intentRepository;this.vendorRepository=vendorRepository;this.provider=provider;this.configuredProvider=configuredProvider;this.returnUrl=frontendBaseUrl+"/payments/return";
  }
- @Transactional
+ @Transactional(noRollbackFor = RuntimeException.class)
  public ProviderPaymentIntentResponse create(Long payerUserId,ProviderPaymentIntentRequest req){
   Vendor vendor=vendorRepository.findByQrCode(req.vendorQrCode()).orElseThrow(()->new ResourceNotFoundException("No vendor found for this QR code"));
   if(vendor.getStatus()!=VendorStatus.APPROVED)throw new IllegalArgumentException("This vendor is not approved");
@@ -35,7 +35,15 @@ public class ProviderPaymentService {
   intent.setInternalReference("UKH-"+UUID.randomUUID().toString().replace("-","").substring(0,28).toUpperCase());
   intent.setProvider(provider.name());intent.setIdempotencyKey(idem);intent.setVendorId(vendor.getId());intent.setPayerUserId(payerUserId);intent.setAmount(req.amount());intent.setCurrency("ZAR");intent.setStatus("PENDING");
   intent=intentRepository.saveAndFlush(intent);
-  ProviderPaymentResponse created=provider.createPayment(intent.getInternalReference(),intent.getAmount(),intent.getCurrency(),returnUrl,idem);
+  ProviderPaymentResponse created;
+  try {
+   created=provider.createPayment(intent.getInternalReference(),intent.getAmount(),intent.getCurrency(),returnUrl,idem);
+  } catch (RuntimeException ex) {
+   String message=ex.getMessage()==null?"Provider request outcome is unknown; reconciliation required":ex.getMessage();
+   intent.setFailureReason(message.substring(0,Math.min(255,message.length())));
+   intentRepository.save(intent);
+   throw ex;
+  }
   intent.setProviderPaymentReference(created.providerReference());intent.setStatus("PENDING");intentRepository.save(intent);
   return response(intent,created.redirectUrl());
  }
