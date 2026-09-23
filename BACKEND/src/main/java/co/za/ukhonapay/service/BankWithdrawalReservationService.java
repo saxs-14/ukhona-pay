@@ -60,6 +60,9 @@ public class BankWithdrawalReservationService {
         Wallet wallet = wallets.findWithLockByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Wallet not found"));
 
+        if (request.amount().scale() > 2) {
+            throw new IllegalArgumentException("Withdrawal amount may have at most two decimal places");
+        }
         BigDecimal amount = request.amount().setScale(2);
         if (amount.signum() <= 0) {
             throw new IllegalArgumentException("Withdrawal amount must be positive");
