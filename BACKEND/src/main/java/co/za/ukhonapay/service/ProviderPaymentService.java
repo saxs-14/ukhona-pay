@@ -48,6 +48,6 @@ public class ProviderPaymentService {
   return response(intent,created.redirectUrl());
  }
  private ProviderPaymentIntentResponse response(PaymentIntent i,String redirectUrl){
-  return new ProviderPaymentIntentResponse(i.getInternalReference(),i.getProvider(),i.getProviderReference(),redirectUrl,i.getStatus(),i.getAmount(),i.getCurrency());
+  return new ProviderPaymentIntentResponse(i.getInternalReference(),i.getProvider(),i.getProviderPaymentReference(),redirectUrl,i.getStatus(),i.getAmount(),i.getCurrency());
  }
 }
