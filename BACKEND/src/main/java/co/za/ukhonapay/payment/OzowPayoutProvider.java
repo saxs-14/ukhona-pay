@@ -81,6 +81,62 @@ public class OzowPayoutProvider implements PayoutProvider {
         }
     }
 
+
+    @Override
+    public ProviderPayoutLookup findPayoutByMerchantReference(
+            String merchantReference,
+            java.time.LocalDateTime from,
+            java.time.LocalDateTime to) {
+        if (!isConfigured()) throw new IllegalStateException("Ozow payout configuration is incomplete");
+        try {
+            String json = objectMapper.writeValueAsString(java.util.Map.of(
+                    "pageSize", 50,
+                    "pageIndex", 1,
+                    "searchFields", java.util.List.of(0),
+                    "searchString", merchantReference,
+                    "sortField", 0,
+                    "dateFrom", from.toString(),
+                    "dateTo", to.toString(),
+                    "isRtc", rtc));
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/getpayoutbyreference"))
+                    .timeout(Duration.ofSeconds(20))
+                    .header("ApiKey", apiKey)
+                    .header("SiteCode", siteCode)
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(json))
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 200) {
+                throw new IllegalStateException("Ozow payout lookup HTTP " + response.statusCode());
+            }
+
+            JsonNode root = objectMapper.readTree(response.body());
+            if (!root.isArray()) return null;
+
+            for (JsonNode item : root) {
+                if (!merchantReference.equals(text(item, "merchantReference"))) continue;
+                JsonNode status = item.path("payoutStatus");
+                return new ProviderPayoutLookup(
+                        text(item, "id"),
+                        text(item, "merchantReference"),
+                        item.path("amount").decimalValue(),
+                        status.path("status").asInt(0),
+                        status.path("subStatus").asInt(0),
+                        text(status, "errorMessage"));
+            }
+            return null;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Ozow payout lookup was interrupted", e);
+        } catch (Exception e) {
+            if (e instanceof IllegalStateException) throw (IllegalStateException) e;
+            throw new IllegalStateException("Ozow payout lookup failed", e);
+        }
+    }
+
     @Override
     public ProviderPayoutResponse requestPayout(String merchantReference, BigDecimal amount,
                                                  BankAccount bankAccount, String encryptionKey) {
