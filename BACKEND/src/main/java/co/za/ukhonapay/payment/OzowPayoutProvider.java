@@ -159,6 +159,6 @@ public class OzowPayoutProvider implements PayoutProvider {
     }
 
     private String esc(String value) {
-        return value == null ? "" : value.replace("\\", "\\\\").replace(""", "\\"");
+        return value == null ? "" : value.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 }
