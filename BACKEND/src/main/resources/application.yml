@@ -41,6 +41,7 @@ ukhonapay:
       payin-reconciliation-lookback-hours: ${OZOW_PAYIN_RECONCILIATION_LOOKBACK_HOURS:48}
       payin-reconciliation-delay-ms: ${OZOW_PAYIN_RECONCILIATION_DELAY_MS:300000}
       reconciliation-lookback-hours: ${OZOW_PAYOUT_RECONCILIATION_LOOKBACK_HOURS:48}
+      payout-reconciliation-delay-ms: ${OZOW_PAYOUT_RECONCILIATION_DELAY_MS:300000}
 
 logging:
   level:
