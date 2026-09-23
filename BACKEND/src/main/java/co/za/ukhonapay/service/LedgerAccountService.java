@@ -47,6 +47,8 @@ public class LedgerAccountService {
     public void ensureSystemAccounts() {
         accounts.ensureAccount("PLATFORM_FEE_REVENUE_ZAR", "PLATFORM_REVENUE", null, null);
         accounts.ensureAccount("PAYMENT_CLEARING_ZAR", "PAYMENT_CLEARING", null, null);
+        accounts.ensureAccount("PAYOUT_CLEARING_ZAR", "PAYOUT_CLEARING", null, null);
+        accounts.ensureAccount("OZOW_PAYOUT_FLOAT_ZAR", "EXTERNAL_FLOAT", null, null);
     }
 
     public LedgerAccount requireAccount(String code) {
