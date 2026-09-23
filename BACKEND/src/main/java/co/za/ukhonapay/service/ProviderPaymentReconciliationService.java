@@ -4,6 +4,7 @@ import co.za.ukhonapay.model.PaymentIntent;
 import co.za.ukhonapay.payment.PaymentProvider;
 import co.za.ukhonapay.payment.ProviderPaymentRequestStatus;
 import co.za.ukhonapay.payment.ProviderPaymentTransaction;
+import co.za.ukhonapay.payment.ProviderRefund;
 import co.za.ukhonapay.repository.PaymentIntentRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -18,6 +19,7 @@ public class ProviderPaymentReconciliationService {
     private final PaymentIntentRepository intents;
     private final PaymentProvider provider;
     private final ProviderPaymentSettlementService settlement;
+    private final ProviderPaymentRefundService refundSettlement;
     private final int lookbackHours;
     private final String configuredProvider;
 
@@ -25,11 +27,13 @@ public class ProviderPaymentReconciliationService {
             PaymentIntentRepository intents,
             PaymentProvider provider,
             ProviderPaymentSettlementService settlement,
+            ProviderPaymentRefundService refundSettlement,
             @Value("$"+"{ukhonapay.payments.ozow.payin-reconciliation-lookback-hours:48}") int lookbackHours,
             @Value("$"+"{ukhonapay.payments.provider:}") String configuredProvider) {
         this.intents = intents;
         this.provider = provider;
         this.settlement = settlement;
+        this.refundSettlement = refundSettlement;
         this.lookbackHours = lookbackHours;
         this.configuredProvider = configuredProvider;
     }
@@ -37,6 +41,7 @@ public class ProviderPaymentReconciliationService {
     @Scheduled(fixedDelayString = "$"+"{ukhonapay.payments.ozow.payin-reconciliation-delay-ms:300000}")
     public void scheduledReconcile() {
         reconcilePending();
+        reconcileRefunds();
     }
 
     public int reconcilePending() {
@@ -84,4 +89,35 @@ public class ProviderPaymentReconciliationService {
         }
         return processed;
     }
+
+    public int reconcileRefunds() {
+        if (!"OZOW".equalsIgnoreCase(configuredProvider) || !"OZOW".equalsIgnoreCase(provider.name())) return 0;
+        LocalDateTime cutoff = LocalDateTime.now().minusHours(lookbackHours);
+        List<PaymentIntent> completed = intents.findByStatusAndCompletedAtAfter("COMPLETED", cutoff);
+        int processed = 0;
+
+        for (PaymentIntent intent : completed) {
+            if (intent.getProviderReference() == null || intent.getProviderReference().isBlank()) continue;
+            try {
+                ProviderPaymentTransaction transaction = provider.getTransaction(intent.getProviderReference());
+                if (!"Refunded".equalsIgnoreCase(transaction.status())) continue;
+
+                for (ProviderRefund refund : provider.getRefunds(intent.getProviderReference())) {
+                    if ("Complete".equalsIgnoreCase(refund.status())) {
+                        refundSettlement.processCompletedRefund(
+                                refund.refundReference(),
+                                refund.transactionReference(),
+                                refund.amount(),
+                                refund.currency(),
+                                refund.reason());
+                        processed++;
+                    }
+                }
+            } catch (RuntimeException ignored) {
+                // Provider outages never mutate or fail local completed payments.
+            }
+        }
+        return processed;
+    }
+
 }
