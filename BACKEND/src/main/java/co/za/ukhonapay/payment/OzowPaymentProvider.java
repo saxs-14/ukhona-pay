@@ -83,6 +83,28 @@ public class OzowPaymentProvider implements PaymentProvider {
  }
 
  @Override
+ public java.util.List<ProviderRefund> getRefunds(String transactionReference){
+  requireConfigured();
+  String token=accessToken(refundScope);
+  JsonNode response=client.get().uri(uriBuilder->uriBuilder.path("/transactions/{id}/refunds")
+    .queryParam("limit",50).queryParam("offset",0).build(transactionReference))
+    .headers(h->h.setBearerAuth(token)).retrieve().body(JsonNode.class);
+  java.util.List<ProviderRefund> result=new java.util.ArrayList<>();
+  if(response==null || !response.path("results").isArray()) return result;
+  for(JsonNode item:response.path("results")){
+   JsonNode amount=item.path("amount");
+   result.add(new ProviderRefund(
+    item.path("id").asText(""),
+    item.path("transactionId").asText(transactionReference),
+    amount.path("value").decimalValue(),
+    amount.path("currency").asText(""),
+    item.path("status").asText(""),
+    item.path("reason").asText("")));
+  }
+  return result;
+ }
+
+ @Override
  public ProviderPaymentRequestStatus getPaymentStatus(String paymentReference){
   requireConfigured();
   String token=accessToken();
