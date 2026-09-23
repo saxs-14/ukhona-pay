@@ -23,7 +23,7 @@ public class SecurityConfig {
     private final JwtAuthFilter jwtAuthFilter;
     private final String allowedOrigins;
     public SecurityConfig(JwtAuthFilter jwtAuthFilter,
-                          org.springframework.beans.factory.annotation.Value("${ukhonapay.frontend.allowed-origins:http://localhost:5173}") String allowedOrigins) {
+                          @org.springframework.beans.factory.annotation.Value("${ukhonapay.frontend.allowed-origins:http://localhost:5173}") String allowedOrigins) {
         this.jwtAuthFilter = jwtAuthFilter;
         this.allowedOrigins = allowedOrigins;
     }
