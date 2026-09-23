@@ -7,6 +7,8 @@ import java.math.BigDecimal;
 public interface PayoutProvider {
     boolean isConfigured();
 
+    ProviderPayoutStatus getPayoutStatus(String providerReference);
+
     ProviderPayoutResponse requestPayout(
             String merchantReference,
             BigDecimal amount,
