@@ -53,6 +53,35 @@ public class OzowPayoutProvider implements PayoutProvider {
     }
 
     @Override
+    public ProviderPayoutStatus getPayoutStatus(String providerReference) {
+        if (!isConfigured()) throw new IllegalStateException("Ozow payout configuration is incomplete");
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/getpayout?payoutId=" + java.net.URLEncoder.encode(providerReference, java.nio.charset.StandardCharsets.UTF_8)))
+                    .timeout(Duration.ofSeconds(20))
+                    .header("ApiKey", apiKey)
+                    .header("SiteCode", siteCode)
+                    .GET()
+                    .build();
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 200) throw new IllegalStateException("Ozow get payout HTTP " + response.statusCode());
+            JsonNode root = objectMapper.readTree(response.body());
+            JsonNode status = root.path("payoutStatus");
+            return new ProviderPayoutStatus(
+                    text(root, "id"),
+                    status.path("status").asInt(0),
+                    status.path("subStatus").asInt(0),
+                    text(status, "errorMessage"));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Ozow get payout was interrupted", e);
+        } catch (Exception e) {
+            if (e instanceof IllegalStateException) throw (IllegalStateException)e;
+            throw new IllegalStateException("Ozow get payout failed", e);
+        }
+    }
+
+    @Override
     public ProviderPayoutResponse requestPayout(String merchantReference, BigDecimal amount,
                                                  BankAccount bankAccount, String encryptionKey) {
         if (apiKey.isBlank() || siteCode.isBlank() || notifyUrl.isBlank()) {
