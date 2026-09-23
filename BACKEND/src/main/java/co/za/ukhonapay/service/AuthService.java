@@ -106,7 +106,7 @@ public class AuthService {
                 .idNumber(req.idNumber())
                 .email(req.email())
                 // Mock ABSA SMS OTP: auto-verified for hackathon demo purposes.
-                .phoneVerified(true);
+                .phoneVerified(false);
 
         if (req.userType() == UserType.TAXI_ASSOCIATION_ADMIN) {
             userBuilder.associationId(associationId).rankId(rankId);
@@ -116,7 +116,7 @@ public class AuthService {
 
         Wallet wallet = Wallet.builder()
                 .userId(user.getId())
-                .balance(new BigDecimal("1500.00"))
+                .balance(BigDecimal.ZERO)
                 .cashbackBalance(BigDecimal.ZERO)
                 .currency("ZAR")
                 .build();

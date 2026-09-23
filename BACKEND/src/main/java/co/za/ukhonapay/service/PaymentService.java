@@ -2,8 +2,6 @@ package co.za.ukhonapay.service;
 
 import co.za.ukhonapay.dto.AssociationTransferRequest;
 import co.za.ukhonapay.dto.AssociationTransferResponse;
-import co.za.ukhonapay.dto.IncomingPaymentRequest;
-import co.za.ukhonapay.dto.IncomingPaymentResponse;
 import co.za.ukhonapay.dto.PaymentRequest;
 import co.za.ukhonapay.dto.PaymentResponse;
 import co.za.ukhonapay.exception.InsufficientFundsException;
@@ -38,22 +36,28 @@ public class PaymentService {
     private final TransactionRepository transactionRepository;
     private final TaxiAssociationRepository taxiAssociationRepository;
     private final WalletService walletService;
+    private final LedgerService ledger;
+    private final LedgerAccountService ledgerAccounts;
     private final PasswordEncoder passwordEncoder;
     private final SecureRandom random = new SecureRandom();
 
     public PaymentService(UserRepository userRepository,
-                           VendorRepository vendorRepository,
-                           WalletRepository walletRepository,
-                           TransactionRepository transactionRepository,
-                           TaxiAssociationRepository taxiAssociationRepository,
-                           WalletService walletService,
-                           PasswordEncoder passwordEncoder) {
+                          VendorRepository vendorRepository,
+                          WalletRepository walletRepository,
+                          TransactionRepository transactionRepository,
+                          TaxiAssociationRepository taxiAssociationRepository,
+                          WalletService walletService,
+                          LedgerService ledger,
+                          LedgerAccountService ledgerAccounts,
+                          PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.vendorRepository = vendorRepository;
         this.walletRepository = walletRepository;
         this.transactionRepository = transactionRepository;
         this.taxiAssociationRepository = taxiAssociationRepository;
         this.walletService = walletService;
+        this.ledger = ledger;
+        this.ledgerAccounts = ledgerAccounts;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -80,26 +84,34 @@ public class PaymentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Vendor wallet not found"));
 
         BigDecimal amount = req.amount();
+        BigDecimal fee = WalletService.PLATFORM_FEE;
+        BigDecimal netAmount = amount.subtract(fee);
+        if (netAmount.signum() <= 0) {
+            throw new IllegalArgumentException("Payment amount is too small for the configured platform fee");
+        }
         if (senderWallet.getBalance().compareTo(amount) < 0) {
             throw new InsufficientFundsException("Insufficient wallet balance for this payment");
         }
 
-        // Platform wallet is always locked last, after every other wallet in
-        // this transaction - a fixed lock order across pay/transferToAssociation
-        // /receiveExternalPayment so concurrent transactions can't deadlock on it.
-        BigDecimal fee = WalletService.PLATFORM_FEE;
-        BigDecimal netAmount = amount.subtract(fee);
-        Wallet platformWallet = walletService.getLockedPlatformFeeWallet();
+        String senderAccount = walletLedgerAccount(senderId);
+        String vendorAccount = ledgerAccounts.ensureVendorWalletAccount(vendor.getId(), vendor.getUserId());
+        String reference = generateReference();
+
+        ledger.post("LED-" + reference, "WALLET_PAYMENT", reference,
+                req.description(),
+                java.util.List.of(
+                        new LedgerService.Entry(senderAccount, "DEBIT", amount),
+                        new LedgerService.Entry(vendorAccount, "CREDIT", netAmount),
+                        new LedgerService.Entry("PLATFORM_FEE_REVENUE_ZAR", "CREDIT", fee)
+                ));
 
         senderWallet.setBalance(senderWallet.getBalance().subtract(amount));
         WalletService.creditWithAutoAllocation(vendorWallet, netAmount);
-        platformWallet.setBalance(platformWallet.getBalance().add(fee));
         walletRepository.save(senderWallet);
         walletRepository.save(vendorWallet);
-        walletRepository.save(platformWallet);
 
         Transaction transaction = Transaction.builder()
-                .reference(generateReference())
+                .reference(reference)
                 .senderId(senderId)
                 .receiverId(vendor.getUserId())
                 .vendorId(vendor.getId())
@@ -147,24 +159,35 @@ public class PaymentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Sender wallet not found"));
 
         BigDecimal amount = req.amount();
+        BigDecimal fee = WalletService.PLATFORM_FEE;
+        BigDecimal netAmount = amount.subtract(fee);
+        if (netAmount.signum() <= 0) {
+            throw new IllegalArgumentException("Transfer amount is too small for the configured platform fee");
+        }
         if (senderWallet.getBalance().compareTo(amount) < 0) {
             throw new InsufficientFundsException("Insufficient wallet balance for this transfer");
         }
 
         Wallet associationWallet = walletService.getOrCreateLockedAssociationWallet(associationId);
-        BigDecimal fee = WalletService.PLATFORM_FEE;
-        BigDecimal netAmount = amount.subtract(fee);
-        Wallet platformWallet = walletService.getLockedPlatformFeeWallet();
+        String senderAccount = ledgerAccounts.ensureVendorWalletAccount(driverProfile.getId(), driverId);
+        String associationAccount = ledgerAccounts.ensureAssociationWalletAccount(associationId);
+        String reference = generateReference();
+
+        ledger.post("LED-" + reference, "ASSOCIATION_TRANSFER", reference,
+                req.description(),
+                java.util.List.of(
+                        new LedgerService.Entry(senderAccount, "DEBIT", amount),
+                        new LedgerService.Entry(associationAccount, "CREDIT", netAmount),
+                        new LedgerService.Entry("PLATFORM_FEE_REVENUE_ZAR", "CREDIT", fee)
+                ));
 
         senderWallet.setBalance(senderWallet.getBalance().subtract(amount));
         associationWallet.setBalance(associationWallet.getBalance().add(netAmount));
-        platformWallet.setBalance(platformWallet.getBalance().add(fee));
         walletRepository.save(senderWallet);
         walletRepository.save(associationWallet);
-        walletRepository.save(platformWallet);
 
         Transaction transaction = Transaction.builder()
-                .reference(generateReference())
+                .reference(reference)
                 .senderId(driverId)
                 .receiverAssociationId(associationId)
                 .amount(amount)
@@ -181,13 +204,6 @@ public class PaymentService {
                 amount, fee, senderWallet.getBalance(), transaction.getCreatedAt());
     }
 
-    // An association admin fining a driver in their own association - unlike
-    // transferToAssociation, this is admin-initiated (no PIN, the driver isn't
-    // the one authorizing it) and capped at the driver's available balance
-    // rather than allowed to go negative: wallets.balance has a DB-level
-    // CHECK (balance >= 0), and tracking money genuinely owed beyond that is
-    // a real debt-ledger feature this doesn't attempt to be. No platform fee -
-    // it's a punitive admin action, not a voluntary transaction.
     @Transactional
     public AssociationTransferResponse issueFine(Long adminAssociationId, Long vendorId, BigDecimal amount, String reason) {
         Vendor vendor = vendorRepository.findById(vendorId)
@@ -204,6 +220,16 @@ public class PaymentService {
             throw new InsufficientFundsException("Driver's available balance is lower than the fine amount");
         }
         Wallet associationWallet = walletService.getOrCreateLockedAssociationWallet(adminAssociationId);
+        String driverAccount = ledgerAccounts.ensureVendorWalletAccount(vendor.getId(), vendor.getUserId());
+        String associationAccount = ledgerAccounts.ensureAssociationWalletAccount(adminAssociationId);
+        String reference = generateReference();
+
+        ledger.post("LED-" + reference, "ASSOCIATION_FINE", reference,
+                "Fine: " + reason,
+                java.util.List.of(
+                        new LedgerService.Entry(driverAccount, "DEBIT", amount),
+                        new LedgerService.Entry(associationAccount, "CREDIT", amount)
+                ));
 
         driverWallet.setBalance(driverWallet.getBalance().subtract(amount));
         associationWallet.setBalance(associationWallet.getBalance().add(amount));
@@ -211,7 +237,7 @@ public class PaymentService {
         walletRepository.save(associationWallet);
 
         Transaction transaction = Transaction.builder()
-                .reference(generateReference())
+                .reference(reference)
                 .senderId(vendor.getUserId())
                 .receiverAssociationId(adminAssociationId)
                 .amount(amount)
@@ -227,49 +253,12 @@ public class PaymentService {
                 amount, BigDecimal.ZERO, driverWallet.getBalance(), transaction.getCreatedAt());
     }
 
-    // A commuter paying via their own banking app - no sender wallet to debit,
-    // no PIN to check, since the payer never holds a UKHONA PAY account. This
-    // stands in for what a real bank's payment-confirmation webhook would call.
-    @Transactional
-    public IncomingPaymentResponse receiveExternalPayment(IncomingPaymentRequest req) {
-        Vendor vendor = vendorRepository.findByQrCode(req.vendorQrCode())
-                .orElseThrow(() -> new VendorNotFoundException("No vendor found for this QR code"));
-        requireApproved(vendor);
-
-        Wallet vendorWallet = walletRepository.findWithLockByUserId(vendor.getUserId())
-                .orElseThrow(() -> new ResourceNotFoundException("Vendor wallet not found"));
-
-        BigDecimal amount = req.amount();
-        BigDecimal fee = WalletService.PLATFORM_FEE;
-        BigDecimal netAmount = amount.subtract(fee);
-        Wallet platformWallet = walletService.getLockedPlatformFeeWallet();
-
-        WalletService.creditWithAutoAllocation(vendorWallet, netAmount);
-        platformWallet.setBalance(platformWallet.getBalance().add(fee));
-        walletRepository.save(vendorWallet);
-        walletRepository.save(platformWallet);
-
-        Transaction transaction = Transaction.builder()
-                .reference(generateReference())
-                .receiverId(vendor.getUserId())
-                .vendorId(vendor.getId())
-                .amount(amount)
-                .platformFee(fee)
-                .cashbackAmount(BigDecimal.ZERO)
-                .cashbackRate(BigDecimal.ZERO)
-                .status(TransactionStatus.COMPLETED)
-                .description(req.description())
-                .build();
-        transaction = transactionRepository.save(transaction);
-
-        return new IncomingPaymentResponse(
-                transaction.getReference(), vendor.getId(), vendor.getBusinessName(),
-                amount, fee, vendorWallet.getBalance(), transaction.getCreatedAt());
+    private String walletLedgerAccount(Long userId) {
+        return vendorRepository.findByUserId(userId)
+                .map(vendor -> ledgerAccounts.ensureVendorWalletAccount(vendor.getId(), userId))
+                .orElseGet(() -> ledgerAccounts.ensureUserWalletAccount(userId));
     }
 
-    // Blocks payments to a driver whose registration hasn't been approved by
-    // their taxi association yet (or was rejected) - vendors are always
-    // APPROVED at signup, so this only ever actually gates drivers.
     private void requireApproved(Vendor vendor) {
         if (vendor.getStatus() != VendorStatus.APPROVED) {
             throw new IllegalArgumentException(

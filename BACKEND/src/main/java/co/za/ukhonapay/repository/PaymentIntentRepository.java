@@ -1,0 +1,5 @@
+package co.za.ukhonapay.repository;
+import co.za.ukhonapay.model.PaymentIntent; import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import jakarta.persistence.LockModeType; import java.util.Optional; import java.time.LocalDateTime; import java.util.List;
+public interface PaymentIntentRepository extends JpaRepository<PaymentIntent,Long>{Optional<PaymentIntent> findByInternalReference(String v); @Lock(LockModeType.PESSIMISTIC_WRITE) Optional<PaymentIntent> findByInternalReferenceForUpdate(String v); Optional<PaymentIntent> findByProviderReference(String v); @Lock(LockModeType.PESSIMISTIC_WRITE) Optional<PaymentIntent> findByProviderReferenceForUpdate(String v); Optional<PaymentIntent> findByIdempotencyKey(String v); List<PaymentIntent> findByStatusAndCreatedAtAfter(String status, LocalDateTime createdAt); List<PaymentIntent> findByStatusAndCompletedAtAfter(String status, LocalDateTime completedAt);}
