@@ -33,6 +33,11 @@ ukhonapay:
       scope: ${OZOW_SCOPE:payments}
       payout-base-url: ${OZOW_PAYOUT_BASE_URL:https://payoutsapi.ozow.com/v1}
       payout-api-key: ${OZOW_PAYOUT_API_KEY:}
+      payout-master-key: ${OZOW_PAYOUT_MASTER_KEY:}
+      payout-notify-url: ${OZOW_PAYOUT_NOTIFY_URL:}
+      payout-verification-url: ${OZOW_PAYOUT_VERIFICATION_URL:}
+      payout-verification-access-token: ${OZOW_PAYOUT_VERIFICATION_ACCESS_TOKEN:}
+      payout-is-rtc: ${OZOW_PAYOUT_IS_RTC:false}
 
 logging:
   level:
