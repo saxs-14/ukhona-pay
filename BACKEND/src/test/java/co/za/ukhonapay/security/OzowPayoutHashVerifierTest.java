@@ -18,13 +18,13 @@ class OzowPayoutHashVerifierTest {
 
     @Test
     void acceptsValidNotificationHash() {
-        String hash = sha512("payout-1site123merchant-1customer-1100test-api-key");
+        String hash = sha512("payout-1site123merchant-1customer-11100test-api-key");
         assertTrue(verifier.verify("payout-1", "SITE123", "merchant-1", "customer-1", 1, 100, hash));
     }
 
     @Test
     void rejectsWrongSiteCode() {
-        String hash = sha512("payout-1othermerchant-1customer-1100test-api-key");
+        String hash = sha512("payout-1othermerchant-1customer-11100test-api-key");
         assertFalse(verifier.verify("payout-1", "OTHER", "merchant-1", "customer-1", 1, 100, hash));
     }
 
