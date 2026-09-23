@@ -35,6 +35,20 @@ public class BankWithdrawalSettlementService {
     }
 
     @Transactional
+    public void releaseRejectedProviderPayout(String reference, String reason) {
+        BankWithdrawal withdrawal = withdrawals.findByReferenceForUpdate(reference)
+                .orElseThrow(() -> new IllegalStateException("Withdrawal not found: " + reference));
+        if (withdrawal.getStatus() == BankWithdrawalStatus.FAILED) return;
+        if (withdrawal.getStatus() == BankWithdrawalStatus.COMPLETED) {
+            throw new IllegalStateException("Cannot release an already completed payout");
+        }
+        refundPending(withdrawal);
+        withdrawal.setStatus(BankWithdrawalStatus.FAILED);
+        withdrawal.setProviderError(reason);
+        withdrawals.save(withdrawal);
+    }
+
+    @Transactional
     public void applyNotification(PayoutNotificationEvent event) {
         BankWithdrawal withdrawal = withdrawals.findByReferenceForUpdate(event.getMerchantReference())
                 .orElseThrow(() -> new IllegalStateException(
