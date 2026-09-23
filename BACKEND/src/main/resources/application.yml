@@ -1,14 +1,10 @@
 server:
-  # Cloud Run assigns the listening port via $PORT at runtime - falls back to
-  # 8080 for local dev where nothing sets that variable.
   port: ${PORT:8080}
 
 spring:
   application:
     name: ukhona-pay
   datasource:
-    # Local dev defaults match docker-compose.yml unchanged. In production
-    # these are set via Cloud Run environment variables - see DOCS/DEPLOYMENT.md.
     url: ${DATABASE_URL:jdbc:postgresql://localhost:5442/ukhonapay}
     username: ${DB_USERNAME:ukhonapay}
     password: ${DB_PASSWORD:ukhonapay}
@@ -17,19 +13,18 @@ spring:
     hibernate:
       ddl-auto: validate
     show-sql: false
-    properties:
-      hibernate:
-        format_sql: true
     open-in-view: false
 
 ukhonapay:
+  mode: ${UKHONA_PAY_MODE:demo}
   frontend:
-    # Where a scanned vendor QR code should send a commuter's phone to pay -
-    # override for demo day if judges are on a LAN IP instead of localhost.
     base-url: ${FRONTEND_BASE_URL:http://localhost:5173}
   jwt:
-    secret: ${JWT_SECRET:demo-only-secret-key-for-hackathon-do-not-use-in-production-1234567890}
-    expiry-minutes: 720
+    secret: ${JWT_SECRET:}
+    expiry-minutes: ${JWT_EXPIRY_MINUTES:60}
+  payments:
+    provider: ${PAYMENT_PROVIDER:none}
+    webhook-secret: ${PAYMENT_WEBHOOK_SECRET:}
 
 logging:
   level:
