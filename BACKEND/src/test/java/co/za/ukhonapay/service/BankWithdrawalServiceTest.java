@@ -24,15 +24,23 @@ class BankWithdrawalServiceTest {
     @Mock WalletRepository walletRepository;
     @Mock UserRepository userRepository;
     @Mock PasswordEncoder passwordEncoder;
+    @Mock BankWithdrawalReservationService reservationService;
+    @Mock BankWithdrawalSettlementService settlementService;
+    @Mock co.za.ukhonapay.payment.PayoutProvider payoutProvider;
+    @Mock PayoutSecretCryptoService secretCrypto;
 
     @Test
     void liveModeRejectsWithdrawalBeforeAnyWalletMutation() {
         BankWithdrawalService service = new BankWithdrawalService(
                 bankWithdrawalRepository,
                 bankAccountRepository,
-                walletRepository,
+                reservationService,
+                settlementService,
                 userRepository,
+                walletRepository,
                 passwordEncoder,
+                payoutProvider,
+                secretCrypto,
                 "live"
         );
 
