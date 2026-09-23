@@ -51,7 +51,7 @@ public class OzowPaymentProvider implements PaymentProvider {
  @Override
  public ProviderPaymentTransaction getTransaction(String transactionReference){
   requireConfigured();
-  String token=accessToken();
+  String token=accessToken(scope);
   JsonNode response=client.get().uri("/transactions/{id}",transactionReference)
    .headers(h->h.setBearerAuth(token)).retrieve().body(JsonNode.class);
   if(response==null) throw new IllegalStateException("Ozow returned an empty transaction response");
@@ -68,7 +68,7 @@ public class OzowPaymentProvider implements PaymentProvider {
  @Override
  public ProviderRefund getRefund(String refundReference){
   requireConfigured();
-  String token=accessToken();
+  String token=accessToken(refundScope);
   JsonNode response=client.get().uri("/refunds/{id}",refundReference)
    .headers(h->h.setBearerAuth(token)).retrieve().body(JsonNode.class);
   if(response==null) throw new IllegalStateException("Ozow returned an empty refund response");
