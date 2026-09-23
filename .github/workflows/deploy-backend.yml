@@ -64,7 +64,7 @@ jobs:
             --min-instances=0 \
             --max-instances=3 \
             --memory=512Mi \
-            --set-env-vars="FRONTEND_BASE_URL=${{ secrets.FRONTEND_BASE_URL }}" \
+            --set-env-vars="SPRING_PROFILES_ACTIVE=prod,UKHONA_PAY_MODE=live,FRONTEND_BASE_URL=${{ secrets.FRONTEND_BASE_URL }}" \
             --set-env-vars="DATABASE_URL=${{ secrets.DATABASE_URL }}" \
             --set-env-vars="DB_USERNAME=${{ secrets.DB_USERNAME }}" \
             --set-env-vars="DB_PASSWORD=${{ secrets.DB_PASSWORD }}" \
