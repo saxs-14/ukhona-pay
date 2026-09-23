@@ -19,16 +19,19 @@ public class ProviderPaymentReconciliationService {
     private final PaymentProvider provider;
     private final ProviderPaymentSettlementService settlement;
     private final int lookbackHours;
+    private final String configuredProvider;
 
     public ProviderPaymentReconciliationService(
             PaymentIntentRepository intents,
             PaymentProvider provider,
             ProviderPaymentSettlementService settlement,
-            @Value("$"+"{ukhonapay.payments.ozow.payin-reconciliation-lookback-hours:48}") int lookbackHours) {
+            @Value("$"+"{ukhonapay.payments.ozow.payin-reconciliation-lookback-hours:48}") int lookbackHours,
+            @Value("$"+"{ukhonapay.payments.provider:}") String configuredProvider) {
         this.intents = intents;
         this.provider = provider;
         this.settlement = settlement;
         this.lookbackHours = lookbackHours;
+        this.configuredProvider = configuredProvider;
     }
 
     @Scheduled(fixedDelayString = "$"+"{ukhonapay.payments.ozow.payin-reconciliation-delay-ms:300000}")
@@ -37,7 +40,7 @@ public class ProviderPaymentReconciliationService {
     }
 
     public int reconcilePending() {
-        if (!"OZOW".equalsIgnoreCase(provider.name())) return 0;
+        if (!"OZOW".equalsIgnoreCase(configuredProvider) || !"OZOW".equalsIgnoreCase(provider.name())) return 0;
         LocalDateTime cutoff = LocalDateTime.now().minusHours(lookbackHours);
         List<PaymentIntent> pending = intents.findByStatusAndCreatedAtAfter("PENDING", cutoff);
         int processed = 0;
@@ -45,6 +48,7 @@ public class ProviderPaymentReconciliationService {
         for (PaymentIntent intent : pending) {
             try {
                 String paymentReference = intent.getProviderPaymentReference();
+                if (paymentReference == null || paymentReference.isBlank()) paymentReference = intent.getProviderReference();
                 if (paymentReference == null || paymentReference.isBlank()) continue;
 
                 List<ProviderPaymentTransaction> providerTransactions =
