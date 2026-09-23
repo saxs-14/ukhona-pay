@@ -48,6 +48,40 @@ public class OzowPaymentProvider implements PaymentProvider {
  }
 
  @Override
+ public ProviderPaymentTransaction getTransaction(String transactionReference){
+  requireConfigured();
+  String token=accessToken();
+  JsonNode response=client.get().uri("/transactions/{id}",transactionReference)
+   .headers(h->h.setBearerAuth(token)).retrieve().body(JsonNode.class);
+  if(response==null) throw new IllegalStateException("Ozow returned an empty transaction response");
+  JsonNode amount=response.path("amount");
+  return new ProviderPaymentTransaction(
+   response.path("id").asText(transactionReference),
+   response.path("merchantReference").asText(""),
+   amount.path("value").decimalValue(),
+   amount.path("currency").asText(""),
+   response.path("status").asText(""),
+   response.path("reason").asText(""));
+ }
+
+ @Override
+ public ProviderRefund getRefund(String refundReference){
+  requireConfigured();
+  String token=accessToken();
+  JsonNode response=client.get().uri("/refunds/{id}",refundReference)
+   .headers(h->h.setBearerAuth(token)).retrieve().body(JsonNode.class);
+  if(response==null) throw new IllegalStateException("Ozow returned an empty refund response");
+  JsonNode amount=response.path("amount");
+  return new ProviderRefund(
+   response.path("id").asText(refundReference),
+   response.path("transactionId").asText(""),
+   amount.path("value").decimalValue(),
+   amount.path("currency").asText(""),
+   response.path("status").asText(""),
+   response.path("reason").asText(""));
+ }
+
+ @Override
  public ProviderPaymentRequestStatus getPaymentStatus(String paymentReference){
   requireConfigured();
   String token=accessToken();
