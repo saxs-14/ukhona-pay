@@ -15,6 +15,7 @@ public class PaymentIntent {
  @Column(nullable=false,precision=12,scale=2) private BigDecimal amount;
  @Column(nullable=false,length=3) private String currency="ZAR";
  @Column(nullable=false,length=20) private String status="PENDING";
+ @Column(name="refunded_amount",nullable=false,precision=12,scale=2) private BigDecimal refundedAmount=BigDecimal.ZERO;
  @Column(name="failure_reason",length=255) private String failureReason;
  @Column(name="created_at",nullable=false,updatable=false) private LocalDateTime createdAt;
  @Column(name="completed_at") private LocalDateTime completedAt;
@@ -24,6 +25,7 @@ public class PaymentIntent {
  public String getIdempotencyKey(){return idempotencyKey;} public void setIdempotencyKey(String v){idempotencyKey=v;} public Long getVendorId(){return vendorId;} public void setVendorId(Long v){vendorId=v;}
  public Long getPayerUserId(){return payerUserId;} public void setPayerUserId(Long v){payerUserId=v;} public BigDecimal getAmount(){return amount;} public void setAmount(BigDecimal v){amount=v;}
  public String getCurrency(){return currency;} public void setCurrency(String v){currency=v;} public String getStatus(){return status;} public void setStatus(String v){status=v;}
+ public BigDecimal getRefundedAmount(){return refundedAmount;} public void setRefundedAmount(BigDecimal v){refundedAmount=v;}
  public String getFailureReason(){return failureReason;} public void setFailureReason(String v){failureReason=v;} public LocalDateTime getCreatedAt(){return createdAt;}
  public LocalDateTime getCompletedAt(){return completedAt;} public void setCompletedAt(LocalDateTime v){completedAt=v;}
 }
