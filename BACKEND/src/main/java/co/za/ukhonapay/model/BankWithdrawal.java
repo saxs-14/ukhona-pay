@@ -37,7 +37,7 @@ public class BankWithdrawal {
     void onCreate() {
         createdAt = LocalDateTime.now();
         if (status == null) {
-            status = BankWithdrawalStatus.COMPLETED;
+            status = BankWithdrawalStatus.PENDING;
         }
     }
 
