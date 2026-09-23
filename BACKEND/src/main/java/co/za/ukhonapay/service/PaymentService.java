@@ -93,7 +93,7 @@ public class PaymentService {
             throw new InsufficientFundsException("Insufficient wallet balance for this payment");
         }
 
-        String senderAccount = ledgerAccounts.ensureUserWalletAccount(senderId);
+        String senderAccount = walletLedgerAccount(senderId);
         String vendorAccount = ledgerAccounts.ensureVendorWalletAccount(vendor.getId(), vendor.getUserId());
         String reference = generateReference();
 
@@ -169,7 +169,7 @@ public class PaymentService {
         }
 
         Wallet associationWallet = walletService.getOrCreateLockedAssociationWallet(associationId);
-        String senderAccount = ledgerAccounts.ensureUserWalletAccount(driverId);
+        String senderAccount = ledgerAccounts.ensureVendorWalletAccount(driverProfile.getId(), driverId);
         String associationAccount = ledgerAccounts.ensureAssociationWalletAccount(associationId);
         String reference = generateReference();
 
@@ -220,7 +220,7 @@ public class PaymentService {
             throw new InsufficientFundsException("Driver's available balance is lower than the fine amount");
         }
         Wallet associationWallet = walletService.getOrCreateLockedAssociationWallet(adminAssociationId);
-        String driverAccount = ledgerAccounts.ensureUserWalletAccount(vendor.getUserId());
+        String driverAccount = ledgerAccounts.ensureVendorWalletAccount(vendor.getId(), vendor.getUserId());
         String associationAccount = ledgerAccounts.ensureAssociationWalletAccount(adminAssociationId);
         String reference = generateReference();
 
@@ -251,6 +251,12 @@ public class PaymentService {
         return new AssociationTransferResponse(
                 transaction.getReference(), adminAssociationId, association.getName(),
                 amount, BigDecimal.ZERO, driverWallet.getBalance(), transaction.getCreatedAt());
+    }
+
+    private String walletLedgerAccount(Long userId) {
+        return vendorRepository.findByUserId(userId)
+                .map(vendor -> ledgerAccounts.ensureVendorWalletAccount(vendor.getId(), userId))
+                .orElseGet(() -> ledgerAccounts.ensureUserWalletAccount(userId));
     }
 
     private void requireApproved(Vendor vendor) {
