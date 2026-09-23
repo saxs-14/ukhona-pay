@@ -26,7 +26,7 @@ Never:
 - CORS no longer allows arbitrary private LAN origins in the deployed application.
 - Production deployment does not expose demo payment injection.
 
-## What must be completed before a real association handles real money
+## What remains before a real association handles real money
 
 ### 1. Payment provider onboarding
 
@@ -34,16 +34,19 @@ Choose and contract with a South African payment provider that supports the requ
 
 ### 2. Real pay-in flow
 
-Implement:
+Implemented in the production-hardening branch:
 
-1. Create a pending payment/order.
-2. Generate the provider checkout/QR/payment request.
-3. Redirect the payer to the provider/bank authorisation flow.
-4. Receive the provider webhook.
-5. Verify the webhook signature.
-6. Check provider transaction ID, amount, currency, merchant reference and final status.
-7. Apply the ledger update exactly once using an idempotency constraint.
-8. Only then mark the transaction completed and credit the recipient.
+1. Create a PENDING payment intent with an idempotency key.
+2. Create the provider payment request and persist its provider payment reference and checkout URL.
+3. Return the provider checkout URL to the authenticated payer.
+4. Receive Ozow One API transaction webhooks.
+5. Verify the Svix signature before reading the event.
+6. Support both thin and full transaction webhook payloads; thin events are resolved through the provider transaction API.
+7. Verify provider transaction ID, exact merchant reference, amount and currency before settlement.
+8. Apply the double-entry ledger settlement exactly once.
+9. Reconcile pending pay-ins when webhooks are delayed or unavailable.
+10. Keep uncertain provider/network outcomes PENDING rather than inventing a failure.
+11. Reconcile completed transactions for provider refunds and reverse the original ledger/wallet allocation exactly once.
 
 ### 3. Real payouts
 
@@ -63,25 +66,13 @@ The production bank-withdrawal path now uses an Ozow payout adapter and an async
 12. On status 4, 90 or 99, restore the reserved wallet amount exactly once.
 13. Keep provider timeouts or unknown outcomes pending so the system does not blindly refund a payout that may already have been accepted by the provider.
 
-The remaining production work is provider onboarding, staging certification, and a reconciliation job that can recover an accepted payout when the initial API response was lost.
+The remaining production work is provider onboarding and staging certification. The code now also has scheduled payout reconciliation that can recover an accepted payout when the initial API response was lost.
 
 ### 4. Ledger
 
-Do not use mutable wallet balances as the only financial record. Add a double-entry ledger with:
+The code now contains a double-entry ledger and dedicated system accounts for provider clearing, payout clearing and platform fee revenue. Provider pay-ins and payouts post balanced ledger entries, and provider refunds create idempotent reversal entries. Wallet projections are reconciled against the vendor ledger.
 
-- immutable journal entries
-- debit account
-- credit account
-- amount
-- currency
-- provider reference
-- internal reference
-- idempotency key
-- status
-- created/posted timestamps
-- reversal/refund linkage
-
-Wallet balances should be derived from or reconciled against the ledger.
+Before production, the association pilot must still start from a clean, reconciled financial database and the operating entity must define settlement-account and float accounting with the payment provider.
 
 ### 5. Compliance and operations
 
