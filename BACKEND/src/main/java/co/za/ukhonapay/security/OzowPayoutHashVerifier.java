@@ -42,10 +42,10 @@ public class OzowPayoutHashVerifier {
                 + status
                 + subStatus
                 + apiKey;
-        String expected = sha512(input.toLowerCase());
+        String expected = sha512(input.toLowerCase(java.util.Locale.ROOT));
         return MessageDigest.isEqual(
                 expected.getBytes(StandardCharsets.US_ASCII),
-                hashCheck.toLowerCase().getBytes(StandardCharsets.US_ASCII));
+                hashCheck.toLowerCase(java.util.Locale.ROOT).getBytes(StandardCharsets.US_ASCII));
     }
 
     private String value(String value) {
@@ -58,7 +58,7 @@ public class OzowPayoutHashVerifier {
                     .digest(value.getBytes(StandardCharsets.UTF_8));
             StringBuilder out = new StringBuilder(128);
             for (byte b : digest) {
-                out.append(String.format("%02x", b));
+                out.append(String.format(java.util.Locale.ROOT, "%02x", b));
             }
             return out.toString();
         } catch (NoSuchAlgorithmException e) {
