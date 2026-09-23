@@ -1,15 +1,12 @@
 package co.za.ukhonapay.model;
 
 import jakarta.persistence.*;
-
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "bank_accounts")
 public class BankAccount {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(name = "user_id", nullable = false, unique = true)
@@ -20,6 +17,9 @@ public class BankAccount {
 
     @Column(name = "bank_name", nullable = false, length = 100)
     private String bankName;
+
+    @Column(name = "bank_group_id", length = 36)
+    private String bankGroupId;
 
     @Column(name = "account_number", nullable = false, length = 20)
     private String accountNumber;
@@ -41,32 +41,32 @@ public class BankAccount {
     }
 
     @PreUpdate
-    void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
+    void onUpdate() { updatedAt = LocalDateTime.now(); }
 
     public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public void setId(Long id) { id = id; }
     public Long getUserId() { return userId; }
-    public void setUserId(Long userId) { this.userId = userId; }
+    public void setUserId(Long v) { userId = v; }
     public String getAccountHolderName() { return accountHolderName; }
-    public void setAccountHolderName(String accountHolderName) { this.accountHolderName = accountHolderName; }
+    public void setAccountHolderName(String v) { accountHolderName = v; }
     public String getBankName() { return bankName; }
-    public void setBankName(String bankName) { this.bankName = bankName; }
+    public void setBankName(String v) { bankName = v; }
+    public String getBankGroupId() { return bankGroupId; }
+    public void setBankGroupId(String v) { bankGroupId = v; }
     public String getAccountNumber() { return accountNumber; }
-    public void setAccountNumber(String accountNumber) { this.accountNumber = accountNumber; }
+    public void setAccountNumber(String v) { accountNumber = v; }
     public String getBranchCode() { return branchCode; }
-    public void setBranchCode(String branchCode) { this.branchCode = branchCode; }
+    public void setBranchCode(String v) { branchCode = v; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
 
     public static Builder builder() { return new Builder(); }
-
     public static final class Builder {
         private final BankAccount account = new BankAccount();
         public Builder userId(Long v) { account.userId = v; return this; }
         public Builder accountHolderName(String v) { account.accountHolderName = v; return this; }
         public Builder bankName(String v) { account.bankName = v; return this; }
+        public Builder bankGroupId(String v) { account.bankGroupId = v; return this; }
         public Builder accountNumber(String v) { account.accountNumber = v; return this; }
         public Builder branchCode(String v) { account.branchCode = v; return this; }
         public BankAccount build() { return account; }
