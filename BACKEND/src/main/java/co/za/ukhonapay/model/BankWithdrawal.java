@@ -13,6 +13,10 @@ public class BankWithdrawal {
     @Column(name = "bank_account_id", nullable = false) private Long bankAccountId;
     @Column(nullable = false, unique = true, length = 30) private String reference;
     @Column(name = "provider_reference", length = 120) private String providerReference;
+    @Column(name = "provider_encryption_key") private String providerEncryptionKey;
+    @Column(name = "provider_status") private Integer providerStatus;
+    @Column(name = "provider_sub_status") private Integer providerSubStatus;
+    @Column(name = "provider_error", length = 500) private String providerError;
     @Column(nullable = false, precision = 12, scale = 2) private BigDecimal amount;
     @Enumerated(EnumType.STRING) @Column(nullable = false, length = 20) private BankWithdrawalStatus status;
     @Column(name = "created_at", nullable = false, updatable = false) private LocalDateTime createdAt;
@@ -29,6 +33,10 @@ public class BankWithdrawal {
     public Long getBankAccountId(){return bankAccountId;} public void setBankAccountId(Long v){bankAccountId=v;}
     public String getReference(){return reference;} public void setReference(String v){reference=v;}
     public String getProviderReference(){return providerReference;} public void setProviderReference(String v){providerReference=v;}
+    public String getProviderEncryptionKey(){return providerEncryptionKey;} public void setProviderEncryptionKey(String v){providerEncryptionKey=v;}
+    public Integer getProviderStatus(){return providerStatus;} public void setProviderStatus(Integer v){providerStatus=v;}
+    public Integer getProviderSubStatus(){return providerSubStatus;} public void setProviderSubStatus(Integer v){providerSubStatus=v;}
+    public String getProviderError(){return providerError;} public void setProviderError(String v){providerError=v;}
     public BigDecimal getAmount(){return amount;} public void setAmount(BigDecimal v){amount=v;}
     public BankWithdrawalStatus getStatus(){return status;} public void setStatus(BankWithdrawalStatus v){status=v;}
     public LocalDateTime getCreatedAt(){return createdAt;} public LocalDateTime getUpdatedAt(){return updatedAt;}
