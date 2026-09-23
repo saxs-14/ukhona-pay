@@ -7,7 +7,6 @@ import co.za.ukhonapay.repository.PayoutNotificationEventRepository;
 import co.za.ukhonapay.security.OzowPayoutHashVerifier;
 import co.za.ukhonapay.service.BankWithdrawalSettlementService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -34,7 +33,6 @@ public class OzowPayoutWebhookController {
     }
 
     @PostMapping("/ozow-payout")
-    @Transactional
     public ResponseEntity<Void> receive(@RequestBody String rawBody) {
         String eventId = null;
         try {
