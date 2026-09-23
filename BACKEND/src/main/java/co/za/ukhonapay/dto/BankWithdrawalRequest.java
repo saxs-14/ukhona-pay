@@ -7,7 +7,7 @@ import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 
 public record BankWithdrawalRequest(
-        @NotNull @DecimalMin(value = "0.01", message = "amount must be greater than 0") BigDecimal amount,
+        @NotNull @DecimalMin(value = "1.00", message = "minimum bank withdrawal is R1.00") BigDecimal amount,
         @NotBlank String pin
 ) {
 }
