@@ -1,0 +1,13 @@
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+ukhonapay:
+  mode: demo
+  jwt:
+    secret: local-development-only-ukhona-pay-secret-change-before-production-2026
+    expiry-minutes: 60
+  payments:
+    provider: none
+    webhook-secret: local-demo-webhook-secret
