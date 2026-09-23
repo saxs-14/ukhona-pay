@@ -8,5 +8,7 @@ public interface PaymentProvider {
     String name();
     ProviderPaymentResponse createPayment(String reference, BigDecimal amount, String currency, String returnUrl, String idempotencyKey);
     List<ProviderPaymentTransaction> getTransactions(String paymentReference, LocalDate fromDate, LocalDate toDate);
+    ProviderPaymentTransaction getTransaction(String transactionReference);
+    ProviderRefund getRefund(String refundReference);
     ProviderPaymentRequestStatus getPaymentStatus(String paymentReference);
 }
