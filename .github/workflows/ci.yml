@@ -45,6 +45,7 @@ jobs:
       - name: Build Frontend (Vite)
         run: |
           cd FRONTEND
+          npm run lint
           npm run build
 
   build-backend:
@@ -61,4 +62,4 @@ jobs:
       - name: Compile Backend (Maven)
         run: |
           cd BACKEND
-          mvn -B clean compile
+          mvn -B clean test
