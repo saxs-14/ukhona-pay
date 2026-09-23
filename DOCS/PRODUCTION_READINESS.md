@@ -47,7 +47,23 @@ Implement:
 
 ### 3. Real payouts
 
-The current bank-withdrawal code must not be presented as a completed bank transfer in production. Replace the demo completion with a provider payout request and asynchronous status handling.
+The production bank-withdrawal path now uses an Ozow payout adapter and an asynchronous state machine:
+
+1. Authenticate the user and verify the account PIN.
+2. Require a provider bank identifier (bankGroupId) on the saved bank account.
+3. Reserve the wallet amount in a double-entry PAYOUT_CLEARING_ZAR account.
+4. Create a PENDING bank-withdrawal record with a unique internal reference.
+5. Generate a unique per-payout Ozow encryption key and store it encrypted with the application payout master key.
+6. Encrypt the destination account number using Ozow AES-256-CBC requirements.
+7. Sign and submit the payout request to Ozow.
+8. Keep the withdrawal PENDING until Ozow confirms the outcome.
+9. Verify the Ozow payout verification webhook, including its access token, SHA-512 hash, payout reference and banking details, before returning the decryption key.
+10. Verify notification hashes and process duplicate notifications idempotently.
+11. On status 5 (completed), settle the payout clearing ledger entry.
+12. On status 4, 90 or 99, restore the reserved wallet amount exactly once.
+13. Keep provider timeouts or unknown outcomes pending so the system does not blindly refund a payout that may already have been accepted by the provider.
+
+The remaining production work is provider onboarding, staging certification, and a reconciliation job that can recover an accepted payout when the initial API response was lost.
 
 ### 4. Ledger
 
