@@ -6,6 +6,7 @@ import co.za.ukhonapay.payment.ProviderPayoutStatus;
 import co.za.ukhonapay.repository.BankWithdrawalRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.scheduling.annotation.Scheduled;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -26,6 +27,11 @@ public class BankWithdrawalReconciliationService {
         this.payoutProvider = payoutProvider;
         this.settlementService = settlementService;
         this.lookbackHours = lookbackHours;
+    }
+
+    @Scheduled(fixedDelayString = "$"+"{ukhonapay.payments.ozow.payout-reconciliation-delay-ms:300000}")
+    public void scheduledReconcile() {
+        reconcilePending();
     }
 
     public int reconcilePending() {
