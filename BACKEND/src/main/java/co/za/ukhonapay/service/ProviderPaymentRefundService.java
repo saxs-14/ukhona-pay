@@ -64,7 +64,7 @@ public class ProviderPaymentRefundService {
             return;
         }
 
-        PaymentIntent intent = intents.findByProviderReference(providerTransactionReference)
+        PaymentIntent intent = intents.findByProviderReferenceForUpdate(providerTransactionReference)
                 .orElseThrow(() -> new ResourceNotFoundException("Payment intent for refunded transaction not found"));
 
         if (!"COMPLETED".equals(intent.getStatus())) {
