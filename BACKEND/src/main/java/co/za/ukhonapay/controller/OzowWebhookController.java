@@ -3,8 +3,12 @@ package co.za.ukhonapay.controller;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import co.za.ukhonapay.model.PaymentWebhookEvent;
+import co.za.ukhonapay.payment.PaymentProvider;
+import co.za.ukhonapay.payment.ProviderPaymentTransaction;
+import co.za.ukhonapay.payment.ProviderRefund;
 import co.za.ukhonapay.repository.PaymentWebhookEventRepository;
 import co.za.ukhonapay.security.SvixWebhookVerifier;
+import co.za.ukhonapay.service.ProviderPaymentRefundService;
 import co.za.ukhonapay.service.ProviderPaymentSettlementService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -16,20 +20,25 @@ import java.time.LocalDateTime;
 @RestController
 @RequestMapping("/api/payments/webhooks/ozow")
 public class OzowWebhookController {
-
     private final ObjectMapper mapper;
     private final PaymentWebhookEventRepository events;
     private final ProviderPaymentSettlementService settlement;
+    private final ProviderPaymentRefundService refundSettlement;
+    private final PaymentProvider provider;
     private final String secret;
 
     public OzowWebhookController(
             ObjectMapper mapper,
             PaymentWebhookEventRepository events,
             ProviderPaymentSettlementService settlement,
+            ProviderPaymentRefundService refundSettlement,
+            PaymentProvider provider,
             @Value("${ukhonapay.payments.webhook-secret:}") String secret) {
         this.mapper = mapper;
         this.events = events;
         this.settlement = settlement;
+        this.refundSettlement = refundSettlement;
+        this.provider = provider;
         this.secret = secret;
     }
 
@@ -53,56 +62,23 @@ public class OzowWebhookController {
         }
 
         String type = root.path("type").asText("");
-        if (!"transaction.complete".equals(type)) return ResponseEntity.ok().build();
+        if (!"transaction.complete".equals(type) && !"refund.complete".equals(type)) {
+            return ResponseEntity.ok().build();
+        }
 
         try {
             events.claimIfNew("OZOW", id, type, true, rawBody);
-
-            // The unique insert records the delivery; this conditional update
-            // atomically assigns processing ownership to exactly one worker.
-            int claimedForProcessing = events.claimForProcessing("OZOW", id, rawBody);
-            if (claimedForProcessing == 0) {
-                PaymentWebhookEvent existing =
-                        events.findByProviderAndProviderEventId("OZOW", id).orElse(null);
-
-                if (existing == null) return ResponseEntity.status(500).build();
-
-                // Another worker is already processing this delivery, or it has
-                // already reached a terminal state. Both cases are safe to
-                // acknowledge because the event is idempotently persisted.
-                return ResponseEntity.ok().build();
-            }
+            int claimed = events.claimForProcessing("OZOW", id, rawBody);
+            if (claimed == 0) return ResponseEntity.ok().build();
 
             PaymentWebhookEvent event = events.findByProviderAndProviderEventId("OZOW", id)
                     .orElseThrow(() -> new IllegalStateException("Webhook event was not persisted"));
-
             JsonNode data = root.path("data");
-            String reference = firstNonBlank(
-                    data.path("TransactionReference").asText(""),
-                    data.path("merchantReference").asText(""));
-            String providerReference = firstNonBlank(
-                    data.path("TransactionId").asText(""),
-                    data.path("id").asText(""));
-            String status = firstNonBlank(
-                    data.path("Status").asText(""),
-                    data.path("status").asText(""));
 
-            if (reference.isBlank()) throw new IllegalArgumentException("Webhook has no payment intent reference");
-            if (providerReference.isBlank()) throw new IllegalArgumentException("Webhook has no provider reference");
-
-            if ("Successful".equalsIgnoreCase(status)) {
-                BigDecimal amount = new BigDecimal(data.path("Amount").asText("0"));
-                settlement.settleSuccessful(reference, providerReference, amount, "ZAR");
-            } else if ("Error".equalsIgnoreCase(status)) {
-                settlement.markFailed(reference, firstNonBlank(
-                        data.path("Reason").asText(""),
-                        data.path("reason").asText(""),
-                        "Provider reported payment failure"));
+            if ("transaction.complete".equals(type)) {
+                processTransaction(data);
             } else {
-                event.setProcessingStatus("IGNORED");
-                event.setProcessedAt(LocalDateTime.now());
-                events.save(event);
-                return ResponseEntity.ok().build();
+                processRefund(data);
             }
 
             event.setProcessingStatus("PROCESSED");
@@ -110,7 +86,6 @@ public class OzowWebhookController {
             event.setErrorMessage(null);
             events.save(event);
             return ResponseEntity.ok().build();
-
         } catch (Exception ex) {
             events.findByProviderAndProviderEventId("OZOW", id).ifPresent(event -> {
                 event.setProcessingStatus("FAILED");
@@ -119,6 +94,66 @@ public class OzowWebhookController {
                 events.save(event);
             });
             return ResponseEntity.status(500).build();
+        }
+    }
+
+    private void processTransaction(JsonNode data) {
+        String providerReference = firstNonBlank(
+                data.path("TransactionId").asText(""),
+                data.path("id").asText(""));
+        if (providerReference.isBlank()) {
+            throw new IllegalArgumentException("Transaction webhook has no provider reference");
+        }
+
+        ProviderPaymentTransaction transaction;
+        if (data.hasNonNull("TransactionReference") && data.hasNonNull("Amount")) {
+            String reference = data.path("TransactionReference").asText("");
+            BigDecimal amount = new BigDecimal(data.path("Amount").asText("0"));
+            String currency = firstNonBlank(data.path("CurrencyCode").asText(""), "ZAR");
+            transaction = new ProviderPaymentTransaction(
+                    providerReference,
+                    reference,
+                    amount,
+                    currency,
+                    firstNonBlank(data.path("Status").asText(""), "Error"),
+                    firstNonBlank(data.path("StatusMessage").asText(""), data.path("reason").asText("")));
+        } else {
+            transaction = provider.getTransaction(providerReference);
+        }
+
+        if (transaction.merchantReference().isBlank()) {
+            throw new IllegalArgumentException("Transaction webhook could not resolve merchant reference");
+        }
+
+        if ("Successful".equalsIgnoreCase(transaction.status())) {
+            settlement.settleSuccessful(
+                    transaction.merchantReference(),
+                    transaction.providerReference(),
+                    transaction.amount(),
+                    transaction.currency());
+        } else if ("Error".equalsIgnoreCase(transaction.status())) {
+            settlement.markFailed(
+                    transaction.merchantReference(),
+                    transaction.reason().isBlank()
+                            ? "Provider reported payment failure"
+                            : transaction.reason());
+        }
+    }
+
+    private void processRefund(JsonNode data) {
+        String refundReference = data.path("id").asText("");
+        if (refundReference.isBlank()) {
+            throw new IllegalArgumentException("Refund webhook has no refund reference");
+        }
+
+        ProviderRefund refund = provider.getRefund(refundReference);
+        if ("Complete".equalsIgnoreCase(refund.status())) {
+            refundSettlement.processCompletedRefund(
+                    refund.refundReference(),
+                    refund.transactionReference(),
+                    refund.amount(),
+                    refund.currency(),
+                    refund.reason());
         }
     }
 
