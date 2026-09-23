@@ -29,6 +29,34 @@ public class OzowPaymentProvider implements PaymentProvider {
   if(response==null||response.path("id").isMissingNode()||response.path("redirectUrl").isMissingNode())throw new IllegalStateException("Ozow returned an incomplete payment response");
   return new ProviderPaymentResponse(response.path("id").asText(),response.path("redirectUrl").asText(),response.path("status").asText("Created"));
  }
+ @Override
+ public java.util.List<ProviderPaymentTransaction> getTransactions(String paymentReference, java.time.LocalDate fromDate, java.time.LocalDate toDate){
+  requireConfigured();
+  if(paymentReference==null||paymentReference.isBlank()) throw new IllegalArgumentException("Ozow payment reference is required");
+  String token=accessToken();
+  com.fasterxml.jackson.databind.JsonNode response=client.get().uri(uriBuilder->uriBuilder.path("/payments/{id}/transactions")
+   .queryParam("limit",50).queryParam("offset",0).queryParam("fromDate",fromDate).queryParam("toDate",toDate)
+   .build(paymentReference)).headers(h->h.setBearerAuth(token)).retrieve().body(com.fasterxml.jackson.databind.JsonNode.class);
+  java.util.List<ProviderPaymentTransaction> result=new java.util.ArrayList<>();
+  if(response==null||!response.path("results").isArray()) return result;
+  for(com.fasterxml.jackson.databind.JsonNode item:response.path("results")){
+   com.fasterxml.jackson.databind.JsonNode amount=item.path("amount");
+   result.add(new ProviderPaymentTransaction(item.path("id").asText(""),item.path("merchantReference").asText(""),
+    amount.path("value").decimalValue(),amount.path("currency").asText(""),item.path("status").asText(""),item.path("reason").asText("")));
+  }
+  return result;
+ }
+
+ @Override
+ public ProviderPaymentRequestStatus getPaymentStatus(String paymentReference){
+  requireConfigured();
+  String token=accessToken();
+  com.fasterxml.jackson.databind.JsonNode response=client.get().uri("/payments/{id}",paymentReference)
+   .headers(h->h.setBearerAuth(token)).retrieve().body(com.fasterxml.jackson.databind.JsonNode.class);
+  if(response==null) throw new IllegalStateException("Ozow returned an empty payment status response");
+  return new ProviderPaymentRequestStatus(response.path("id").asText(paymentReference),response.path("status").asText(""),response.path("reason").asText(""));
+ }
+
  private String accessToken(){
   String form="client_id="+enc(clientId)+"&client_secret="+enc(clientSecret)+"&scope="+enc(scope)+"&grant_type=client_credentials";
   JsonNode response=client.post().uri("/token").contentType(MediaType.APPLICATION_FORM_URLENCODED).body(form).retrieve().body(JsonNode.class);
