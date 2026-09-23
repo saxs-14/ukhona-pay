@@ -10,5 +10,6 @@ public interface PaymentProvider {
     List<ProviderPaymentTransaction> getTransactions(String paymentReference, LocalDate fromDate, LocalDate toDate);
     ProviderPaymentTransaction getTransaction(String transactionReference);
     ProviderRefund getRefund(String refundReference);
+    List<ProviderRefund> getRefunds(String transactionReference);
     ProviderPaymentRequestStatus getPaymentStatus(String paymentReference);
 }
