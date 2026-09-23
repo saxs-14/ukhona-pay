@@ -1,7 +1,6 @@
 package co.za.ukhonapay.controller;
 
 import co.za.ukhonapay.service.BankWithdrawalReconciliationService;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -16,7 +15,6 @@ public class AdminPayoutReconciliationController {
     }
 
     @PostMapping("/reconcile")
-    @PreAuthorize("hasRole('ADMIN')")
     public Map<String, Object> reconcile() {
         return Map.of("processed", reconciliation.reconcilePending());
     }
