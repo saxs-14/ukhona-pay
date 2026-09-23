@@ -69,6 +69,10 @@ public class BankWithdrawalService {
             throw new InvalidCredentialsException("Incorrect PIN");
         }
 
+        if (!payoutProvider.isConfigured()) {
+            throw new IllegalStateException("Production payout provider is not configured");
+        }
+
         BankAccount bankAccount = bankAccounts.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "No bank account saved yet - add and verify one before withdrawing"));
