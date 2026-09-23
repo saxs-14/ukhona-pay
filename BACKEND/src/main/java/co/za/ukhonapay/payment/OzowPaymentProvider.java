@@ -107,7 +107,7 @@ public class OzowPaymentProvider implements PaymentProvider {
  @Override
  public ProviderPaymentRequestStatus getPaymentStatus(String paymentReference){
   requireConfigured();
-  String token=accessToken();
+  String token=accessToken(scope);
   com.fasterxml.jackson.databind.JsonNode response=client.get().uri("/payments/{id}",paymentReference)
    .headers(h->h.setBearerAuth(token)).retrieve().body(com.fasterxml.jackson.databind.JsonNode.class);
   if(response==null) throw new IllegalStateException("Ozow returned an empty payment status response");
