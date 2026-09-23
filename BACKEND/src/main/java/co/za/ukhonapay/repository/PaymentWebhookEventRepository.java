@@ -24,6 +24,24 @@ public interface PaymentWebhookEventRepository extends JpaRepository<PaymentWebh
                    @Param("verified") boolean verified,
                    @Param("payload") String payload);
 
+
+    @Modifying
+    @Transactional
+    @Query("""
+        update PaymentWebhookEvent e
+           set e.processingStatus = 'PROCESSING',
+               e.payload = :payload,
+               e.signatureVerified = true,
+               e.errorMessage = null,
+               e.processedAt = null
+         where e.provider = :provider
+           and e.providerEventId = :eventId
+           and e.processingStatus in ('RECEIVED', 'FAILED')
+        """)
+    int claimForProcessing(@Param("provider") String provider,
+                           @Param("eventId") String eventId,
+                           @Param("payload") String payload);
+
     @Modifying
     @Transactional
     @Query("""
