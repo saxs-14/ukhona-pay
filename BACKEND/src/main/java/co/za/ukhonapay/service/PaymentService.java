@@ -2,8 +2,6 @@ package co.za.ukhonapay.service;
 
 import co.za.ukhonapay.dto.AssociationTransferRequest;
 import co.za.ukhonapay.dto.AssociationTransferResponse;
-import co.za.ukhonapay.dto.IncomingPaymentRequest;
-import co.za.ukhonapay.dto.IncomingPaymentResponse;
 import co.za.ukhonapay.dto.PaymentRequest;
 import co.za.ukhonapay.dto.PaymentResponse;
 import co.za.ukhonapay.exception.InsufficientFundsException;
@@ -225,46 +223,6 @@ public class PaymentService {
         return new AssociationTransferResponse(
                 transaction.getReference(), adminAssociationId, association.getName(),
                 amount, BigDecimal.ZERO, driverWallet.getBalance(), transaction.getCreatedAt());
-    }
-
-    // A commuter paying via their own banking app - no sender wallet to debit,
-    // no PIN to check, since the payer never holds a UKHONA PAY account. This
-    // stands in for what a real bank's payment-confirmation webhook would call.
-    @Transactional
-    public IncomingPaymentResponse receiveExternalPayment(IncomingPaymentRequest req) {
-        Vendor vendor = vendorRepository.findByQrCode(req.vendorQrCode())
-                .orElseThrow(() -> new VendorNotFoundException("No vendor found for this QR code"));
-        requireApproved(vendor);
-
-        Wallet vendorWallet = walletRepository.findWithLockByUserId(vendor.getUserId())
-                .orElseThrow(() -> new ResourceNotFoundException("Vendor wallet not found"));
-
-        BigDecimal amount = req.amount();
-        BigDecimal fee = WalletService.PLATFORM_FEE;
-        BigDecimal netAmount = amount.subtract(fee);
-        Wallet platformWallet = walletService.getLockedPlatformFeeWallet();
-
-        WalletService.creditWithAutoAllocation(vendorWallet, netAmount);
-        platformWallet.setBalance(platformWallet.getBalance().add(fee));
-        walletRepository.save(vendorWallet);
-        walletRepository.save(platformWallet);
-
-        Transaction transaction = Transaction.builder()
-                .reference(generateReference())
-                .receiverId(vendor.getUserId())
-                .vendorId(vendor.getId())
-                .amount(amount)
-                .platformFee(fee)
-                .cashbackAmount(BigDecimal.ZERO)
-                .cashbackRate(BigDecimal.ZERO)
-                .status(TransactionStatus.COMPLETED)
-                .description(req.description())
-                .build();
-        transaction = transactionRepository.save(transaction);
-
-        return new IncomingPaymentResponse(
-                transaction.getReference(), vendor.getId(), vendor.getBusinessName(),
-                amount, fee, vendorWallet.getBalance(), transaction.getCreatedAt());
     }
 
     // Blocks payments to a driver whose registration hasn't been approved by
