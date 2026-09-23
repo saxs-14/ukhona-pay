@@ -16,6 +16,7 @@ import co.za.ukhonapay.repository.UserRepository;
 import co.za.ukhonapay.repository.WalletRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -31,21 +32,28 @@ public class BankWithdrawalService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final SecureRandom random = new SecureRandom();
+    private final String mode;
 
     public BankWithdrawalService(BankWithdrawalRepository bankWithdrawalRepository,
                                   BankAccountRepository bankAccountRepository,
                                   WalletRepository walletRepository,
                                   UserRepository userRepository,
-                                  PasswordEncoder passwordEncoder) {
+                                  PasswordEncoder passwordEncoder,
+                                  @Value("${ukhonapay.mode:live}") String mode) {
         this.bankWithdrawalRepository = bankWithdrawalRepository;
         this.bankAccountRepository = bankAccountRepository;
         this.walletRepository = walletRepository;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.mode = mode;
     }
 
     @Transactional
     public BankWithdrawalResponse withdraw(Long userId, BankWithdrawalRequest req) {
+        if ("live".equalsIgnoreCase(mode)) {
+            throw new IllegalStateException("Bank payouts are not enabled yet. Configure and verify the production payout provider before accepting withdrawals.");
+        }
+
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         if (!passwordEncoder.matches(req.pin(), user.getPinHash())) {
@@ -70,7 +78,7 @@ public class BankWithdrawalService {
                 .bankAccountId(bankAccount.getId())
                 .reference(generateReference())
                 .amount(req.amount())
-                .status(BankWithdrawalStatus.COMPLETED)
+                .status(BankWithdrawalStatus.PENDING)
                 .build();
         withdrawal = bankWithdrawalRepository.save(withdrawal);
 
