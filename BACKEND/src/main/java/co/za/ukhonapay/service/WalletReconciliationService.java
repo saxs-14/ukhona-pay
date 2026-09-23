@@ -51,7 +51,8 @@ public class WalletReconciliationService {
 
         BigDecimal walletTotal = zero(wallet.getBalance())
                 .add(zero(wallet.getSavingsBalance()))
-                .add(zero(wallet.getMaintenanceBalance()));
+                .add(zero(wallet.getMaintenanceBalance()))
+                .add(zero(wallet.getCashbackBalance()));
 
         BigDecimal ledgerBalance = zero(entries.getSignedBalanceByAccountCode(account.getAccountCode()));
         BigDecimal difference = walletTotal.subtract(ledgerBalance);
