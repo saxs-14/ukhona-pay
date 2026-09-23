@@ -31,6 +31,8 @@ ukhonapay:
       client-secret: ${OZOW_CLIENT_SECRET:}
       site-code: ${OZOW_SITE_CODE:}
       scope: ${OZOW_SCOPE:payments}
+      payout-base-url: ${OZOW_PAYOUT_BASE_URL:https://payoutsapi.ozow.com/v1}
+      payout-api-key: ${OZOW_PAYOUT_API_KEY:}
 
 logging:
   level:
