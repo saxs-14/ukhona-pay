@@ -37,6 +37,22 @@ public class BankWithdrawalReconciliationService {
 
         for (BankWithdrawal withdrawal : pending) {
             String providerReference = withdrawal.getProviderReference();
+            if (providerReference == null || providerReference.isBlank()) {
+                var recovered = payoutProvider.findPayoutByMerchantReference(
+                        withdrawal.getReference(),
+                        withdrawal.getCreatedAt().minusMinutes(5),
+                        LocalDateTime.now().plusMinutes(5));
+                if (recovered != null
+                        && withdrawal.getAmount().compareTo(recovered.amount()) == 0
+                        && withdrawal.getReference().equals(recovered.merchantReference())) {
+                    withdrawal.setProviderReference(recovered.providerReference());
+                    withdrawal.setProviderStatus(recovered.status());
+                    withdrawal.setProviderSubStatus(recovered.subStatus());
+                    withdrawal.setProviderError(recovered.errorMessage());
+                    withdrawals.save(withdrawal);
+                    providerReference = recovered.providerReference();
+                }
+            }
             if (providerReference == null || providerReference.isBlank()) continue;
             ProviderPayoutStatus status;
             try {
