@@ -6,9 +6,9 @@ import jakarta.validation.constraints.Pattern;
 public record BankAccountRequest(
         @NotBlank String accountHolderName,
         @NotBlank String bankName,
-        @NotBlank @Pattern(
-                regexp = "^[0-9a-fA-F-]{36}$",
-                message = "bankGroupId must be the provider bank UUID"
+        @Pattern(
+                regexp = "^$|^[0-9a-fA-F-]{36}$",
+                message = "bankGroupId must be the provider bank UUID when supplied"
         ) String bankGroupId,
         @NotBlank @Pattern(
                 regexp = "^[0-9]{6,20}$",
