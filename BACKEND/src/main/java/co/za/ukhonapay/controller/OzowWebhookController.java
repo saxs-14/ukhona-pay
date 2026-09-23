@@ -56,23 +56,21 @@ public class OzowWebhookController {
         if (!"transaction.complete".equals(type)) return ResponseEntity.ok().build();
 
         try {
-            int claimed = events.claimIfNew("OZOW", id, type, true, rawBody);
+            events.claimIfNew("OZOW", id, type, true, rawBody);
 
-            if (claimed == 0) {
+            // The unique insert records the delivery; this conditional update
+            // atomically assigns processing ownership to exactly one worker.
+            int claimedForProcessing = events.claimForProcessing("OZOW", id, rawBody);
+            if (claimedForProcessing == 0) {
                 PaymentWebhookEvent existing =
                         events.findByProviderAndProviderEventId("OZOW", id).orElse(null);
 
                 if (existing == null) return ResponseEntity.status(500).build();
 
-                if ("PROCESSED".equals(existing.getProcessingStatus())
-                        || "IGNORED".equals(existing.getProcessingStatus())) {
-                    return ResponseEntity.ok().build();
-                }
-
-                if ("FAILED".equals(existing.getProcessingStatus())
-                        && events.retryFailed("OZOW", id, rawBody) == 0) {
-                    return ResponseEntity.ok().build();
-                }
+                // Another worker is already processing this delivery, or it has
+                // already reached a terminal state. Both cases are safe to
+                // acknowledge because the event is idempotently persisted.
+                return ResponseEntity.ok().build();
             }
 
             PaymentWebhookEvent event = events.findByProviderAndProviderEventId("OZOW", id)
