@@ -25,6 +25,12 @@ ukhonapay:
   payments:
     provider: ${PAYMENT_PROVIDER:}
     webhook-secret: ${PAYMENT_WEBHOOK_SECRET:}
+    ozow:
+      base-url: ${OZOW_BASE_URL:https://one.ozow.com/v1}
+      client-id: ${OZOW_CLIENT_ID:}
+      client-secret: ${OZOW_CLIENT_SECRET:}
+      site-code: ${OZOW_SITE_CODE:}
+      scope: ${OZOW_SCOPE:payments}
 
 logging:
   level:
