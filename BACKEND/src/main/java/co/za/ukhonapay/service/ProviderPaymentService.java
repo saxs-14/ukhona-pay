@@ -36,7 +36,7 @@ public class ProviderPaymentService {
   intent.setProvider(provider.name());intent.setIdempotencyKey(idem);intent.setVendorId(vendor.getId());intent.setPayerUserId(payerUserId);intent.setAmount(req.amount());intent.setCurrency("ZAR");intent.setStatus("PENDING");
   intent=intentRepository.saveAndFlush(intent);
   ProviderPaymentResponse created=provider.createPayment(intent.getInternalReference(),intent.getAmount(),intent.getCurrency(),returnUrl,idem);
-  intent.setProviderReference(created.providerReference());intent.setStatus("PENDING");intentRepository.save(intent);
+  intent.setProviderPaymentReference(created.providerReference());intent.setStatus("PENDING");intentRepository.save(intent);
   return response(intent,created.redirectUrl());
  }
  private ProviderPaymentIntentResponse response(PaymentIntent i,String redirectUrl){
