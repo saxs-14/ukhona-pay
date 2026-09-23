@@ -48,6 +48,11 @@ public class OzowPayoutProvider implements PayoutProvider {
     }
 
     @Override
+    public boolean isConfigured() {
+        return !apiKey.isBlank() && !siteCode.isBlank() && !notifyUrl.isBlank();
+    }
+
+    @Override
     public ProviderPayoutResponse requestPayout(String merchantReference, BigDecimal amount,
                                                  BankAccount bankAccount, String encryptionKey) {
         if (apiKey.isBlank() || siteCode.isBlank() || notifyUrl.isBlank()) {
