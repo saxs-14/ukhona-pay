@@ -10,9 +10,6 @@ ALTER TABLE bank_withdrawals
 ALTER TABLE bank_withdrawals
     ADD COLUMN IF NOT EXISTS provider_error VARCHAR(500);
 
-ALTER TABLE bank_withdrawals
-    ADD CONSTRAINT bank_withdrawals_provider_reference_unique
-    UNIQUE (provider_reference);
 INSERT INTO ledger_accounts(account_code, account_type, currency)
 VALUES ('PAYOUT_CLEARING_ZAR','PAYOUT_CLEARING','ZAR')
 ON CONFLICT (account_code) DO NOTHING;
