@@ -29,9 +29,7 @@ public class OzowPayoutHashVerifier {
         if (apiKey.isBlank() || siteCode.isBlank() || hashCheck == null || hashCheck.isBlank()) {
             return false;
         }
-        if (!MessageDigest.isEqual(
-                siteCode.getBytes(StandardCharsets.UTF_8),
-                notificationSiteCode == null ? new byte[0] : notificationSiteCode.getBytes(StandardCharsets.UTF_8))) {
+        if (!java.util.Objects.equals(siteCode, notificationSiteCode)) {
             return false;
         }
 
