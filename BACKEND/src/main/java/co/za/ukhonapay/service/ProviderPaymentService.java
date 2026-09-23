@@ -28,7 +28,7 @@ public class ProviderPaymentService {
   if(vendor.getStatus()!=VendorStatus.APPROVED)throw new IllegalArgumentException("This vendor is not approved");
   String idem=req.idempotencyKey()==null||req.idempotencyKey().isBlank()?UUID.randomUUID().toString():req.idempotencyKey().trim();
   var existing=intentRepository.findByIdempotencyKey(idem);
-  if(existing.isPresent())return response(existing.get(),null);
+  if(existing.isPresent())return response(existing.get(),existing.get().getRedirectUrl());
   if(!"OZOW".equalsIgnoreCase(configuredProvider)||!"OZOW".equalsIgnoreCase(provider.name()))
    throw new IllegalStateException("No production payment provider is configured. Set PAYMENT_PROVIDER=OZOW and configure Ozow credentials.");
   PaymentIntent intent=new PaymentIntent();
@@ -44,7 +44,7 @@ public class ProviderPaymentService {
    intentRepository.save(intent);
    throw ex;
   }
-  intent.setProviderPaymentReference(created.providerReference());intent.setStatus("PENDING");intentRepository.save(intent);
+  intent.setProviderPaymentReference(created.providerReference());intent.setRedirectUrl(created.redirectUrl());intent.setStatus("PENDING");intentRepository.save(intent);
   return response(intent,created.redirectUrl());
  }
  private ProviderPaymentIntentResponse response(PaymentIntent i,String redirectUrl){
