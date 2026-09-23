@@ -44,7 +44,7 @@ public class BankAccount {
     void onUpdate() { updatedAt = LocalDateTime.now(); }
 
     public Long getId() { return id; }
-    public void setId(Long id) { id = id; }
+    public void setId(Long id) { this.id = id; }
     public Long getUserId() { return userId; }
     public void setUserId(Long v) { userId = v; }
     public String getAccountHolderName() { return accountHolderName; }
