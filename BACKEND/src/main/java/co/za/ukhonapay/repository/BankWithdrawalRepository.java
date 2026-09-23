@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.*;
 import jakarta.persistence.LockModeType;
 import java.util.List;
 import java.util.Optional;
+import java.time.LocalDateTime;
 
 public interface BankWithdrawalRepository extends JpaRepository<BankWithdrawal, Long> {
     List<BankWithdrawal> findByUserIdOrderByCreatedAtDesc(Long userId);
@@ -16,4 +17,6 @@ public interface BankWithdrawalRepository extends JpaRepository<BankWithdrawal, 
     Optional<BankWithdrawal> findByReferenceForUpdate(String reference);
 
     boolean existsByUserIdAndStatus(Long userId, BankWithdrawalStatus status);
+
+    List<BankWithdrawal> findByStatusAndCreatedAtAfter(BankWithdrawalStatus status, LocalDateTime createdAt);
 }
