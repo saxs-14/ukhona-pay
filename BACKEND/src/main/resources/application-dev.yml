@@ -11,3 +11,8 @@ ukhonapay:
   payments:
     provider: none
     webhook-secret: local-demo-webhook-secret
+    ozow:
+      payout-master-key: local-dev-payout-master-key
+      payout-notify-url: http://localhost:8080/api/payments/webhooks/ozow-payout
+      payout-verification-url: http://localhost:8080/api/payments/webhooks/ozow-payout-verification
+      payout-verification-access-token: local-dev-verification-token
