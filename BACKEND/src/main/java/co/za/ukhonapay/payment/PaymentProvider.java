@@ -1,3 +1,12 @@
 package co.za.ukhonapay.payment;
+
 import java.math.BigDecimal;
-public interface PaymentProvider{String name(); ProviderPaymentResponse createPayment(String reference,BigDecimal amount,String currency,String returnUrl,String idempotencyKey);}
+import java.time.LocalDate;
+import java.util.List;
+
+public interface PaymentProvider {
+    String name();
+    ProviderPaymentResponse createPayment(String reference, BigDecimal amount, String currency, String returnUrl, String idempotencyKey);
+    List<ProviderPaymentTransaction> getTransactions(String paymentReference, LocalDate fromDate, LocalDate toDate);
+    ProviderPaymentRequestStatus getPaymentStatus(String paymentReference);
+}
