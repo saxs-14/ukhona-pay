@@ -14,6 +14,7 @@ import co.za.ukhonapay.repository.UserRepository;
 import co.za.ukhonapay.repository.WalletRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -27,19 +28,25 @@ public class WithdrawalService {
     private final UserRepository userRepository;
     private final TransactionRepository transactionRepository;
     private final PasswordEncoder passwordEncoder;
+    private final String mode;
 
     public WithdrawalService(WalletRepository walletRepository,
                              UserRepository userRepository,
                              TransactionRepository transactionRepository,
-                             PasswordEncoder passwordEncoder) {
+                             PasswordEncoder passwordEncoder,
+                             @Value("${ukhonapay.mode:live}") String mode) {
         this.walletRepository = walletRepository;
         this.userRepository = userRepository;
         this.transactionRepository = transactionRepository;
         this.passwordEncoder = passwordEncoder;
+        this.mode = mode;
     }
 
     @Transactional
     public VendorBankWithdrawalResponse withdrawToBank(Long userId, VendorBankWithdrawalRequest req) {
+        if ("live".equalsIgnoreCase(mode)) {
+            throw new IllegalStateException("Direct bank cashout is not enabled yet. Use the provider-backed payout flow.");
+        }
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
@@ -80,6 +87,9 @@ public class WithdrawalService {
 
     @Transactional
     public co.za.ukhonapay.dto.CashSendResponse cashSend(Long userId, co.za.ukhonapay.dto.CashSendRequest req) {
+        if ("live".equalsIgnoreCase(mode)) {
+            throw new IllegalStateException("CashSend is not enabled until a real cash-out provider is integrated.");
+        }
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 

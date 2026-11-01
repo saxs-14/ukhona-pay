@@ -5,12 +5,9 @@ import co.za.ukhonapay.dto.WalletResponse;
 import co.za.ukhonapay.exception.InsufficientFundsException;
 import co.za.ukhonapay.exception.ResourceNotFoundException;
 import co.za.ukhonapay.model.TaxiAssociation;
-import co.za.ukhonapay.model.User;
 import co.za.ukhonapay.model.Wallet;
-import co.za.ukhonapay.model.enums.UserType;
 import co.za.ukhonapay.model.enums.WalletPocket;
 import co.za.ukhonapay.repository.TaxiAssociationRepository;
-import co.za.ukhonapay.repository.UserRepository;
 import co.za.ukhonapay.repository.WalletRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,35 +17,21 @@ import java.math.BigDecimal;
 @Service
 public class WalletService {
 
-    // Flat fee charged to the platform on every user-initiated transaction
-    // (wallet-to-wallet payment, commuter-to-vendor payment, association dues
-    // transfer), credited into the platform administrator's own personal
-    // wallet - the wallets table only allows a user-linked or association-linked
-    // row, so there's no separate "platform wallet" entity; the ADMIN's wallet
-    // fills that role.
+    /**
+     * Flat fee charged on every user-initiated transaction.
+     * The fee is accounted for in the dedicated PLATFORM_FEE_REVENUE_ZAR
+     * ledger account; it is never credited to a human administrator wallet.
+     */
     public static final BigDecimal PLATFORM_FEE = new BigDecimal("1.00");
 
     private final WalletRepository walletRepository;
     private final TaxiAssociationRepository taxiAssociationRepository;
-    private final UserRepository userRepository;
 
-    public WalletService(WalletRepository walletRepository, TaxiAssociationRepository taxiAssociationRepository,
-                          UserRepository userRepository) {
+    public WalletService(
+            WalletRepository walletRepository,
+            TaxiAssociationRepository taxiAssociationRepository) {
         this.walletRepository = walletRepository;
         this.taxiAssociationRepository = taxiAssociationRepository;
-        this.userRepository = userRepository;
-    }
-
-    // There is exactly one ADMIN account (public self-signup as ADMIN is
-    // blocked - see AuthService.signup), so the earliest-created one is always
-    // THE platform administrator. Locked because it's mutated inside the same
-    // transaction as the sender/receiver wallets.
-    @Transactional
-    public Wallet getLockedPlatformFeeWallet() {
-        User admin = userRepository.findFirstByUserTypeOrderByIdAsc(UserType.ADMIN)
-                .orElseThrow(() -> new IllegalStateException("No platform administrator account exists"));
-        return walletRepository.findWithLockByUserId(admin.getId())
-                .orElseThrow(() -> new IllegalStateException("Platform administrator wallet not found"));
     }
 
     public WalletResponse getWallet(Long userId) {
@@ -78,26 +61,30 @@ public class WalletService {
                         .associationId(associationId)
                         .balance(BigDecimal.ZERO)
                         .cashbackBalance(BigDecimal.ZERO)
+                        .savingsBalance(BigDecimal.ZERO)
+                        .maintenanceBalance(BigDecimal.ZERO)
                         .currency("ZAR")
                         .build()));
     }
 
     public static WalletResponse toResponse(Wallet wallet) {
-        return new WalletResponse(wallet.getUserId(), wallet.getBalance(), wallet.getCashbackBalance(),
-                wallet.getSavingsBalance(), wallet.getMaintenanceBalance(), wallet.getCurrency());
+        return new WalletResponse(
+                wallet.getUserId(),
+                wallet.getBalance(),
+                wallet.getCashbackBalance(),
+                wallet.getSavingsBalance(),
+                wallet.getMaintenanceBalance(),
+                wallet.getCurrency());
     }
 
-    // Splits an incoming fare payment into the available balance (90%) and
-    // two earmarked pots (5% savings, 5% maintenance) - the two percentage
-    // pots are rounded first and the available share takes the remainder, so
-    // the three always sum exactly to the original amount regardless of
-    // rounding. Mutates the wallet in place; caller still saves it.
     public static final BigDecimal SAVINGS_RATE = new BigDecimal("0.05");
     public static final BigDecimal MAINTENANCE_RATE = new BigDecimal("0.05");
 
     public static void creditWithAutoAllocation(Wallet wallet, BigDecimal amount) {
-        BigDecimal savingsShare = amount.multiply(SAVINGS_RATE).setScale(2, java.math.RoundingMode.HALF_UP);
-        BigDecimal maintenanceShare = amount.multiply(MAINTENANCE_RATE).setScale(2, java.math.RoundingMode.HALF_UP);
+        BigDecimal savingsShare = amount.multiply(SAVINGS_RATE)
+                .setScale(2, java.math.RoundingMode.HALF_UP);
+        BigDecimal maintenanceShare = amount.multiply(MAINTENANCE_RATE)
+                .setScale(2, java.math.RoundingMode.HALF_UP);
         BigDecimal availableShare = amount.subtract(savingsShare).subtract(maintenanceShare);
 
         wallet.setBalance(wallet.getBalance().add(availableShare));
@@ -105,14 +92,29 @@ public class WalletService {
         wallet.setMaintenanceBalance(wallet.getMaintenanceBalance().add(maintenanceShare));
     }
 
-    /**
-     * Moves money between a single user's own pockets (spendable balance,
-     * savings, maintenance) - e.g. pulling savings back into the spendable
-     * balance. Never touches another user's wallet; {@code from}/{@code to}
-     * index into the same locked row.
-     */
+    public static void reverseAutoAllocation(Wallet wallet, BigDecimal amount) {
+        if (amount == null || amount.signum() <= 0) {
+            throw new IllegalArgumentException("Amount must be greater than zero");
+        }
+        BigDecimal savings = amount.multiply(SAVINGS_RATE).setScale(2, java.math.RoundingMode.HALF_UP);
+        BigDecimal maintenance = amount.multiply(MAINTENANCE_RATE).setScale(2, java.math.RoundingMode.HALF_UP);
+        BigDecimal balance = amount.subtract(savings).subtract(maintenance);
+
+        if (wallet.getBalance().compareTo(balance) < 0
+                || wallet.getSavingsBalance().compareTo(savings) < 0
+                || wallet.getMaintenanceBalance().compareTo(maintenance) < 0) {
+            throw new InsufficientFundsException(
+                    "Vendor wallet does not have enough allocated funds to reverse this provider refund");
+        }
+
+        wallet.setBalance(wallet.getBalance().subtract(balance));
+        wallet.setSavingsBalance(wallet.getSavingsBalance().subtract(savings));
+        wallet.setMaintenanceBalance(wallet.getMaintenanceBalance().subtract(maintenance));
+    }
+
     @Transactional
-    public WalletResponse transferBetweenOwnPockets(Long userId, WalletPocket from, WalletPocket to, BigDecimal amount) {
+    public WalletResponse transferBetweenOwnPockets(
+            Long userId, WalletPocket from, WalletPocket to, BigDecimal amount) {
         if (from == to) {
             throw new IllegalArgumentException("Choose two different pockets to move money between");
         }

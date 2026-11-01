@@ -17,8 +17,6 @@ public class Transaction {
     @Column(nullable = false, unique = true, length = 20)
     private String reference;
 
-    // Null means an external payment - a commuter paying via their own banking
-    // app, who never holds a UKHONA PAY account/user row.
     @Column(name = "sender_id")
     private Long senderId;
 
@@ -40,10 +38,6 @@ public class Transaction {
     @Column(name = "cashback_rate", nullable = false, precision = 4, scale = 3)
     private BigDecimal cashbackRate;
 
-    // Flat platform fee deducted from this transaction (0 for types the fee
-    // doesn't apply to, e.g. fines). amount stays the gross figure the sender
-    // was charged / the external payer sent; the receiver's actual credit is
-    // amount - platformFee.
     @Column(name = "platform_fee", nullable = false, precision = 12, scale = 2)
     private BigDecimal platformFee = BigDecimal.ZERO;
 
@@ -61,7 +55,7 @@ public class Transaction {
     void onCreate() {
         createdAt = LocalDateTime.now();
         if (status == null) {
-            status = TransactionStatus.COMPLETED;
+            status = TransactionStatus.PENDING;
         }
     }
 
@@ -74,7 +68,7 @@ public class Transaction {
     public Long getReceiverId() { return receiverId; }
     public void setReceiverId(Long receiverId) { this.receiverId = receiverId; }
     public Long getReceiverAssociationId() { return receiverAssociationId; }
-    public void setReceiverAssociationId(Long receiverAssociationId) { this.receiverAssociationId = receiverAssociationId; }
+    public void setReceiverAssociationId(Long receiverId) { this.receiverAssociationId = receiverId; }
     public Long getVendorId() { return vendorId; }
     public void setVendorId(Long vendorId) { this.vendorId = vendorId; }
     public BigDecimal getAmount() { return amount; }

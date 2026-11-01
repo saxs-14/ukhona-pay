@@ -170,7 +170,7 @@ CREATE TABLE bank_withdrawals (
     bank_account_id BIGINT NOT NULL REFERENCES bank_accounts(id),
     reference       VARCHAR(30) NOT NULL UNIQUE,
     amount          NUMERIC(12,2) NOT NULL CHECK (amount > 0),
-    status          VARCHAR(20) NOT NULL DEFAULT 'COMPLETED' CHECK (status IN ('COMPLETED', 'FAILED')),
+    status          VARCHAR(20) NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'COMPLETED', 'FAILED')),
     created_at      TIMESTAMP NOT NULL DEFAULT now()
 );
 

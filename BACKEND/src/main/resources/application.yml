@@ -1,14 +1,10 @@
 server:
-  # Cloud Run assigns the listening port via $PORT at runtime - falls back to
-  # 8080 for local dev where nothing sets that variable.
   port: ${PORT:8080}
 
 spring:
   application:
     name: ukhona-pay
   datasource:
-    # Local dev defaults match docker-compose.yml unchanged. In production
-    # these are set via Cloud Run environment variables - see DOCS/DEPLOYMENT.md.
     url: ${DATABASE_URL:jdbc:postgresql://localhost:5442/ukhonapay}
     username: ${DB_USERNAME:ukhonapay}
     password: ${DB_PASSWORD:ukhonapay}
@@ -17,19 +13,37 @@ spring:
     hibernate:
       ddl-auto: validate
     show-sql: false
-    properties:
-      hibernate:
-        format_sql: true
     open-in-view: false
 
 ukhonapay:
+  mode: ${UKHONA_PAY_MODE:live}
   frontend:
-    # Where a scanned vendor QR code should send a commuter's phone to pay -
-    # override for demo day if judges are on a LAN IP instead of localhost.
     base-url: ${FRONTEND_BASE_URL:http://localhost:5173}
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://127.0.0.1:5173}
   jwt:
-    secret: ${JWT_SECRET:demo-only-secret-key-for-hackathon-do-not-use-in-production-1234567890}
-    expiry-minutes: 720
+    secret: ${JWT_SECRET:}
+    expiry-minutes: ${JWT_EXPIRY_MINUTES:60}
+  payments:
+    provider: ${PAYMENT_PROVIDER:}
+    webhook-secret: ${PAYMENT_WEBHOOK_SECRET:}
+    ozow:
+      base-url: ${OZOW_BASE_URL:https://one.ozow.com/v1}
+      client-id: ${OZOW_CLIENT_ID:}
+      client-secret: ${OZOW_CLIENT_SECRET:}
+      site-code: ${OZOW_SITE_CODE:}
+      scope: ${OZOW_SCOPE:payments}
+      refund-scope: ${OZOW_REFUND_SCOPE:refunds}
+      payout-base-url: ${OZOW_PAYOUT_BASE_URL:https://payoutsapi.ozow.com/v1}
+      payout-api-key: ${OZOW_PAYOUT_API_KEY:}
+      payout-master-key: ${OZOW_PAYOUT_MASTER_KEY:}
+      payout-notify-url: ${OZOW_PAYOUT_NOTIFY_URL:}
+      payout-verification-url: ${OZOW_PAYOUT_VERIFICATION_URL:}
+      payout-verification-access-token: ${OZOW_PAYOUT_VERIFICATION_ACCESS_TOKEN:}
+      payout-is-rtc: ${OZOW_PAYOUT_IS_RTC:false}
+      payin-reconciliation-lookback-hours: ${OZOW_PAYIN_RECONCILIATION_LOOKBACK_HOURS:48}
+      payin-reconciliation-delay-ms: ${OZOW_PAYIN_RECONCILIATION_DELAY_MS:300000}
+      reconciliation-lookback-hours: ${OZOW_PAYOUT_RECONCILIATION_LOOKBACK_HOURS:48}
+      payout-reconciliation-delay-ms: ${OZOW_PAYOUT_RECONCILIATION_DELAY_MS:300000}
 
 logging:
   level:

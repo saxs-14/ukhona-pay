@@ -2,12 +2,9 @@
 BACKEND/target/
 *.class
 
-<<<<<<< HEAD
-=======
 # Vercel project link (machine-local, never shared)
 .vercel
 
->>>>>>> origin/main
 # Frontend (Node/Vite)
 FRONTEND/node_modules/
 FRONTEND/dist/
@@ -27,9 +24,25 @@ Thumbs.db
 # Env files that might hold real secrets if ever added later
 .env
 .env.local
-<<<<<<< HEAD
-=======
 
 .vercel
 .env*
->>>>>>> origin/main
+
+# Android signing material and build output (never commit)
+ANDROID/android.keystore
+*.keystore
+*.jks
+ANDROID/do-build.js
+ANDROID/generate.js
+ANDROID/build/
+ANDROID/app/build/
+ANDROID/.gradle/
+*.apk
+*.idsig
+replay_pid*.log
+
+# Production demo seeds contain working credential hashes
+DATABASE/prod-*.sql
+
+# Local presentation backups
+* - backup before *.pptx
