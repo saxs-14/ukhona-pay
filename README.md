@@ -1,3 +1,5 @@
+<p align="center"><img src=".github/assets/banner.svg" width="100%" alt="Ukhona Pay banner"/></p>
+
 # UKHONA PAY
 
 South African fintech payment & savings platform for **Mbombela / Nelspruit** — EDHE Studentpreneurs Indaba 2026, **Market Connectivity** challenge (with a light **Data Analytics** touch via the vendor insights tile).
